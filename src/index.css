@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body full-width sin centrado */
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Root sin restricciones */
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Enlaces - usar colores de Tailwind */
+a {
+  text-decoration: inherit;
+}
+
+/* Botones - usar clases de Tailwind */
+button {
+  cursor: pointer;
+}
+
+/* Sin restricciones de ancho */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
