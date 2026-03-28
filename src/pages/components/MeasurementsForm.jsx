@@ -58,9 +58,23 @@ function MeasurementsForm({ width, height, depth, onWidthChange, onHeightChange,
 
   return (
     <div>
-      <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">
-        Medidas
-      </h2>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
+          Medidas
+        </h2>
+        <a
+          href="/tutorial-medidas.pdf"
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-1.5 text-xs font-semibold text-red-700 hover:text-red-800 bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1.5 rounded-lg transition-colors"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+          </svg>
+          Guía de medidas
+        </a>
+      </div>
 
       <div className="space-y-4">
         {measures.map(({ label, unit, value, onChange, min, max, step, hint, surcharge, icon }) => {
