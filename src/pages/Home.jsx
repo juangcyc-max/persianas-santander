@@ -1,245 +1,331 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import HeroBlind from './HeroBlind'
 
-function Home() {
-  const [isOpen, setIsOpen] = useState(false)
-  const [boxColor, setBoxColor] = useState('#EC1C24')
-  const [slatColor, setSlatColor] = useState('#C4A77D')
-  const [isMotor, setIsMotor] = useState(true)
+const FEATURES = [
+  {
+    icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />,
+    title: 'Garantía 10 años',
+    desc: 'Resistencia UV certificada y acabados anti-arañazos en todos nuestros productos.',
+  },
+  {
+    icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />,
+    title: 'Seguridad certificada',
+    desc: 'Lamas bloqueantes anti-levantamiento. Homologación europea EN 1627.',
+  },
+  {
+    icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />,
+    title: 'Fabricación propia',
+    desc: 'Taller en Santander con control total de calidad desde el aluminio hasta la instalación.',
+  },
+  {
+    icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />,
+    title: 'Entrega en 7–15 días',
+    desc: 'Fabricamos a medida y enviamos con instalador propio en toda Cantabria.',
+  },
+  {
+    icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />,
+    title: 'Descuento profesional',
+    desc: '20% de descuento para instaladores, arquitectos y empresas constructoras.',
+  },
+  {
+    icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />,
+    title: 'Soporte técnico',
+    desc: 'Asesoramiento en obra, visita técnica gratuita y posventa en toda la región.',
+  },
+]
 
-  const winchesterPalette = [
-    { name: 'Roble Dorado', hex: '#C4A77D' }, { name: 'Nogal Oscuro', hex: '#5D4037' },
-    { name: 'Caoba Premium', hex: '#4E342E' }, { name: 'Cerezo Clásico', hex: '#8D6E63' },
-    { name: 'Fresno Claro', hex: '#E8E0D2' }, { name: 'Teak Salvaje', hex: '#B19F83' },
-    { name: 'Wengué Intenso', hex: '#2B2B2B' }, { name: 'Pino Natural', hex: '#DBCABB' },
-    { name: 'Sapelly', hex: '#9C7F6B' }, { name: 'Arce Suave', hex: '#F3E5DC' },
-    { name: 'Gris Carbono', hex: '#3D3D3D' }, { name: 'Gris Tráfico', hex: '#707476' },
-    { name: 'Gris Plata Pro', hex: '#A2A2A2' }, { name: 'Gris Basalto', hex: '#4D5C63' },
-    { name: 'Negro Satinado', hex: '#1A1A1A' }, { name: 'Bronce Metal', hex: '#6F4E37' },
-    { name: 'Cobre Puro', hex: '#B87333' }, { name: 'Aluminio Anodizado', hex: '#C0C0C0' },
-    { name: 'Gris Cuarzo', hex: '#6F7A85' }, { name: 'Antracita Pro', hex: '#373F41' },
-    { name: 'Blanco Puro', hex: '#FFFFFF' }, { name: 'Marfil', hex: '#FFFFF0' },
-    { name: 'Verde Musgo', hex: '#4B5320' }, { name: 'Azul Báltico', hex: '#00416A' },
-  ]
+const PROCESS_STEPS = [
+  { n: '01', title: 'Configura online',     desc: 'Elige tipo, medidas, colores y mecanismo en nuestro configurador.' },
+  { n: '02', title: 'Recibe presupuesto',   desc: 'Te enviamos el presupuesto detallado en menos de 24 h.' },
+  { n: '03', title: 'Fabricamos a medida',  desc: 'Producción en nuestro taller de Santander con control de calidad.' },
+  { n: '04', title: 'Instalación incluida', desc: 'Nuestro equipo instala y revisa el funcionamiento en tu hogar.' },
+]
 
+const TESTIMONIALS = [
+  { name: 'Carlos Méndez',          role: 'Arquitecto',           initials: 'CM', stars: 5, text: 'La precisión de medidas y la calidad del aluminio extrusionado superan a la mayoría de fabricantes nacionales. Trabajo con ellos en todos mis proyectos.' },
+  { name: 'Laura Fernández',         role: 'Propietaria particular', initials: 'LF', stars: 5, text: 'Pedí 12 persianas motorizadas para mi casa nueva. El configurador fue muy fácil y el equipo de instalación fue puntual y limpio.' },
+  { name: 'Grupo Constructor Norte', role: 'Empresa promotora',    initials: 'GN', stars: 5, text: 'Llevamos 3 años trabajando con Persianas Santander. Los plazos se cumplen y la relación calidad-precio es inmejorable.' },
+]
+
+function StarRating({ count }) {
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
-      
-      {/* HERO - Rojo sólido, sin sombras */}
-      <section className="bg-red-700 text-white py-24">
-        <div className="w-full px-4 sm:px-6 lg:px-8 text-center">
-          <span className="text-red-200 font-bold tracking-widest uppercase text-xs mb-3 block">Fabricación Propia | Desde Santander</span>
-          <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight tracking-tight">Persianas Santander</h1>
-          <p className="text-xl md:text-2xl text-white mb-12 font-medium max-w-2xl mx-auto leading-relaxed">Tecnología de extrusión y acabados de alta precisión para arquitecturas exigentes.</p>
-          <Link to="/configurador" className="inline-flex items-center gap-3 bg-white text-red-700 px-10 py-4 rounded-full font-bold text-lg hover:bg-red-50 transition-colors">
-            Configurar Proyecto a Medida
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-          </Link>
-        </div>
-      </section>
-
-      {/* SHOWROOM MEJORADO */}
-      <section className="py-16 bg-white">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Visualizador Interactivo</h2>
-            <p className="text-gray-600">Personaliza caja y lamas de forma independiente</p>
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-12 items-start max-w-7xl mx-auto">
-            
-            {/* VENTANA 3D */}
-            <div className="relative">
-              <div className="relative bg-gray-100 rounded-lg p-8 shadow-lg">
-                <div className="absolute inset-0 bg-black/10 rounded-lg blur-lg translate-y-3"></div>
-                
-                {/* Window container - SIN overflow-hidden para que se vea la cinta */}
-                <div className="relative bg-white rounded shadow" style={{ height: '500px' }}>
-                  {/* Fondo paisaje */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-blue-100 to-blue-50">
-                    <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=1000&auto=format&fit=crop')] bg-cover bg-center"></div>
-                  </div>
-                  
-                  {/* Reflejo cristal */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-white/10 via-transparent to-white/10 pointer-events-none"></div>
-                  
-                  {/* CAJA SUPERIOR - Color independiente */}
-                  <div 
-                    className="absolute top-0 left-0 right-0 h-14 z-20 shadow"
-                    style={{ 
-                      backgroundColor: boxColor,
-                      boxShadow: 'inset 0 2px 8px rgba(255,255,255,0.25), 0 3px 6px rgba(0,0,0,0.25)',
-                      backgroundImage: `linear-gradient(to bottom, rgba(255,255,255,0.15) 0%, transparent 60%, rgba(0,0,0,0.08) 100%)`
-                    }}
-                  ></div>
-
-                  {/* LAMAS - Color independiente */}
-                  <div 
-                    className="absolute top-14 left-0 right-0 z-10"
-                    style={{ 
-                      height: isOpen ? '18px' : 'calc(100% - 56px)',
-                      transition: 'height 1s cubic-bezier(0.4, 0, 0.2, 1)',
-                    }}
-                  >
-                    <div 
-                      className="w-full h-full relative"
-                      style={{ 
-                        backgroundColor: slatColor,
-                        backgroundImage: `repeating-linear-gradient(to bottom, rgba(255,255,255,0.12) 0px, rgba(255,255,255,0.03) 2px, transparent 3px, transparent 21px, rgba(0,0,0,0.08) 21px, rgba(0,0,0,0.15) 23px)`,
-                        boxShadow: 'inset 0 -4px 12px rgba(0,0,0,0.25)'
-                      }}
-                    >
-                      <div className="absolute bottom-0 left-0 right-0 h-5 bg-black/15 border-t border-black/08"></div>
-                    </div>
-                  </div>
-
-                  {/* CINTA MANUAL - En el borde derecho, DENTRO del área visible */}
-                  {!isMotor && (
-                    <div className="absolute top-14 right-0 w-7 h-[430px] z-40">
-                      <div className="w-full h-full bg-gradient-to-b from-gray-100 via-gray-200 to-gray-100 rounded-r shadow-lg border-y border-r border-gray-300 relative">
-                        {/* Textura de cinta enrollada */}
-                        <div className="absolute inset-0 opacity-40" style={{
-                          backgroundImage: `repeating-linear-gradient(to bottom, transparent 0px, transparent 10px, rgba(0,0,0,0.08) 10px, rgba(0,0,0,0.12) 11px)`
-                        }}></div>
-                        {/* Borde central sutil */}
-                        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-gray-300/60"></div>
-                        {/* Asa/tirador inferior */}
-                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-5 h-7 bg-gradient-to-b from-gray-100 to-gray-300 rounded border-2 border-gray-400 shadow flex items-center justify-center">
-                          <div className="w-3 h-4 bg-gray-400 rounded-full"></div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Indicador motor - Solo cuando ES motor */}
-                  {isMotor && (
-                    <div className="absolute top-16 right-4 flex items-center gap-2 z-30 bg-white/95 px-3 py-1.5 rounded shadow border border-gray-200">
-                      <div className={`w-2 h-2 rounded-full ${isOpen ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                      <span className="text-xs font-medium text-gray-700">Motor</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* CONTROLES */}
-            <div className="space-y-6">
-              
-              {/* Color CAJA */}
-              <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-bold text-gray-900 uppercase tracking-wide">Color Caja</label>
-                  <span className="text-sm text-gray-600 bg-white px-2 py-1 rounded border border-gray-200">
-                    {winchesterPalette.find(c => c.hex === boxColor)?.name}
-                  </span>
-                </div>
-                <div className="grid grid-cols-8 gap-2">
-                  {winchesterPalette.map((item) => (
-                    <button
-                      key={item.name + '-box'}
-                      onClick={() => setBoxColor(item.hex)}
-                      className={`w-full aspect-square rounded border-2 transition ${
-                        boxColor === item.hex ? 'border-gray-900 scale-105' : 'border-gray-300 hover:border-gray-500'
-                      }`}
-                      style={{ backgroundColor: item.hex }}
-                      title={item.name}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Color LAMAS */}
-              <div className="bg-gray-50 p-5 rounded-lg border border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <label className="text-sm font-bold text-gray-900 uppercase tracking-wide">Color Lamas</label>
-                  <span className="text-sm text-gray-600 bg-white px-2 py-1 rounded border border-gray-200">
-                    {winchesterPalette.find(c => c.hex === slatColor)?.name}
-                  </span>
-                </div>
-                <div className="grid grid-cols-8 gap-2">
-                  {winchesterPalette.map((item) => (
-                    <button
-                      key={item.name + '-slat'}
-                      onClick={() => setSlatColor(item.hex)}
-                      className={`w-full aspect-square rounded border-2 transition ${
-                        slatColor === item.hex ? 'border-gray-900 scale-105' : 'border-gray-300 hover:border-gray-500'
-                      }`}
-                      style={{ backgroundColor: item.hex }}
-                      title={item.name}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Mecanismo */}
-              <div className="bg-gray-50 p-5 rounded-lg border border-gray-200 space-y-3">
-                <label className="text-sm font-bold text-gray-900 uppercase tracking-wide block">Sistema</label>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => setIsMotor(true)}
-                    className={`flex-1 py-2.5 rounded font-semibold text-sm transition ${
-                      isMotor ? 'bg-red-700 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                    }`}
-                  >
-                    Motorizado
-                  </button>
-                  <button 
-                    onClick={() => setIsMotor(false)}
-                    className={`flex-1 py-2.5 rounded font-semibold text-sm transition ${
-                      !isMotor ? 'bg-red-700 text-white' : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-100'
-                    }`}
-                  >
-                    Cinta
-                  </button>
-                </div>
-                
-                <button 
-                  onClick={() => setIsOpen(!isOpen)}
-                  className="w-full bg-gray-900 text-white py-2.5 rounded font-semibold hover:bg-gray-800 transition-colors"
-                >
-                  {isOpen ? 'Bajar Persiana' : 'Subir Persiana'}
-                </button>
-              </div>
-
-              {/* Info */}
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <p className="text-sm text-gray-700">
-                  <strong className="text-gray-900">Combinación:</strong> Caja {winchesterPalette.find(c => c.hex === boxColor)?.name} + Lamas {winchesterPalette.find(c => c.hex === slatColor)?.name}
-                </p>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CARACTERÍSTICAS */}
-      <section className="py-16 bg-gray-50">
-         <div className="w-full px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto grid md:grid-cols-3 gap-8">
-            <FeatureCard title="Garantía 10 años" desc="Resistencia UV y anti-arañazos certificada." />
-            <FeatureCard title="Seguridad" desc="Lamas bloqueantes anti-levantamiento." />
-            <FeatureCard title="Soporte" desc="Asesoramiento técnico en Cantabria." />
-         </div>
-      </section>
-
-      {/* CTA - Botón simple */}
-      <section className="py-16 bg-white text-center">
-          <h2 className="text-2xl font-bold mb-3 text-gray-900">¿Listo para tu proyecto?</h2>
-          <p className="text-gray-600 mb-6 max-w-lg mx-auto text-sm">Únete a profesionales que confían en Persianas Santander.</p>
-          <Link to="/registro" className="inline-block bg-red-700 text-white px-8 py-3 rounded font-semibold hover:bg-red-800 transition-colors">
-            Crear Cuenta Profesional
-          </Link>
-      </section>
+    <div className="flex gap-0.5">
+      {Array.from({ length: count }).map((_, i) => (
+        <svg key={i} className="w-4 h-4 text-amber-400 fill-amber-400" viewBox="0 0 20 20">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+      ))}
     </div>
   )
 }
 
-const FeatureCard = ({ title, desc }) => (
-  <div className="bg-white p-6 rounded-lg border border-gray-200 text-center">
-    <h3 className="text-base font-bold mb-2 text-gray-900">{title}</h3>
-    <p className="text-gray-600 text-sm leading-relaxed">{desc}</p>
-  </div>
-)
+function SocialLink({ href, label }) {
+  return (
+    <a href={href} aria-label={label}
+      className="w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors text-xs font-bold">
+      {label[0]}
+    </a>
+  )
+}
 
-export default Home
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-white text-gray-900 font-sans">
+
+      {/* ── HERO ── */}
+      <HeroBlind />
+
+      {/* ── CARACTERÍSTICAS ── */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">¿Por qué elegirnos?</h2>
+            <p className="text-gray-500 max-w-xl mx-auto">Más de tres décadas fabricando persianas de aluminio con la mayor exigencia técnica.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {FEATURES.map(({ icon, title, desc }) => (
+              <div key={title} className="bg-white rounded-xl p-6 border border-gray-200 hover:border-red-200 hover:shadow-md transition-all group">
+                <div className="w-12 h-12 rounded-lg bg-red-50 text-red-600 flex items-center justify-center mb-4 group-hover:bg-red-600 group-hover:text-white transition-colors">
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">{icon}</svg>
+                </div>
+                <h3 className="font-bold text-gray-900 mb-2">{title}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CÓMO FUNCIONA ── */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <span className="text-xs font-bold tracking-widest uppercase text-red-600 mb-3 block">Proceso</span>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Cómo funciona</h2>
+            <p className="text-gray-500">Del configurador a la instalación en 4 pasos.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-0 relative">
+            {/* Línea conectora desktop */}
+            <div className="hidden lg:block absolute top-8 left-[12.5%] right-[12.5%] h-px bg-gray-200 z-0" />
+            {PROCESS_STEPS.map(({ n, title, desc }) => (
+              <div key={n} className="relative z-10 flex flex-col items-center text-center px-6 pb-8">
+                <div className="w-16 h-16 rounded-full bg-white border-2 border-red-600 flex items-center justify-center mb-5 shadow-sm">
+                  <span className="text-red-600 font-black text-lg">{n}</span>
+                </div>
+                <h3 className="font-bold text-gray-900 mb-2 text-base">{title}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA debajo del proceso */}
+          <div className="text-center mt-8">
+            <Link
+              to="/configurador"
+              className="inline-flex items-center gap-2 bg-red-700 hover:bg-red-800 text-white px-8 py-3.5 rounded-full font-bold text-sm transition-colors"
+            >
+              Empezar ahora
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── PRODUCTOS ── */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Nuestros productos</h2>
+            <p className="text-gray-500">Dos líneas fabricadas con aluminio extrusionado de primera calidad.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            {[
+              { badge: 'Más popular', title: 'Persiana estándar', price: 'Desde 120 €/m²', desc: 'Ideal para viviendas, locales y oficinas. Disponible con muelle, cinta o motor.', features: ['Muelle, cinta o motor', 'Lamas normales o de seguridad', 'Garantía 10 años', 'Ancho hasta 3.000 mm'], accent: true },
+              { badge: 'Alta seguridad', title: 'Persiana bloqueante', price: 'Desde 180 €/m²', desc: 'Sistema anti-levantamiento certificado EN 1627. Exclusivo con motor.', features: ['Solo motorizada', 'Lamas de seguridad reforzadas', 'Certificado EN 1627', 'Acero + aluminio compuesto'], accent: false },
+            ].map(({ badge, title, price, desc, features, accent }) => (
+              <div key={title} className={`rounded-xl p-8 border-2 ${accent ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <span className={`inline-block text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded mb-2 ${accent ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}>{badge}</span>
+                    <h3 className="text-xl font-bold text-gray-900">{title}</h3>
+                  </div>
+                  <span className={`font-bold text-sm ${accent ? 'text-red-700' : 'text-gray-700'}`}>{price}</span>
+                </div>
+                <p className="text-gray-600 text-sm mb-5 leading-relaxed">{desc}</p>
+                <ul className="space-y-2 mb-6">
+                  {features.map(f => (
+                    <li key={f} className="flex items-center gap-2 text-sm text-gray-700">
+                      <svg className={`w-4 h-4 flex-shrink-0 ${accent ? 'text-red-500' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Link to="/configurador" className={`block text-center py-3 rounded-lg font-semibold text-sm transition-colors ${accent ? 'bg-red-700 text-white hover:bg-red-800' : 'bg-gray-900 text-white hover:bg-gray-800'}`}>
+                  Configurar este modelo
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── TESTIMONIOS ── */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Lo que dicen nuestros clientes</h2>
+            <p className="text-gray-500">Más de 5.000 instalaciones en Cantabria y resto de España.</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map(({ name, role, text, stars, initials }) => (
+              <div key={name} className="bg-white rounded-xl p-6 border border-gray-200 flex flex-col gap-4">
+                <StarRating count={stars} />
+                <p className="text-gray-700 text-sm leading-relaxed flex-1">"{text}"</p>
+                <div className="flex items-center gap-3 pt-2 border-t border-gray-100">
+                  <div className="w-10 h-10 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold text-sm flex-shrink-0">{initials}</div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">{name}</p>
+                    <p className="text-gray-400 text-xs">{role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA PROFESIONAL ── */}
+      <section className="py-20 bg-red-700 text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="inline-block bg-red-800/60 text-red-200 text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full border border-red-500/40 mb-4">
+            Para instaladores y constructores
+          </span>
+          <h2 className="text-4xl font-black mb-4">Cuenta profesional con 20% de descuento</h2>
+          <p className="text-red-100 mb-8 text-lg max-w-2xl mx-auto">
+            Acceso a precios de tarifa profesional, gestión de múltiples proyectos y presupuestos PDF descargables.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link to="/registro" className="inline-block bg-white text-red-700 px-8 py-3.5 rounded-full font-bold hover:bg-red-50 transition-colors">Crear cuenta profesional</Link>
+            <Link to="/login"    className="inline-block border border-red-400/60 text-white px-8 py-3.5 rounded-full font-semibold hover:bg-red-600 transition-colors">Ya tengo cuenta</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="bg-white border-t border-gray-200 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-10 mb-12">
+
+            {/* Marca — 2 columnas */}
+            <div className="md:col-span-2">
+              <img
+                src="/persianassantanderlogo.svg"
+                alt="Persianas Santander"
+                className="w-36 h-auto mb-5"
+                onError={e => { e.target.src = '/persianassantanderlogo.png' }}
+              />
+              <p className="text-sm leading-relaxed text-gray-500 max-w-xs mb-6">
+                Fabricantes de persianas de aluminio desde 1990. Taller propio en Santander, instalación en toda Cantabria.
+              </p>
+              <div className="flex gap-3">
+                {[
+                  { label: 'Facebook',  letter: 'F' },
+                  { label: 'Instagram', letter: 'I' },
+                  { label: 'LinkedIn',  letter: 'L' },
+                ].map(({ label, letter }) => (
+                  <a key={label} href="#" aria-label={label}
+                    className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-700 hover:border-red-200 transition-colors text-xs font-bold">
+                    {letter}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Productos */}
+            <div>
+              <p className="text-gray-900 font-semibold text-xs uppercase tracking-widest mb-5">Productos</p>
+              <ul className="space-y-3">
+                {[
+                  { label: 'Configurador', to: '/configurador', link: true },
+                  { label: 'Persianas estándar' },
+                  { label: 'Persianas bloqueantes' },
+                  { label: 'Motorización' },
+                ].map(({ label, to, link }) => (
+                  <li key={label} className="text-sm">
+                    {link
+                      ? <Link to={to} className="text-gray-500 hover:text-red-700 transition-colors">{label}</Link>
+                      : <span className="text-gray-500 hover:text-red-700 cursor-pointer transition-colors">{label}</span>
+                    }
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Empresa */}
+            <div>
+              <p className="text-gray-900 font-semibold text-xs uppercase tracking-widest mb-5">Empresa</p>
+              <ul className="space-y-3">
+                {['Sobre nosotros', 'Trabaja con nosotros', 'Aviso legal', 'Privacidad'].map(l => (
+                  <li key={l} className="text-sm">
+                    <span className="text-gray-500 hover:text-red-700 cursor-pointer transition-colors">{l}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Contacto */}
+            <div>
+              <p className="text-gray-900 font-semibold text-xs uppercase tracking-widest mb-5">Contacto</p>
+              <ul className="space-y-4">
+                <li>
+                  <a href="tel:942000000" className="flex items-center gap-3 text-sm text-gray-500 hover:text-red-700 transition-colors group">
+                    <div className="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-red-50 flex items-center justify-center flex-shrink-0 transition-colors">
+                      <svg className="w-3.5 h-3.5 text-gray-400 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                    </div>
+                    942 00 00 00
+                  </a>
+                </li>
+                <li>
+                  <a href="mailto:info@persianassantander.com" className="flex items-center gap-3 text-sm text-gray-500 hover:text-red-700 transition-colors group">
+                    <div className="w-8 h-8 rounded-lg bg-gray-100 group-hover:bg-red-50 flex items-center justify-center flex-shrink-0 transition-colors">
+                      <svg className="w-3.5 h-3.5 text-gray-400 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    info@persianassantander.com
+                  </a>
+                </li>
+                <li>
+                  <div className="flex items-start gap-3 text-sm text-gray-500">
+                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </div>
+                    <span className="leading-relaxed">Polígono Industrial<br />Nueva Montaña, Santander</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Barra inferior */}
+          <div className="border-t border-gray-100 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
+            <p>© {new Date().getFullYear()} Persianas Santander S.L. Todos los derechos reservados.</p>
+            <div className="flex gap-5">
+              {['Aviso legal', 'Privacidad', 'Cookies'].map(l => (
+                <span key={l} className="hover:text-gray-600 cursor-pointer transition-colors">{l}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </footer>
+    </div>
+  )
+}

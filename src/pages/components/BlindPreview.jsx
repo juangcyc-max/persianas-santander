@@ -1,33 +1,66 @@
 function BlindPreview({ boxColor, slatColor, width, blindType }) {
+  const maskStyle = (src) => ({
+    maskImage:          `url(${src})`,
+    maskSize:           'contain',
+    maskRepeat:         'no-repeat',
+    maskPosition:       'center',
+    WebkitMaskImage:    `url(${src})`,
+    WebkitMaskSize:     'contain',
+    WebkitMaskRepeat:   'no-repeat',
+    WebkitMaskPosition: 'center',
+  })
+
   return (
-    <div className="bg-white p-8 rounded-xl shadow-lg">
-      <h2 className="text-xl font-semibold mb-4">Vista Previa</h2>
-      
-      {/* CAJA de la persiana */}
-      <div 
-        className="h-16 rounded-lg mb-2 transition-colors duration-300 flex items-center justify-center text-sm font-medium"
-        style={{ 
-          backgroundColor: boxColor,
-          color: boxColor === '#FFFFFF' ? '#000000' : '#FFFFFF',
-          width: `${Math.min(width / 10, 400)}px`
-        }}
-      >
-        📦 Caja ({blindType === 'normal' ? 'Normal' : 'Bloqueante'})
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+
+      {/* Cabecera */}
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Vista previa</h2>
+        <div className="flex items-center gap-3">
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+            blindType === 'blocking' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600'
+          }`}>
+            {blindType === 'blocking' ? 'Bloqueante' : 'Estándar'}
+          </span>
+          <span className="text-xs text-gray-400">{width} mm</span>
+        </div>
       </div>
 
-      {/* LAMAS de la persiana */}
-      <div className="border-2 rounded-lg overflow-hidden" 
-        style={{ 
-          borderColor: boxColor,
-          width: `${Math.min(width / 10, 400)}px`
-        }}>
-        {[...Array(8)].map((_, i) => (
-          <div
-            key={i}
-            className="h-8 transition-colors duration-300"
-            style={{ backgroundColor: slatColor }}
-          />
-        ))}
+      {/* Imagen real con color */}
+      <div className="relative w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2000 / 1090', background: '#f8f8f6' }}>
+
+        {/* Capa 1: color lamas — recortado a la forma de la persiana completa */}
+        <div
+          className="absolute inset-0 transition-colors duration-500"
+          style={{ backgroundColor: slatColor, ...maskStyle('/persianacompleta.png') }}
+        />
+
+        {/* Capa 2: color caja — recortado a la forma de la caja */}
+        <div
+          className="absolute inset-0 transition-colors duration-500"
+          style={{ backgroundColor: boxColor, ...maskStyle('/caja.png') }}
+        />
+
+        {/* Capa 3: imagen original encima con multiply para texturas y sombras */}
+        <img
+          src="/persianacompleta.png"
+          alt="Vista previa persiana"
+          className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+          draggable={false}
+          style={{ mixBlendMode: 'multiply' }}
+        />
+      </div>
+
+      {/* Chips de color */}
+      <div className="flex gap-2 mt-4">
+        <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+          <div className="w-4 h-4 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: boxColor }} />
+          <span className="text-xs text-gray-500 truncate">Caja</span>
+        </div>
+        <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+          <div className="w-4 h-4 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: slatColor }} />
+          <span className="text-xs text-gray-500 truncate">Lamas</span>
+        </div>
       </div>
     </div>
   )
