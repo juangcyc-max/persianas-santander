@@ -10,6 +10,7 @@ import Configurator from './pages/Configurator'
 import MisConfiguraciones from './pages/components/MisConfiguraciones'
 import ProfessionalDashboard from './pages/ProfessionalDashboard'
 import AdminDashboard from './pages/AdminDashboard'
+import { PoliticaPrivacidad, PoliticaCookies, TerminosCondiciones } from './pages/LegalPages'
 import Cart from './pages/Cart'
 
 // ── Ruta protegida que redirige según tipo de usuario ─────────────────────
@@ -76,6 +77,9 @@ function App() {
                   <Route path="/configurador"        element={<Configurator />} />
                   <Route path="/mis-configuraciones" element={<MisConfiguraciones />} />
                   <Route path="/cesta"               element={<Cart />} />
+                  <Route path="/privacidad"          element={<PoliticaPrivacidad />} />
+                  <Route path="/cookies"             element={<PoliticaCookies />} />
+                  <Route path="/terminos"            element={<TerminosCondiciones />} />
                 </Routes>
               </main>
             </div>

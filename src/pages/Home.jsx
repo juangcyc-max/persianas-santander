@@ -255,7 +255,7 @@ export default function Home() {
               <img
                 src="/persianassantanderlogo.png"
                 alt="Persianas Santander"
-                className="h-16 w-auto mb-5"
+                className="h-24 w-auto mb-5"
                 onError={e => { e.target.src = '/persianassantanderlogo.svg' }}
               />
               <p className="text-sm leading-relaxed text-gray-500 max-w-xs mb-6">
@@ -354,9 +354,9 @@ export default function Home() {
           <div className="border-t border-gray-100 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
             <p>© {new Date().getFullYear()} Persianas Santander S.L. Todos los derechos reservados.</p>
             <div className="flex gap-5">
-              {['Aviso legal', 'Privacidad', 'Cookies'].map(l => (
-                <span key={l} className="hover:text-gray-600 cursor-pointer transition-colors">{l}</span>
-              ))}
+              <Link to="/terminos"   className="hover:text-gray-600 transition-colors">Aviso legal</Link>
+              <Link to="/privacidad" className="hover:text-gray-600 transition-colors">Privacidad</Link>
+              <Link to="/cookies"    className="hover:text-gray-600 transition-colors">Cookies</Link>
             </div>
           </div>
         </div>
