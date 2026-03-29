@@ -108,16 +108,16 @@ function Configurator() {
       )}
 
       {/* Header */}
-      <section className="bg-red-700 text-white py-12">
+      <section className="bg-red-700 text-white py-8 md:py-12">
         <div className="w-full px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-2xl md:text-3xl font-bold mb-2">Configura tu Persiana</h1>
+          <h1 className="text-xl md:text-3xl font-bold mb-2">Configura tu Persiana</h1>
           <p className="text-red-100 text-sm">Personaliza cada detalle y obtén tu presupuesto al instante</p>
         </div>
       </section>
 
-      <section className="py-12 bg-white">
+      <section className="py-6 md:py-12 bg-white">
         <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
 
             {/* Columna izquierda */}
             <div className="space-y-6">

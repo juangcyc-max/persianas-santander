@@ -119,38 +119,26 @@ export default function HeroBlind() {
       {/* ── Panel izquierdo: persiana ── */}
       <div
         className="relative flex-1 flex items-center justify-center overflow-hidden"
-        style={{ background: '#f0f0ee', minHeight: '60vh' }}
+        style={{ background: '#f0f0ee', minHeight: '45vw' }}
       >
-        <div className="relative w-full h-full flex items-center justify-center" style={{ minHeight: '60vh' }}>
-          <div
-            className="absolute inset-0 transition-colors duration-500"
-            style={{ backgroundColor: slatColor, ...maskStyle('/persianacompleta.png') }}
-          />
-          <div
-            className="absolute inset-0 transition-colors duration-500"
-            style={{ backgroundColor: boxColor, ...maskStyle('/caja.png') }}
-          />
-          <img
-            src="/persianacompleta.png"
-            alt="Persiana Santander"
+        <div className="relative w-full h-full flex items-center justify-center" style={{ minHeight: '45vw' }}>
+          <div className="absolute inset-0 transition-colors duration-500"
+            style={{ backgroundColor: slatColor, ...maskStyle('/persianacompleta.png') }} />
+          <div className="absolute inset-0 transition-colors duration-500"
+            style={{ backgroundColor: boxColor, ...maskStyle('/caja.png') }} />
+          <img src="/persianacompleta.png" alt="Persiana Santander"
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-            draggable={false}
-            style={{ mixBlendMode: 'multiply' }}
-          />
+            draggable={false} style={{ mixBlendMode: 'multiply' }} />
         </div>
       </div>
 
-      {/* ── Panel derecho: controles en estilo claro ── */}
-      <div
-        className="flex flex-col justify-center gap-7 px-10 py-14 bg-white border-l border-gray-200"
-        style={{ width: '420px', minWidth: 360, flexShrink: 0 }}
-      >
-        {/* Titular */}
+      {/* ── Panel derecho: controles ── */}
+      <div className="flex flex-col justify-center gap-6 px-6 py-10 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 lg:w-[420px] lg:flex-shrink-0">
         <div>
           <span className="text-xs font-bold tracking-widest uppercase text-red-600 mb-2 block">
             Fabricación propia · Santander
           </span>
-          <h1 className="text-4xl font-black text-gray-900 leading-tight mb-3">
+          <h1 className="text-3xl lg:text-4xl font-black text-gray-900 leading-tight mb-3">
             Tu persiana,<br />tu color
           </h1>
           <p className="text-gray-500 text-sm leading-relaxed">
@@ -160,7 +148,6 @@ export default function HeroBlind() {
 
         <div className="h-px bg-gray-100" />
 
-        {/* Selectores */}
         <div className="space-y-4">
           <ColorDropdown label="Color de la caja"   selectedHex={boxColor}  onChange={setBoxColor}  />
           <ColorDropdown label="Color de las lamas" selectedHex={slatColor} onChange={setSlatColor} />
@@ -168,7 +155,6 @@ export default function HeroBlind() {
 
         <div className="h-px bg-gray-100" />
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
           {[
             { n: '24',      l: 'acabados' },
@@ -182,11 +168,8 @@ export default function HeroBlind() {
           ))}
         </div>
 
-        {/* CTA */}
-        <Link
-          to="/configurador"
-          className="block w-full py-4 rounded-xl bg-red-700 hover:bg-red-800 text-white font-bold text-sm text-center transition-colors"
-        >
+        <Link to="/configurador"
+          className="block w-full py-4 rounded-xl bg-red-700 hover:bg-red-800 text-white font-bold text-sm text-center transition-colors">
           Configurar a medida con precio →
         </Link>
       </div>

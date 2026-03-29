@@ -152,18 +152,24 @@ function Header() {
           <div className="md:hidden pb-5 border-t border-gray-100 pt-3">
             <nav className="flex flex-col gap-1">
               {navLinks.map(({ to, label }) => (
-                <Link
-                  key={to}
-                  to={to}
+                <Link key={to} to={to}
                   className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
-                    isActive(to)
-                      ? 'bg-red-50 text-red-700'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
+                    isActive(to) ? 'bg-red-50 text-red-700' : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                  }`}>
                   {label}
                 </Link>
               ))}
+              {/* Cesta en móvil */}
+              {user && (
+                <Link to="/cesta"
+                  className="px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Mi cesta {itemCount > 0 && <span className="bg-red-700 text-white text-xs px-1.5 py-0.5 rounded-full">{itemCount}</span>}
+                </Link>
+              )}
             </nav>
 
             <div className="mt-4 pt-4 border-t border-gray-100">
