@@ -9,7 +9,7 @@ import Register from './pages/Register'
 import Configurator from './pages/Configurator'
 import MisConfiguraciones from './pages/components/MisConfiguraciones'
 import ProfessionalDashboard from './pages/ProfessionalDashboard'
-import Cart from './pages/Cart'
+import AdminDashboard from './pages/AdminDashboard'
 
 // ── Ruta protegida que redirige según tipo de usuario ─────────────────────
 function SmartRedirect() {
@@ -60,6 +60,7 @@ function App() {
       <CartProvider>
         <Routes>
           <Route path="/panel-profesional" element={<ProfessionalDashboard />} />
+          <Route path="/admin"             element={<AdminDashboard />} />
           <Route path="/inicio" element={<SmartRedirect />} />
           <Route path="/*" element={
             <div className="min-h-screen bg-gray-50 w-full">
