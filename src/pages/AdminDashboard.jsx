@@ -277,24 +277,38 @@ export default function AdminDashboard() {
 
   async function loadOrders() {
     setLoading(true)
-    const { data, error } = await supabase
-      .from('orders')
-      .select(`
-        *,
-        profiles (email, role)
-      `)
-      .order('created_at', { ascending: false })
+    try {
+      // 1. Cargar pedidos
+      const { data: ordersData, error } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    if (error) console.error('Error cargando pedidos:', error)
+      if (error) throw error
 
-    // Si profiles es null, intentar obtener el email de auth directamente
-    const enriched = (data ?? []).map(o => ({
-      ...o,
-      profiles: o.profiles ?? { email: o.user_id, role: 'user' }
-    }))
+      // 2. Cargar perfiles por separado
+      const userIds = [...new Set((ordersData ?? []).map(o => o.user_id).filter(Boolean))]
+      let profilesMap = {}
+      if (userIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('id, email, role')
+          .in('id', userIds)
+        ;(profilesData ?? []).forEach(p => { profilesMap[p.id] = p })
+      }
 
-    setOrders(enriched)
-    setLoading(false)
+      // 3. Combinar
+      const enriched = (ordersData ?? []).map(o => ({
+        ...o,
+        profiles: profilesMap[o.user_id] ?? { email: '—', role: 'user' }
+      }))
+
+      setOrders(enriched)
+    } catch (err) {
+      console.error('Error cargando pedidos:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filtered = orders.filter(o => {
