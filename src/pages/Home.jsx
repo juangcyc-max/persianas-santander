@@ -196,6 +196,37 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── DESCARGA GUÍA DE MEDIDAS ── */}
+      <section className="py-12 bg-gray-50 border-y border-gray-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 bg-white rounded-2xl border border-gray-200 shadow-sm px-8 py-6">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                <svg className="w-7 h-7 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-bold text-gray-900 text-base mb-0.5">Guía gratuita para tomar medidas</p>
+                <p className="text-gray-500 text-sm">Descarga nuestra guía paso a paso y mide tu ventana sin errores antes de pedir presupuesto.</p>
+              </div>
+            </div>
+            <a
+              href="/tutorial-medidas.pdf"
+              download="guia-medidas-persianas-santander.pdf"
+              className="flex-shrink-0 flex items-center gap-2 bg-red-700 hover:bg-red-800 text-white font-bold text-sm px-6 py-3 rounded-xl transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Descargar PDF gratis
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* ── CTA PROFESIONAL ── */}
       <section className="py-20 bg-red-700 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -222,10 +253,10 @@ export default function Home() {
             {/* Marca — 2 columnas */}
             <div className="md:col-span-2">
               <img
-                src="/persianassantanderlogo.svg"
+                src="/persianassantanderlogo.png"
                 alt="Persianas Santander"
-                className="w-36 h-auto mb-5"
-                onError={e => { e.target.src = '/persianassantanderlogo.png' }}
+                className="h-16 w-auto mb-5"
+                onError={e => { e.target.src = '/persianassantanderlogo.svg' }}
               />
               <p className="text-sm leading-relaxed text-gray-500 max-w-xs mb-6">
                 Fabricantes de persianas de aluminio desde 1990. Taller propio en Santander, instalación en toda Cantabria.
@@ -253,10 +284,14 @@ export default function Home() {
                   { label: 'Persianas estándar' },
                   { label: 'Persianas bloqueantes' },
                   { label: 'Motorización' },
-                ].map(({ label, to, link }) => (
+                  { label: '📄 Guía de medidas (PDF)', download: true },
+                ].map(({ label, to, link, download }) => (
                   <li key={label} className="text-sm">
                     {link
                       ? <Link to={to} className="text-gray-500 hover:text-red-700 transition-colors">{label}</Link>
+                      : download
+                      ? <a href="/tutorial-medidas.pdf" download="guia-medidas-persianas-santander.pdf"
+                           className="text-gray-500 hover:text-red-700 transition-colors">{label}</a>
                       : <span className="text-gray-500 hover:text-red-700 cursor-pointer transition-colors">{label}</span>
                     }
                   </li>

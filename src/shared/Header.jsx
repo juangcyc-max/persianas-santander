@@ -52,25 +52,25 @@ function Header() {
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 w-full">
-      <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="flex items-center justify-between h-20 gap-8">
 
           {/* ── Logo ── */}
           <Link
             to="/"
-            className="flex items-center flex-shrink-0"
+            className="flex-shrink-0 flex items-center"
             onClick={() => setMobileMenuOpen(false)}
           >
             <img
-              src="/persianassantanderlogo.svg"
+              src="/persianassantanderlogo.png"
               alt="Persianas Santander"
-              className="w-20 h-auto"
-              onError={e => { e.target.src = '/persianassantanderlogo.png' }}
+              style={{ height: '52px', width: 'auto' }}
+              onError={e => { e.target.src = '/persianassantanderlogo.svg' }}
             />
           </Link>
 
           {/* ── Navegación Desktop ── */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
             {navLinks.map(({ to, label }) => (
               <Link
                 key={to}
@@ -87,7 +87,7 @@ function Header() {
           </nav>
 
           {/* ── Acciones Desktop ── */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-3 flex-shrink-0">
             {user ? (
               <>
                 <div className="flex items-center gap-2.5 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
@@ -105,16 +105,10 @@ function Header() {
               </>
             ) : (
               <>
-                <Link
-                  to="/login"
-                  className="text-sm font-semibold text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
+                <Link to="/login" className="text-sm font-semibold text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors">
                   Iniciar sesión
                 </Link>
-                <Link
-                  to="/registro"
-                  className="text-sm font-bold bg-red-700 text-white px-5 py-2.5 rounded-xl hover:bg-red-800 transition-colors"
-                >
+                <Link to="/registro" className="text-sm font-bold bg-red-700 text-white px-5 py-2.5 rounded-xl hover:bg-red-800 transition-colors">
                   Registrarse
                 </Link>
               </>
