@@ -18,7 +18,7 @@ export function ForgotPassword() {
     setError('')
 
     const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: 'https://persianas-santander.vercel.app/reset-password',
     })
 
     setLoading(false)
