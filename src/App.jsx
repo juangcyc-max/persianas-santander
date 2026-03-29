@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { HelmetProvider } from 'react-helmet-async'
 import { supabase } from './services/supabase/client'
 import { CartProvider } from './context/CartContext'
+import { ToastProvider } from './context/ToastContext'
 import Header from './shared/Header'
 import Home from './pages/Home'
 import Login from './pages/Login'
@@ -64,7 +65,8 @@ function App() {
   return (
     <HelmetProvider>
       <Router>
-        <CartProvider>
+        <ToastProvider>
+          <CartProvider>
           <Routes>
             <Route path="/panel-profesional" element={<ProfessionalDashboard />} />
             <Route path="/admin"             element={<AdminDashboard />} />
@@ -90,6 +92,7 @@ function App() {
             } />
           </Routes>
         </CartProvider>
+        </ToastProvider>
       </Router>
     </HelmetProvider>
   )
