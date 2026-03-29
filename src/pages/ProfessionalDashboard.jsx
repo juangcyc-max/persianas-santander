@@ -6,14 +6,11 @@ import { useCart } from '../context/CartContext'
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
 const fmtDate = (d) => d ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)) : '—'
 
-// ── Tarjeta de stat ───────────────────────────────────────────────────────
 function StatCard({ icon, label, value, sub, accent }) {
   return (
     <div className={`rounded-xl p-5 border ${accent ? 'bg-red-700 border-red-600 text-white' : 'bg-white border-gray-200'}`}>
       <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${accent ? 'bg-red-600' : 'bg-gray-50'}`}>
-        <svg className={`w-5 h-5 ${accent ? 'text-red-200' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          {icon}
-        </svg>
+        <svg className={`w-5 h-5 ${accent ? 'text-red-200' : 'text-gray-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">{icon}</svg>
       </div>
       <p className={`text-2xl font-black mb-0.5 ${accent ? 'text-white' : 'text-gray-900'}`}>{value}</p>
       <p className={`text-sm font-medium ${accent ? 'text-red-200' : 'text-gray-700'}`}>{label}</p>
@@ -22,32 +19,22 @@ function StatCard({ icon, label, value, sub, accent }) {
   )
 }
 
-const TABS = [
-  { id: 'overview',        label: 'Resumen',         icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /> },
-  { id: 'configuraciones', label: 'Configuraciones', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /> },
-  { id: 'pedidos',         label: 'Pedidos',         icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /> },
-  { id: 'presupuestos',    label: 'Presupuestos',    icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /> },
-  { id: 'facturas',        label: 'Facturas',        icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /> },
-  { id: 'empresa',         label: 'Mi empresa',      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /> },
-]
-
 function EditField({ label, value, onChange, type = 'text' }) {
   return (
     <div>
       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)}
-        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-900 bg-white
-                   focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 transition-colors" />
+        className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 transition-colors" />
     </div>
   )
 }
 
 function StatusBadge({ status }) {
   const map = {
-    pending:   { label: 'Pendiente',   cls: 'bg-amber-100 text-amber-700' },
-    confirmed: { label: 'Confirmado',  cls: 'bg-blue-100 text-blue-700'   },
-    completed: { label: 'Completado',  cls: 'bg-green-100 text-green-700' },
-    cancelled: { label: 'Cancelado',   cls: 'bg-red-100 text-red-700'     },
+    pending:   { label: 'Pendiente',  cls: 'bg-amber-100 text-amber-700' },
+    confirmed: { label: 'Confirmado', cls: 'bg-blue-100 text-blue-700'   },
+    completed: { label: 'Completado', cls: 'bg-green-100 text-green-700' },
+    cancelled: { label: 'Cancelado',  cls: 'bg-red-100 text-red-700'     },
   }
   const { label, cls } = map[status] ?? { label: status ?? '—', cls: 'bg-gray-100 text-gray-600' }
   return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cls}`}>{label}</span>
@@ -64,10 +51,49 @@ function EmptyState({ label, action, to }) {
   )
 }
 
+function AddToCartFromDashboard({ configId }) {
+  const { addToCart } = useCart()
+  const [status, setStatus] = useState('idle')
+
+  async function handleAdd() {
+    setStatus('loading')
+    const { error } = await addToCart(configId)
+    setStatus(error ? 'error' : 'done')
+    setTimeout(() => setStatus('idle'), 2500)
+  }
+
+  return (
+    <button onClick={handleAdd} disabled={status === 'loading'}
+      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
+        status === 'done'  ? 'bg-green-100 text-green-700' :
+        status === 'error' ? 'bg-red-100 text-red-700' :
+        'bg-gray-100 hover:bg-gray-200 text-gray-700'
+      }`}>
+      {status === 'loading' && <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />}
+      {status === 'done'    && '✓ Añadido'}
+      {status === 'error'   && 'Error'}
+      {status === 'idle'    && <>
+        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+        Añadir
+      </>}
+    </button>
+  )
+}
+
+const TABS = [
+  { id: 'overview',        label: 'Resumen',         icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /> },
+  { id: 'configuraciones', label: 'Configuraciones', icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /> },
+  { id: 'pedidos',         label: 'Pedidos',         icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /> },
+  { id: 'presupuestos',    label: 'Presupuestos',    icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /> },
+  { id: 'facturas',        label: 'Facturas',        icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /> },
+  { id: 'empresa',         label: 'Mi empresa',      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /> },
+]
+
 export default function ProfessionalDashboard() {
   const navigate = useNavigate()
   const { itemCount } = useCart()
-
   const [activeTab,       setActiveTab]       = useState('overview')
   const [user,            setUser]            = useState(null)
   const [empresa,         setEmpresa]         = useState(null)
@@ -87,14 +113,12 @@ export default function ProfessionalDashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/login'); return }
       setUser(user)
-
       const [empresaRes, configRes, pedidosRes, presupuestosRes] = await Promise.all([
         supabase.from('professional_data').select('*').eq('user_id', user.id).maybeSingle(),
         supabase.from('blind_configurations').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('budgets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       ])
-
       setEmpresa(empresaRes.data ?? null)
       setEmpresaEdit(empresaRes.data ?? {})
       setConfiguraciones(configRes.data ?? [])
@@ -131,49 +155,32 @@ export default function ProfessionalDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
-      {/* Topbar */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <img src="/persianassantanderlogo.png" alt="Persianas Santander" className="h-9 w-auto"
-                onError={e => { e.target.src = '/persianassantanderlogo.svg' }} />
+              <img src="/persianassantanderlogo.png" alt="Persianas Santander" className="h-9 w-auto" onError={e => { e.target.src = '/persianassantanderlogo.svg' }} />
               <div className="hidden sm:block h-6 w-px bg-gray-200" />
               <span className="hidden sm:block text-sm font-semibold text-gray-700">Panel profesional</span>
               <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">−20%</span>
             </div>
             <div className="flex items-center gap-2">
-              {/* Cesta */}
               <Link to="/cesta" className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
                 <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
                 {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-700 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {itemCount}
-                  </span>
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-700 text-white text-xs font-bold rounded-full flex items-center justify-center">{itemCount}</span>
                 )}
               </Link>
-
               <div className="hidden md:flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
                 <div className="w-6 h-6 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-xs font-bold">
                   {empresa?.razon_social?.[0] ?? user?.email?.[0]?.toUpperCase() ?? 'P'}
                 </div>
-                <span className="text-sm text-gray-600 max-w-[160px] truncate">
-                  {empresa?.razon_social ?? user?.email}
-                </span>
+                <span className="text-sm text-gray-600 max-w-[160px] truncate">{empresa?.razon_social ?? user?.email}</span>
               </div>
-
-              <Link to="/configurador"
-                className="text-sm font-bold bg-red-700 text-white px-4 py-2 rounded-xl hover:bg-red-800 transition-colors">
-                + Nueva
-              </Link>
-              <button onClick={handleLogout}
-                className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">
-                Salir
-              </button>
+              <Link to="/configurador" className="text-sm font-bold bg-red-700 text-white px-4 py-2 rounded-xl hover:bg-red-800 transition-colors">+ Nueva</Link>
+              <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">Salir</button>
             </div>
           </div>
         </div>
@@ -181,8 +188,6 @@ export default function ProfessionalDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-6">
-
-          {/* Sidebar */}
           <aside className="lg:w-56 flex-shrink-0">
             <nav className="bg-white rounded-xl border border-gray-200 overflow-hidden flex lg:flex-col overflow-x-auto">
               {TABS.map(({ id, label, icon }) => (
@@ -197,43 +202,25 @@ export default function ProfessionalDashboard() {
             </nav>
           </aside>
 
-          {/* Contenido */}
           <main className="flex-1 min-w-0">
-
-            {/* RESUMEN */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    Bienvenido{empresa?.razon_social ? `, ${empresa.razon_social}` : ''}
-                  </h1>
+                  <h1 className="text-2xl font-bold text-gray-900">Bienvenido{empresa?.razon_social ? `, ${empresa.razon_social}` : ''}</h1>
                   <p className="text-gray-500 text-sm mt-1">Resumen de tu actividad profesional.</p>
                 </div>
-
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard accent value="−20%" label="Descuento activo" sub="Tarifa profesional"
-                    icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z" />}
-                  />
-                  <StatCard value={configuraciones.length} label="Configuraciones" sub="guardadas"
-                    icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />}
-                  />
-                  <StatCard value={pedidos.length} label="Pedidos" sub="realizados"
-                    icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />}
-                  />
-                  <StatCard value={fmt(totalFacturado)} label="Total facturado" sub="con IVA"
-                    icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />}
-                  />
+                  <StatCard accent value="−20%" label="Descuento activo" sub="Tarifa profesional" icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z" />} />
+                  <StatCard value={configuraciones.length} label="Configuraciones" sub="guardadas" icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />} />
+                  <StatCard value={pedidos.length} label="Pedidos" sub="realizados" icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />} />
+                  <StatCard value={fmt(totalFacturado)} label="Total facturado" sub="con IVA" icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />} />
                 </div>
-
-                {/* Acceso rápido a la cesta */}
                 {itemCount > 0 && (
-                  <Link to="/cesta"
-                    className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-5 py-4 hover:bg-red-100 transition-colors">
+                  <Link to="/cesta" className="flex items-center justify-between bg-red-50 border border-red-200 rounded-xl px-5 py-4 hover:bg-red-100 transition-colors">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-red-700 rounded-xl flex items-center justify-center">
                         <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                         </svg>
                       </div>
                       <div>
@@ -246,8 +233,6 @@ export default function ProfessionalDashboard() {
                     </svg>
                   </Link>
                 )}
-
-                {/* Últimas configuraciones */}
                 {configuraciones.length > 0 && (
                   <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                     <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -258,9 +243,7 @@ export default function ProfessionalDashboard() {
                       {configuraciones.slice(0, 4).map(c => (
                         <div key={c.id} className="px-5 py-3 flex items-center justify-between gap-4">
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">
-                              {c.blind_type === 'blocking' ? 'Bloqueante' : 'Estándar'} — {c.mechanism}
-                            </p>
+                            <p className="text-sm font-semibold text-gray-900">{c.blind_type === 'blocking' ? 'Bloqueante' : 'Estándar'} — {c.mechanism}</p>
                             <p className="text-xs text-gray-400">{c.width} × {c.height} mm · {fmtDate(c.created_at)}</p>
                           </div>
                           <span className="text-sm font-bold text-red-700 flex-shrink-0">{fmt(c.estimated_price)}</span>
@@ -272,15 +255,11 @@ export default function ProfessionalDashboard() {
               </div>
             )}
 
-            {/* CONFIGURACIONES */}
             {activeTab === 'configuraciones' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold text-gray-900">Mis configuraciones</h2>
-                  <Link to="/configurador"
-                    className="text-sm font-bold bg-red-700 text-white px-4 py-2 rounded-xl hover:bg-red-800 transition-colors">
-                    + Nueva
-                  </Link>
+                  <Link to="/configurador" className="text-sm font-bold bg-red-700 text-white px-4 py-2 rounded-xl hover:bg-red-800 transition-colors">+ Nueva</Link>
                 </div>
                 {configuraciones.length === 0 ? (
                   <EmptyState label="No tienes configuraciones guardadas" action="Crear configuración" to="/configurador" />
@@ -293,7 +272,7 @@ export default function ProfessionalDashboard() {
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Medidas</th>
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Fecha</th>
                           <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Precio</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Acción</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Cesta</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -306,9 +285,7 @@ export default function ProfessionalDashboard() {
                             <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{c.width} × {c.height} mm</td>
                             <td className="px-5 py-3 text-gray-400 hidden lg:table-cell">{fmtDate(c.created_at)}</td>
                             <td className="px-5 py-3 text-right font-bold text-red-700">{fmt(c.estimated_price)}</td>
-                            <td className="px-5 py-3 text-right">
-                              <AddToCartFromDashboard configId={c.id} />
-                            </td>
+                            <td className="px-5 py-3 text-right"><AddToCartFromDashboard configId={c.id} /></td>
                           </tr>
                         ))}
                       </tbody>
@@ -318,16 +295,13 @@ export default function ProfessionalDashboard() {
               </div>
             )}
 
-            {/* PEDIDOS */}
             {activeTab === 'pedidos' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold text-gray-900">Mis pedidos</h2>
-                  <Link to="/cesta"
-                    className="flex items-center gap-2 text-sm font-bold bg-gray-900 text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition-colors">
+                  <Link to="/cesta" className="flex items-center gap-2 text-sm font-bold bg-gray-900 text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition-colors">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
                     Ver cesta {itemCount > 0 && `(${itemCount})`}
                   </Link>
@@ -361,7 +335,6 @@ export default function ProfessionalDashboard() {
               </div>
             )}
 
-            {/* PRESUPUESTOS */}
             {activeTab === 'presupuestos' && (
               <div className="space-y-4">
                 <h2 className="text-xl font-bold text-gray-900">Mis presupuestos</h2>
@@ -388,11 +361,9 @@ export default function ProfessionalDashboard() {
                             <td className="px-5 py-3 text-right font-bold text-gray-900">{fmt(p.total_with_iva)}</td>
                             <td className="px-5 py-3 text-right">
                               {p.excel_url
-                                ? <a href={p.excel_url} target="_blank" rel="noreferrer"
-                                    className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 hover:text-red-800">
+                                ? <a href={p.excel_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 hover:text-red-800">
                                     <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                                     </svg>
                                     PDF
                                   </a>
@@ -408,7 +379,6 @@ export default function ProfessionalDashboard() {
               </div>
             )}
 
-            {/* FACTURAS */}
             {activeTab === 'facturas' && (
               <div className="space-y-4">
                 <h2 className="text-xl font-bold text-gray-900">Historial de facturas</h2>
@@ -442,42 +412,31 @@ export default function ProfessionalDashboard() {
               </div>
             )}
 
-            {/* MI EMPRESA */}
             {activeTab === 'empresa' && (
               <div className="space-y-5">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-bold text-gray-900">Datos de empresa</h2>
                   {saveMsg && (
-                    <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
-                      saveMsg.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
-                    }`}>{saveMsg}</span>
+                    <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${saveMsg.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{saveMsg}</span>
                   )}
                 </div>
                 <div className="bg-white rounded-xl border border-gray-200 p-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="sm:col-span-2">
-                      <EditField label="Razón social" value={empresaEdit.razon_social ?? ''}
-                        onChange={v => setEmpresaEdit(p => ({...p, razon_social: v}))} />
+                      <EditField label="Razón social" value={empresaEdit.razon_social ?? ''} onChange={v => setEmpresaEdit(p => ({...p, razon_social: v}))} />
                     </div>
-                    <EditField label="CIF / NIF" value={empresaEdit.cif_nif ?? ''}
-                      onChange={v => setEmpresaEdit(p => ({...p, cif_nif: v}))} />
-                    <EditField label="Teléfono" value={empresaEdit.telefono ?? ''}
-                      onChange={v => setEmpresaEdit(p => ({...p, telefono: v}))} />
+                    <EditField label="CIF / NIF" value={empresaEdit.cif_nif ?? ''} onChange={v => setEmpresaEdit(p => ({...p, cif_nif: v}))} />
+                    <EditField label="Teléfono" value={empresaEdit.telefono ?? ''} onChange={v => setEmpresaEdit(p => ({...p, telefono: v}))} />
                     <div className="sm:col-span-2">
-                      <EditField label="Dirección fiscal" value={empresaEdit.direccion_fiscal ?? ''}
-                        onChange={v => setEmpresaEdit(p => ({...p, direccion_fiscal: v}))} />
+                      <EditField label="Dirección fiscal" value={empresaEdit.direccion_fiscal ?? ''} onChange={v => setEmpresaEdit(p => ({...p, direccion_fiscal: v}))} />
                     </div>
-                    <EditField label="Código postal" value={empresaEdit.codigo_postal ?? ''}
-                      onChange={v => setEmpresaEdit(p => ({...p, codigo_postal: v}))} />
-                    <EditField label="Ciudad" value={empresaEdit.ciudad ?? ''}
-                      onChange={v => setEmpresaEdit(p => ({...p, ciudad: v}))} />
+                    <EditField label="Código postal" value={empresaEdit.codigo_postal ?? ''} onChange={v => setEmpresaEdit(p => ({...p, codigo_postal: v}))} />
+                    <EditField label="Ciudad" value={empresaEdit.ciudad ?? ''} onChange={v => setEmpresaEdit(p => ({...p, ciudad: v}))} />
                     <div className="sm:col-span-2">
-                      <EditField label="Provincia" value={empresaEdit.provincia ?? ''}
-                        onChange={v => setEmpresaEdit(p => ({...p, provincia: v}))} />
+                      <EditField label="Provincia" value={empresaEdit.provincia ?? ''} onChange={v => setEmpresaEdit(p => ({...p, provincia: v}))} />
                     </div>
                     <div className="sm:col-span-2">
-                      <EditField label="Email de facturación" type="email" value={empresaEdit.email_facturacion ?? ''}
-                        onChange={v => setEmpresaEdit(p => ({...p, email_facturacion: v}))} />
+                      <EditField label="Email de facturación" type="email" value={empresaEdit.email_facturacion ?? ''} onChange={v => setEmpresaEdit(p => ({...p, email_facturacion: v}))} />
                     </div>
                   </div>
                   <div className="mt-6 pt-5 border-t border-gray-100 flex justify-end">
@@ -491,9 +450,7 @@ export default function ProfessionalDashboard() {
                 <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Cuenta</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold text-sm">
-                      {user?.email?.[0]?.toUpperCase()}
-                    </div>
+                    <div className="w-10 h-10 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold text-sm">{user?.email?.[0]?.toUpperCase()}</div>
                     <div>
                       <p className="text-sm font-semibold text-gray-900">{user?.email}</p>
                       <p className="text-xs text-gray-400">Cuenta profesional · Descuento 20% activo</p>
@@ -506,60 +463,5 @@ export default function ProfessionalDashboard() {
         </div>
       </div>
     </div>
-  )
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────
-function EmptyState({ label, action, to }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-      <p className="font-semibold text-gray-900 mb-1">{label}</p>
-      <Link to={to} className="inline-block mt-4 px-5 py-2.5 bg-red-700 text-white text-sm font-bold rounded-xl hover:bg-red-800 transition-colors">
-        {action}
-      </Link>
-    </div>
-  )
-}
-
-function StatusBadge({ status }) {
-  const map = {
-    pending:   { label: 'Pendiente',   cls: 'bg-amber-100 text-amber-700' },
-    confirmed: { label: 'Confirmado',  cls: 'bg-blue-100 text-blue-700'   },
-    completed: { label: 'Completado',  cls: 'bg-green-100 text-green-700' },
-    cancelled: { label: 'Cancelado',   cls: 'bg-red-100 text-red-700'     },
-  }
-  const { label, cls } = map[status] ?? { label: status ?? '—', cls: 'bg-gray-100 text-gray-600' }
-  return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cls}`}>{label}</span>
-}
-
-function AddToCartFromDashboard({ configId }) {
-  const { addToCart } = useCart()
-  const [status, setStatus] = useState('idle')
-
-  async function handleAdd() {
-    setStatus('loading')
-    const { error } = await addToCart(configId)
-    setStatus(error ? 'error' : 'done')
-    setTimeout(() => setStatus('idle'), 2500)
-  }
-
-  return (
-    <button onClick={handleAdd} disabled={status === 'loading'}
-      className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors ${
-        status === 'done'  ? 'bg-green-100 text-green-700' :
-        status === 'error' ? 'bg-red-100 text-red-700' :
-        'bg-gray-100 hover:bg-gray-200 text-gray-700'
-      }`}>
-      {status === 'loading' && <span className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />}
-      {status === 'done'    && '✓ Añadido'}
-      {status === 'error'   && 'Error'}
-      {status === 'idle'    && <>
-        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-        </svg>
-        Añadir
-      </>}
-    </button>
   )
 }
