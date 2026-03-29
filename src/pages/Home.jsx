@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import HeroBlind from './HeroBlind'
+import SEO from '../shared/SEO'
 
 const FEATURES = [
   {
@@ -71,6 +72,7 @@ function SocialLink({ href, label }) {
 export default function Home() {
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
+      <SEO canonical="/" />
 
       {/* ── HERO ── */}
       <HeroBlind />

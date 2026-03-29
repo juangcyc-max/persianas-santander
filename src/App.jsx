@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { HelmetProvider } from 'react-helmet-async'
 import { supabase } from './services/supabase/client'
 import { CartProvider } from './context/CartContext'
 import Header from './shared/Header'
@@ -10,8 +11,9 @@ import Configurator from './pages/Configurator'
 import MisConfiguraciones from './pages/components/MisConfiguraciones'
 import ProfessionalDashboard from './pages/ProfessionalDashboard'
 import AdminDashboard from './pages/AdminDashboard'
-import { PoliticaPrivacidad, PoliticaCookies, TerminosCondiciones } from './pages/LegalPages'
 import Cart from './pages/Cart'
+import NotFound from './pages/NotFound'
+import { PoliticaPrivacidad, PoliticaCookies, TerminosCondiciones } from './pages/LegalPages'
 
 // ── Ruta protegida que redirige según tipo de usuario ─────────────────────
 function SmartRedirect() {
@@ -60,33 +62,36 @@ function SmartRedirect() {
 
 function App() {
   return (
-    <Router>
-      <CartProvider>
-        <Routes>
-          <Route path="/panel-profesional" element={<ProfessionalDashboard />} />
-          <Route path="/admin"             element={<AdminDashboard />} />
-          <Route path="/inicio" element={<SmartRedirect />} />
-          <Route path="/*" element={
-            <div className="min-h-screen bg-gray-50 w-full">
-              <Header />
-              <main className="w-full">
-                <Routes>
-                  <Route path="/"                    element={<Home />} />
-                  <Route path="/login"               element={<Login />} />
-                  <Route path="/registro"            element={<Register />} />
-                  <Route path="/configurador"        element={<Configurator />} />
-                  <Route path="/mis-configuraciones" element={<MisConfiguraciones />} />
-                  <Route path="/cesta"               element={<Cart />} />
-                  <Route path="/privacidad"          element={<PoliticaPrivacidad />} />
-                  <Route path="/cookies"             element={<PoliticaCookies />} />
-                  <Route path="/terminos"            element={<TerminosCondiciones />} />
-                </Routes>
-              </main>
-            </div>
-          } />
-        </Routes>
-      </CartProvider>
-    </Router>
+    <HelmetProvider>
+      <Router>
+        <CartProvider>
+          <Routes>
+            <Route path="/panel-profesional" element={<ProfessionalDashboard />} />
+            <Route path="/admin"             element={<AdminDashboard />} />
+            <Route path="/inicio"            element={<SmartRedirect />} />
+            <Route path="/*" element={
+              <div className="min-h-screen bg-gray-50 w-full">
+                <Header />
+                <main className="w-full">
+                  <Routes>
+                    <Route path="/"                    element={<Home />} />
+                    <Route path="/login"               element={<Login />} />
+                    <Route path="/registro"            element={<Register />} />
+                    <Route path="/configurador"        element={<Configurator />} />
+                    <Route path="/mis-configuraciones" element={<MisConfiguraciones />} />
+                    <Route path="/cesta"               element={<Cart />} />
+                    <Route path="/privacidad"          element={<PoliticaPrivacidad />} />
+                    <Route path="/cookies"             element={<PoliticaCookies />} />
+                    <Route path="/terminos"            element={<TerminosCondiciones />} />
+                    <Route path="*"                    element={<NotFound />} />
+                  </Routes>
+                </main>
+              </div>
+            } />
+          </Routes>
+        </CartProvider>
+      </Router>
+    </HelmetProvider>
   )
 }
 
