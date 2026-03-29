@@ -10,6 +10,7 @@ import Configurator from './pages/Configurator'
 import MisConfiguraciones from './pages/components/MisConfiguraciones'
 import ProfessionalDashboard from './pages/ProfessionalDashboard'
 import AdminDashboard from './pages/AdminDashboard'
+import Cart from './pages/Cart'
 
 // ── Ruta protegida que redirige según tipo de usuario ─────────────────────
 function SmartRedirect() {
