@@ -25,14 +25,14 @@ function SmartRedirect() {
       // Intentar leer de profiles primero
       const { data: profile } = await supabase
         .from('profiles')
-        .select('user_type')
+        .select('user_type, role')
         .eq('id', user.id)
         .single()
 
       // Fallback: leer de user_metadata si profiles no tiene datos
       const userType = profile?.user_type ?? user.user_metadata?.user_type ?? 'public'
+      const role     = profile?.role ?? user.user_metadata?.user_type
 
-      // Si es profesional y no tiene perfil creado aún, crearlo ahora
       if (!profile) {
         await supabase.from('profiles').upsert({
           id:        user.id,
@@ -41,7 +41,9 @@ function SmartRedirect() {
         })
       }
 
-      setRedirect(userType === 'professional' ? '/panel-profesional' : '/')
+      if (role === 'admin' || userType === 'admin')    setRedirect('/admin')
+      else if (userType === 'professional')             setRedirect('/panel-profesional')
+      else                                              setRedirect('/')
       setLoading(false)
     }
     check()
