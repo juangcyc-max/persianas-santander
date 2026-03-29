@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './services/supabase/client'
+import { CartProvider } from './context/CartContext'
 import Header from './shared/Header'
 import Home from './pages/Home'
 import Login from './pages/Login'
@@ -8,6 +9,7 @@ import Register from './pages/Register'
 import Configurator from './pages/Configurator'
 import MisConfiguraciones from './pages/components/MisConfiguraciones'
 import ProfessionalDashboard from './pages/ProfessionalDashboard'
+import Cart from './pages/Cart'
 
 // ── Ruta protegida que redirige según tipo de usuario ─────────────────────
 function SmartRedirect() {
@@ -55,29 +57,27 @@ function SmartRedirect() {
 function App() {
   return (
     <Router>
-      <Routes>
-        {/* Panel profesional — sin Header global (tiene su propio topbar) */}
-        <Route path="/panel-profesional" element={<ProfessionalDashboard />} />
-
-        {/* Redirección inteligente post-login */}
-        <Route path="/inicio" element={<SmartRedirect />} />
-
-        {/* Resto de rutas — con Header */}
-        <Route path="/*" element={
-          <div className="min-h-screen bg-gray-50 w-full">
-            <Header />
-            <main className="w-full">
-              <Routes>
-                <Route path="/"                    element={<Home />} />
-                <Route path="/login"               element={<Login />} />
-                <Route path="/registro"            element={<Register />} />
-                <Route path="/configurador"        element={<Configurator />} />
-                <Route path="/mis-configuraciones" element={<MisConfiguraciones />} />
-              </Routes>
-            </main>
-          </div>
-        } />
-      </Routes>
+      <CartProvider>
+        <Routes>
+          <Route path="/panel-profesional" element={<ProfessionalDashboard />} />
+          <Route path="/inicio" element={<SmartRedirect />} />
+          <Route path="/*" element={
+            <div className="min-h-screen bg-gray-50 w-full">
+              <Header />
+              <main className="w-full">
+                <Routes>
+                  <Route path="/"                    element={<Home />} />
+                  <Route path="/login"               element={<Login />} />
+                  <Route path="/registro"            element={<Register />} />
+                  <Route path="/configurador"        element={<Configurator />} />
+                  <Route path="/mis-configuraciones" element={<MisConfiguraciones />} />
+                  <Route path="/cesta"               element={<Cart />} />
+                </Routes>
+              </main>
+            </div>
+          } />
+        </Routes>
+      </CartProvider>
     </Router>
   )
 }
