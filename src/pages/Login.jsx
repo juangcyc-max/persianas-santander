@@ -65,9 +65,6 @@ export default function Login() {
       <div className="w-full max-w-sm">
 
         <div className="text-center mb-8">
-          <img src="/persianassantanderlogo.png" alt="Persianas Santander"
-            className="h-16 w-auto mx-auto mb-4"
-            onError={e => { e.target.src = '/persianassantanderlogo.svg' }} />
           <h1 className="text-2xl font-bold text-gray-900">Bienvenido de nuevo</h1>
           <p className="text-gray-500 text-sm mt-1">Inicia sesión en tu cuenta</p>
         </div>
