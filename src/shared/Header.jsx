@@ -47,7 +47,10 @@ function Header() {
     ...(user && isProfessional
       ? [{ to: '/panel-profesional', label: 'Mi panel' }]
       : user
-      ? [{ to: '/mis-configuraciones', label: 'Mis configuraciones' }]
+      ? [
+          { to: '/mis-configuraciones', label: 'Configuraciones' },
+          { to: '/mis-pedidos',         label: 'Mis pedidos' },
+        ]
       : []
     ),
   ]

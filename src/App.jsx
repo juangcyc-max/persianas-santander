@@ -10,6 +10,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Configurator from './pages/Configurator'
 import MisConfiguraciones from './pages/components/MisConfiguraciones'
+import MisPedidos from './pages/MisPedidos'
 import ProfessionalDashboard from './pages/ProfessionalDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import Cart from './pages/Cart'
@@ -82,6 +83,7 @@ function App() {
                     <Route path="/registro"            element={<Register />} />
                     <Route path="/configurador"        element={<Configurator />} />
                     <Route path="/mis-configuraciones" element={<MisConfiguraciones />} />
+                  <Route path="/mis-pedidos"         element={<MisPedidos />} />
                     <Route path="/cesta"               element={<Cart />} />
                     <Route path="/privacidad"          element={<PoliticaPrivacidad />} />
                     <Route path="/cookies"             element={<PoliticaCookies />} />
