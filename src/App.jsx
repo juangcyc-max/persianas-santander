@@ -15,6 +15,7 @@ import AdminDashboard from './pages/AdminDashboard'
 import Cart from './pages/Cart'
 import NotFound from './pages/NotFound'
 import { PoliticaPrivacidad, PoliticaCookies, TerminosCondiciones } from './pages/LegalPages'
+import { ForgotPassword, ResetPassword } from './pages/PasswordPages'
 
 // ── Ruta protegida que redirige según tipo de usuario ─────────────────────
 function SmartRedirect() {
@@ -85,6 +86,8 @@ function App() {
                     <Route path="/privacidad"          element={<PoliticaPrivacidad />} />
                     <Route path="/cookies"             element={<PoliticaCookies />} />
                     <Route path="/terminos"            element={<TerminosCondiciones />} />
+                    <Route path="/recuperar"           element={<ForgotPassword />} />
+                    <Route path="/reset-password"      element={<ResetPassword />} />
                     <Route path="*"                    element={<NotFound />} />
                   </Routes>
                 </main>
