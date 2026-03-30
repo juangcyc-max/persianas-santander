@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
+import { sanitizeText, sanitizeNumber } from '../services/sanitize'
 
 const HORAS = ['08:00','09:00','10:00','11:00','12:00','13:00','16:00','17:00','18:00','19:00']
 
@@ -111,7 +112,13 @@ export default function Cart() {
         total_price:    totalPrice,
         total_with_iva: totalWithIva,
         status:         'pending',
-        ...(!isProfessional && { address, phone, preferred_date: date, preferred_time: time, notes }),
+        ...(!isProfessional && {
+          address:        sanitizeText(address),
+          phone:          sanitizeText(phone),
+          preferred_date: date,
+          preferred_time: time,
+          notes:          sanitizeText(notes),
+        }),
       }
 
       const { data: order, error: orderError } = await supabase
