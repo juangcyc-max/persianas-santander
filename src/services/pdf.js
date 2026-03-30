@@ -122,28 +122,32 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}) {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         const priceWithoutIva = price / 1.21
+        const iva             = price - priceWithoutIva
         await supabase.from('budgets').insert({
-          user_id:        user.id,
-          budget_number:  budgetNumber,
-          customer_name:  customerData.name  || null,
-          customer_phone: customerData.phone || null,
-          customer_email: customerData.email || null,
+          user_id:          user.id,
+          budget_number:    budgetNumber,
+          customer_name:    customerData.name    || null,
+          customer_phone:   customerData.phone   || null,
+          customer_email:   customerData.email   || null,
           customer_address: customerData.address || null,
-          blind_type:     configuration.blindType,
-          mechanism:      configuration.mechanism,
-          width:          configuration.width,
-          height:         configuration.height,
-          depth:          configuration.depth,
-          box_color_name: configuration.boxColorName,
-          slat_color_name:configuration.slatColorName,
+          blind_type:       configuration.blindType,
+          mechanism:        configuration.mechanism,
+          width:            configuration.width,
+          height:           configuration.height,
+          depth:            configuration.depth,
+          box_color_name:   configuration.boxColorName,
+          slat_color_name:  configuration.slatColorName,
           price_without_iva: priceWithoutIva,
-          total_with_iva: price,
-          status:         'pending',
+          total_price:      priceWithoutIva,
+          iva:              iva,
+          total_with_iva:   price,
+          user_type:        user.user_metadata?.user_type ?? 'public',
+          customer_data:    customerData,
+          status:           'pending',
         })
       }
     } catch (dbErr) {
       console.warn('No se pudo guardar el presupuesto en BD:', dbErr)
-      // No bloqueamos la descarga si falla el guardado
     }
 
     // DESCARGAR
