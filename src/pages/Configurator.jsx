@@ -66,13 +66,16 @@ function Configurator() {
   ]
 
   const calculatePrice = () => {
-    const basePerSqm    = blindType === 'blocking' ? 180 : 120
-    const mechMult      = mechanism === 'motor' ? 1.5 : mechanism === 'cinta' ? 1.1 : 1.0
-    const slatMult      = slatType === 'seguridad' ? 1.3 : 1.0
-    const areaSqm       = (width / 1000) * (height / 1000)
-    const base          = areaSqm * basePerSqm * mechMult * slatMult
-    const depthCost     = depth > 200 ? (depth - 200) * 0.5 : 0
-    const total         = (base + depthCost) * 1.21
+    const w = parseFloat(width)  || 0
+    const h = parseFloat(height) || 0
+    const d = parseFloat(depth)  || 0
+    const basePerSqm = blindType === 'blocking' ? 180 : 120
+    const mechMult   = mechanism === 'motor' ? 1.5 : mechanism === 'cinta' ? 1.1 : 1.0
+    const slatMult   = slatType === 'seguridad' ? 1.3 : 1.0
+    const areaSqm    = (w / 1000) * (h / 1000)
+    const base       = areaSqm * basePerSqm * mechMult * slatMult
+    const depthCost  = d > 200 ? (d - 200) * 0.5 : 0
+    const total      = (base + depthCost) * 1.21
     return userType === 'professional' ? total * 0.8 : total
   }
 
@@ -126,8 +129,12 @@ function Configurator() {
               </div>
 
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <PriceDisplay blindType={blindType} mechanism={mechanism} motorType={motorType}
-                  slatType={slatType} width={width} height={height} depth={depth} userType={userType} />
+                <PriceDisplay
+                  estimatedPrice={calculatePrice()}
+                  blindType={blindType}
+                  mechanism={mechanism}
+                  userType={userType}
+                />
               </div>
 
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
@@ -175,7 +182,9 @@ function Configurator() {
               )}
               <SlatTypeSelector slatType={slatType} onSlatTypeChange={setSlatType} blindType={blindType} />
               <MeasurementsForm width={width} height={height} depth={depth}
-                onWidthChange={setWidth} onHeightChange={setHeight} onDepthChange={setDepth} />
+                onWidthChange={v  => setWidth(parseFloat(v)  || 0)}
+                onHeightChange={v => setHeight(parseFloat(v) || 0)}
+                onDepthChange={v  => setDepth(parseFloat(v)  || 0)} />
               <ColorPicker label="Color de la Caja" selectedColor={boxColor}
                 onColorChange={setBoxColor} colors={winchesterColors} />
               <ColorPicker label="Color de las Lamas" selectedColor={slatColor}
