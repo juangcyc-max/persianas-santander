@@ -92,8 +92,15 @@ function OrderModal({ order, onClose, onUpdate }) {
 
       if (error) throw error
 
+      // Cargar datos de empresa del profesional
+      const { data: empresaData } = await supabase
+        .from('professional_data')
+        .select('*')
+        .eq('user_id', order.user_id)
+        .maybeSingle()
+
       setExistingInvoice(inv)
-      generateInvoicePDF(inv, order)
+      generateInvoicePDF(inv, order, empresaData)
     } catch (e) {
       console.error('Error generando factura:', e)
     } finally {
@@ -617,6 +624,9 @@ export default function AdminDashboard() {
         {/* ── SECCIÓN FACTURAS ADMIN ── */}
         <AdminInvoicesSection />
 
+        {/* ── SECCIÓN PROFESIONALES ADMIN ── */}
+        <AdminProfessionalsSection />
+
       </div>
 
       {/* Modal pedido */}
@@ -730,6 +740,100 @@ function AdminInvoicesSection() {
                         PDF
                       </button>
                     </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── SECCIÓN PROFESIONALES ADMIN ───────────────────────────────────────────
+function AdminProfessionalsSection() {
+  const [professionals, setProfessionals] = useState([])
+  const [loading,       setLoading]       = useState(true)
+
+  useEffect(() => { loadProfessionals() }, [])
+
+  async function loadProfessionals() {
+    setLoading(true)
+    const { data } = await supabase
+      .from('professional_data')
+      .select('*, profiles(email)')
+      .order('created_at', { ascending: false })
+    setProfessionals(data ?? [])
+    setLoading(false)
+  }
+
+  function exportToExcel() {
+    const headers = ['Razón social', 'CIF/NIF', 'Teléfono', 'Dirección fiscal', 'CP', 'Ciudad', 'Provincia', 'Email facturación', 'Email cuenta']
+    const rows = professionals.map(p => [
+      p.razon_social ?? '',
+      p.cif_nif ?? '',
+      p.telefono ?? '',
+      p.direccion_fiscal ?? '',
+      p.codigo_postal ?? '',
+      p.ciudad ?? '',
+      p.provincia ?? '',
+      p.email_facturacion ?? '',
+      p.profiles?.email ?? '',
+    ])
+
+    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `profesionales_${new Date().toISOString().slice(0,10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-gray-900">Clientes profesionales</h2>
+        <button onClick={exportToExcel}
+          className="flex items-center gap-2 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Exportar CSV
+        </button>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-10">
+            <div className="w-6 h-6 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : professionals.length === 0 ? (
+          <div className="text-center py-10 text-gray-400 text-sm">No hay profesionales registrados todavía</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  {['Razón social', 'CIF/NIF', 'Teléfono', 'Ciudad', 'Email cuenta', 'Email facturación'].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {professionals.map(p => (
+                  <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-gray-900">{p.razon_social ?? '—'}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{p.cif_nif ?? '—'}</td>
+                    <td className="px-4 py-3 text-gray-600">{p.telefono ?? '—'}</td>
+                    <td className="px-4 py-3 text-gray-600">{p.ciudad ?? '—'}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{p.profiles?.email ?? '—'}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{p.email_facturacion ?? '—'}</td>
                   </tr>
                 ))}
               </tbody>

@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 
-export function generateInvoicePDF(invoice, order) {
+export function generateInvoicePDF(invoice, order, empresa = null) {
   const doc = new jsPDF()
   const primary = [236, 28, 36]
   const gray = [60, 60, 60]
@@ -48,15 +48,24 @@ export function generateInvoicePDF(invoice, order) {
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 40 }, 1: { cellWidth: 140 } }
     })
 
-    // CLIENTE
+    // CLIENTE / EMPRESA
+    const clienteRows = empresa ? [
+      ["Razón social", empresa.razon_social ?? "—"],
+      ["CIF/NIF",      empresa.cif_nif ?? "—"],
+      ["Dirección",    `${empresa.direccion_fiscal ?? "—"}, ${empresa.codigo_postal ?? ""} ${empresa.ciudad ?? ""}`],
+      ["Provincia",    empresa.provincia ?? "—"],
+      ["Teléfono",     empresa.telefono ?? "—"],
+      ["Email",        empresa.email_facturacion ?? order?.profiles?.email ?? "—"],
+    ] : [
+      ["Email",        order?.profiles?.email ?? "—"],
+      ["Dirección",    order?.address ?? "—"],
+      ["Teléfono",     order?.phone ?? "—"],
+    ]
+
     autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 6,
       head: [["CLIENTE", ""]],
-      body: [
-        ["Email", order?.profiles?.email ?? "—"],
-        ["Dirección", order?.address ?? "—"],
-        ["Teléfono", order?.phone ?? "—"],
-      ],
+      body: clienteRows,
       headStyles: { fillColor: gray },
       columnStyles: { 0: { fontStyle: "bold", cellWidth: 40 }, 1: { cellWidth: 140 } }
     })

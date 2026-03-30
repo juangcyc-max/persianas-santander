@@ -106,6 +106,14 @@ export default function ProfessionalDashboard() {
   const [savingEmpresa,   setSavingEmpresa]   = useState(false)
   const [empresaEdit,     setEmpresaEdit]     = useState({})
   const [saveMsg,         setSaveMsg]         = useState('')
+  const [showEmpresaModal, setShowEmpresaModal] = useState(false)
+  const [empresaErrors,    setEmpresaErrors]    = useState({})
+
+  const REQUIRED_FIELDS = ['razon_social', 'cif_nif', 'telefono', 'direccion_fiscal', 'codigo_postal', 'ciudad', 'provincia', 'email_facturacion']
+
+  function empresaCompleta(data) {
+    return data && REQUIRED_FIELDS.every(f => data[f]?.toString().trim())
+  }
 
   useEffect(() => { loadData() }, [])
 
@@ -122,12 +130,15 @@ export default function ProfessionalDashboard() {
         supabase.from('budgets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('invoices').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       ])
-      setEmpresa(empresaRes.data ?? null)
-      setEmpresaEdit(empresaRes.data ?? {})
+      const emp = empresaRes.data ?? null
+      setEmpresa(emp)
+      setEmpresaEdit(emp ?? {})
       setConfiguraciones(configRes.data ?? [])
       setPedidos(pedidosRes.data ?? [])
       setPresupuestos(presupuestosRes.data ?? [])
       setFacturas(facturasRes.data ?? [])
+      // Si no tiene datos completos, mostrar modal obligatorio
+      if (!empresaCompleta(emp)) setShowEmpresaModal(true)
     } catch (err) {
       console.error(err)
     } finally {
@@ -135,13 +146,26 @@ export default function ProfessionalDashboard() {
     }
   }
 
-  async function handleSaveEmpresa() {
+  async function handleSaveEmpresa(fromModal = false) {
+    // Validar campos obligatorios
+    const errors = {}
+    REQUIRED_FIELDS.forEach(f => {
+      if (!empresaEdit[f]?.toString().trim()) errors[f] = 'Campo obligatorio'
+    })
+    if (Object.keys(errors).length) { setEmpresaErrors(errors); return }
+    setEmpresaErrors({})
+
     setSavingEmpresa(true)
     const { error } = await supabase.from('professional_data').upsert({ ...empresaEdit, user_id: user.id })
     setSavingEmpresa(false)
-    setSaveMsg(error ? 'Error al guardar' : 'Guardado correctamente')
+    if (error) {
+      setSaveMsg('Error al guardar')
+    } else {
+      setEmpresa(empresaEdit)
+      setSaveMsg('Guardado correctamente')
+      if (fromModal) setShowEmpresaModal(false)
+    }
     setTimeout(() => setSaveMsg(''), 3000)
-    if (!error) setEmpresa(empresaEdit)
   }
 
   async function handleLogout() {
@@ -480,6 +504,62 @@ export default function ProfessionalDashboard() {
           </main>
         </div>
       </div>
+
+      {/* ── MODAL OBLIGATORIO DATOS EMPRESA ── */}
+      {showEmpresaModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex items-center gap-3 mb-1">
+                <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
+                  <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="font-bold text-gray-900">Completa los datos de tu empresa</h2>
+                  <p className="text-xs text-gray-500">Necesarios para emitir facturas y presupuestos</p>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              {saveMsg && (
+                <div className={`text-xs font-semibold px-3 py-2 rounded-xl ${saveMsg.includes('Error') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'}`}>
+                  {saveMsg}
+                </div>
+              )}
+              {[
+                { label: 'Razón social *',        field: 'razon_social',       colSpan: 2 },
+                { label: 'CIF / NIF *',            field: 'cif_nif',            colSpan: 1 },
+                { label: 'Teléfono *',             field: 'telefono',           colSpan: 1 },
+                { label: 'Dirección fiscal *',     field: 'direccion_fiscal',   colSpan: 2 },
+                { label: 'Código postal *',        field: 'codigo_postal',      colSpan: 1 },
+                { label: 'Ciudad *',               field: 'ciudad',             colSpan: 1 },
+                { label: 'Provincia *',            field: 'provincia',          colSpan: 2 },
+                { label: 'Email de facturación *', field: 'email_facturacion',  colSpan: 2, type: 'email' },
+              ].map(({ label, field, colSpan, type = 'text' }) => (
+                <div key={field} className={colSpan === 2 ? '' : 'inline-block w-[calc(50%-0.5rem)]'}>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+                  <input
+                    type={type}
+                    value={empresaEdit[field] ?? ''}
+                    onChange={e => { setEmpresaEdit(p => ({...p, [field]: e.target.value})); setEmpresaErrors(p => ({...p, [field]: ''})) }}
+                    className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 transition-colors ${
+                      empresaErrors[field] ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                    }`}
+                  />
+                  {empresaErrors[field] && <p className="text-xs text-red-600 mt-0.5">{empresaErrors[field]}</p>}
+                </div>
+              ))}
+              <button onClick={() => handleSaveEmpresa(true)} disabled={savingEmpresa}
+                className="w-full py-3.5 bg-red-700 hover:bg-red-800 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2 mt-2">
+                {savingEmpresa && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                Guardar y acceder al panel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -489,13 +569,11 @@ function DownloadInvoiceButton({ invoice }) {
 
   async function handleDownload() {
     setLoading(true)
-    // Cargar el pedido asociado para los datos del PDF
-    const { data: order } = await supabase
-      .from('orders')
-      .select('*')
-      .eq('id', invoice.order_id)
-      .maybeSingle()
-    generateInvoicePDF(invoice, order ?? {})
+    const [orderRes, empresaRes] = await Promise.all([
+      supabase.from('orders').select('*').eq('id', invoice.order_id).maybeSingle(),
+      supabase.from('professional_data').select('*').eq('user_id', invoice.user_id).maybeSingle(),
+    ])
+    generateInvoicePDF(invoice, orderRes.data ?? {}, empresaRes.data ?? null)
     setLoading(false)
   }
 
