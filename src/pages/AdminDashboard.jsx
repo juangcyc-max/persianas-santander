@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
+import { generateInvoicePDF } from '../services/invoicePDF'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
@@ -53,6 +54,63 @@ function OrderModal({ order, onClose, onUpdate }) {
   const [saved,         setSaved]         = useState(false)
   const [emailSent,     setEmailSent]     = useState(false)
   const [sendingEmail,  setSendingEmail]  = useState(false)
+  const [generatingInvoice, setGeneratingInvoice] = useState(false)
+  const [existingInvoice,   setExistingInvoice]   = useState(null)
+
+  useEffect(() => { loadInvoice() }, [])
+
+  async function loadInvoice() {
+    const { data } = await supabase
+      .from('invoices')
+      .select('*')
+      .eq('order_id', order.id)
+      .maybeSingle()
+    setExistingInvoice(data ?? null)
+  }
+
+  async function handleGenerateInvoice() {
+    setGeneratingInvoice(true)
+    try {
+      const totalSinIva = (order.total_with_iva ?? 0) / 1.21
+      const iva         = (order.total_with_iva ?? 0) - totalSinIva
+      const invoiceNum  = `FAC-${Date.now().toString().slice(-8)}`
+
+      const { data: inv, error } = await supabase
+        .from('invoices')
+        .insert({
+          order_id:           order.id,
+          user_id:            order.user_id,
+          invoice_number:     invoiceNum,
+          payment_status:     'pending_payment',
+          total_without_iva:  totalSinIva,
+          iva:                iva,
+          total_with_iva:     order.total_with_iva,
+          items:              order.items,
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      setExistingInvoice(inv)
+      generateInvoicePDF(inv, order)
+    } catch (e) {
+      console.error('Error generando factura:', e)
+    } finally {
+      setGeneratingInvoice(false)
+    }
+  }
+
+  async function handlePaymentStatus(newStatus) {
+    if (!existingInvoice) return
+    const { data } = await supabase
+      .from('invoices')
+      .update({ payment_status: newStatus })
+      .eq('id', existingInvoice.id)
+      .select()
+      .single()
+    if (data) setExistingInvoice(data)
+  }
 
   const calendarUrl = buildCalendarUrl(order, confirmedDate, confirmedTime)
   const isParticular = order.user_type === 'public'
@@ -241,6 +299,72 @@ function OrderModal({ order, onClose, onUpdate }) {
                 Asigna fecha y hora confirmada para generar el enlace de Google Calendar
               </p>
             )}
+
+            {/* ── SECCIÓN FACTURA ── */}
+            <div className="border-t border-gray-100 pt-4 space-y-3">
+              <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Facturación</p>
+
+              {!existingInvoice ? (
+                <button onClick={handleGenerateInvoice} disabled={generatingInvoice}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-xl transition-colors disabled:opacity-60">
+                  {generatingInvoice
+                    ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                  }
+                  {generatingInvoice ? 'Generando...' : 'Generar factura'}
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{existingInvoice.invoice_number}</p>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        existingInvoice.payment_status === 'paid'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {existingInvoice.payment_status === 'paid' ? 'Pagada' : 'Pendiente de pago'}
+                      </span>
+                    </div>
+                    <button onClick={() => generateInvoicePDF(existingInvoice, order)}
+                      className="flex items-center gap-1.5 text-xs font-semibold text-red-700 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Descargar PDF
+                    </button>
+                  </div>
+
+                  {/* Cambiar estado de pago */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handlePaymentStatus('pending_payment')}
+                      disabled={existingInvoice.payment_status === 'pending_payment'}
+                      className={`flex-1 py-2 text-xs font-semibold rounded-xl transition-colors ${
+                        existingInvoice.payment_status === 'pending_payment'
+                          ? 'bg-amber-100 text-amber-700 cursor-default'
+                          : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                      }`}>
+                      Pendiente de pago
+                    </button>
+                    <button
+                      onClick={() => handlePaymentStatus('paid')}
+                      disabled={existingInvoice.payment_status === 'paid'}
+                      className={`flex-1 py-2 text-xs font-semibold rounded-xl transition-colors ${
+                        existingInvoice.payment_status === 'paid'
+                          ? 'bg-green-100 text-green-700 cursor-default'
+                          : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
+                      }`}>
+                      Marcar como pagada
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

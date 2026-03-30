@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
+import { generateInvoicePDF } from '../services/invoicePDF'
 
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
 const fmtDate = (d) => d ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)) : '—'
@@ -100,6 +101,7 @@ export default function ProfessionalDashboard() {
   const [configuraciones, setConfiguraciones] = useState([])
   const [pedidos,         setPedidos]         = useState([])
   const [presupuestos,    setPresupuestos]    = useState([])
+  const [facturas,        setFacturas]        = useState([])
   const [loading,         setLoading]         = useState(true)
   const [savingEmpresa,   setSavingEmpresa]   = useState(false)
   const [empresaEdit,     setEmpresaEdit]     = useState({})
@@ -113,17 +115,19 @@ export default function ProfessionalDashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/login'); return }
       setUser(user)
-      const [empresaRes, configRes, pedidosRes, presupuestosRes] = await Promise.all([
+      const [empresaRes, configRes, pedidosRes, presupuestosRes, facturasRes] = await Promise.all([
         supabase.from('professional_data').select('*').eq('user_id', user.id).maybeSingle(),
         supabase.from('blind_configurations').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('budgets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('invoices').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       ])
       setEmpresa(empresaRes.data ?? null)
       setEmpresaEdit(empresaRes.data ?? {})
       setConfiguraciones(configRes.data ?? [])
       setPedidos(pedidosRes.data ?? [])
       setPresupuestos(presupuestosRes.data ?? [])
+      setFacturas(facturasRes.data ?? [])
     } catch (err) {
       console.error(err)
     } finally {
@@ -381,28 +385,42 @@ export default function ProfessionalDashboard() {
 
             {activeTab === 'facturas' && (
               <div className="space-y-4">
-                <h2 className="text-xl font-bold text-gray-900">Historial de facturas</h2>
-                {pedidos.filter(p => p.status === 'completed').length === 0 ? (
+                <h2 className="text-xl font-bold text-gray-900">Mis facturas</h2>
+                {facturas.length === 0 ? (
                   <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
                     <p className="font-semibold text-gray-900 mb-1">No hay facturas todavía</p>
-                    <p className="text-gray-400 text-sm">Aparecerán aquí cuando se completen tus pedidos.</p>
+                    <p className="text-gray-400 text-sm">Aparecerán aquí cuando la fábrica las genere.</p>
                   </div>
                 ) : (
                   <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
-                          <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Pedido</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nº Factura</th>
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Fecha</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Importe</th>
+                          <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Pago</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Total</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">PDF</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {pedidos.filter(p => p.status === 'completed').map(p => (
-                          <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-5 py-3 font-mono text-xs text-gray-600">#{p.id.slice(0,8).toUpperCase()}</td>
-                            <td className="px-5 py-3 text-gray-400 hidden md:table-cell">{fmtDate(p.created_at)}</td>
-                            <td className="px-5 py-3 text-right font-bold text-gray-900">{fmt(p.total_with_iva)}</td>
+                        {facturas.map(f => (
+                          <tr key={f.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-5 py-3 font-mono text-xs text-gray-600">{f.invoice_number}</td>
+                            <td className="px-5 py-3 text-gray-400 hidden md:table-cell">{fmtDate(f.created_at)}</td>
+                            <td className="px-5 py-3">
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                f.payment_status === 'paid'
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-amber-100 text-amber-700'
+                              }`}>
+                                {f.payment_status === 'paid' ? 'Pagada' : 'Pendiente de pago'}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3 text-right font-bold text-gray-900">{fmt(f.total_with_iva)}</td>
+                            <td className="px-5 py-3 text-right">
+                              <DownloadInvoiceButton invoice={f} />
+                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -463,5 +481,35 @@ export default function ProfessionalDashboard() {
         </div>
       </div>
     </div>
+  )
+}
+
+function DownloadInvoiceButton({ invoice }) {
+  const [loading, setLoading] = useState(false)
+
+  async function handleDownload() {
+    setLoading(true)
+    // Cargar el pedido asociado para los datos del PDF
+    const { data: order } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('id', invoice.order_id)
+      .maybeSingle()
+    generateInvoicePDF(invoice, order ?? {})
+    setLoading(false)
+  }
+
+  return (
+    <button onClick={handleDownload} disabled={loading}
+      className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 hover:text-red-800 transition-colors">
+      {loading
+        ? <span className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+        : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+      }
+      PDF
+    </button>
   )
 }
