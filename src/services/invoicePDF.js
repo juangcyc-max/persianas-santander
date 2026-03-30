@@ -1,227 +1,244 @@
 import { jsPDF } from "jspdf"
 import autoTable from "jspdf-autotable"
 
-const RED    = [180, 20, 25]
-const RED_BG = [253, 242, 242]
-const DARK   = [30, 30, 30]
-const MID    = [80, 80, 80]
-const LIGHT  = [150, 150, 150]
-const GRAY_BG= [248, 248, 248]
-const WHITE  = [255, 255, 255]
-const GREEN  = [22, 163, 74]
-const AMBER  = [180, 120, 0]
+// ── CONSTANTES DE DISEÑO ──────────────────────────────────────────────────
+const COLORS = {
+  red:       [180, 20, 25],
+  redBg:     [253, 242, 242],
+  dark:      [30, 30, 30],
+  mid:       [80, 80, 80],
+  light:     [150, 150, 150],
+  grayBg:    [248, 248, 248],
+  white:     [255, 255, 255],
+  green:     [22, 163, 74],
+  greenBg:   [240, 253, 244],
+  amber:     [180, 120, 0],
+  amberBg:   [255, 251, 235],
+  border:    [220, 220, 220]
+}
 
-export function generateInvoicePDF(invoice, order, empresa = null) {
-  const doc  = new jsPDF()
-  const W    = doc.internal.pageSize.width
-  const H    = doc.internal.pageSize.height
+// ── FORMATTERS & HELPERS ──────────────────────────────────────────────────
+const formatCurrency = (amount) => 
+  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(Number(amount) || 0)
+
+const formatDate = (dateString) => 
+  new Intl.DateTimeFormat('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(dateString))
+
+const loadImage = (src) => new Promise((resolve) => {
+  const img = new Image()
+  img.onload = () => resolve(img)
+  img.onerror = () => resolve(null)
+  img.src = src
+})
+
+export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
+  const doc = new jsPDF()
+  const W = doc.internal.pageSize.width
+  const H = doc.internal.pageSize.height
   const isPaid = invoice.payment_status === 'paid'
 
-  const img = new Image()
-  img.src   = "/persianassantanderlogo.png"
+  const logoImg = await loadImage("/persianassantanderlogo.png")
 
-  const render = () => {
+  // ── HEADER ────────────────────────────────────────────────────────────
+  doc.setFillColor(...COLORS.red)
+  doc.rect(0, 0, W, 28, "F")
 
-    // ── BANDA SUPERIOR ────────────────────────────────────────────────────
-    doc.setFillColor(...RED)
-    doc.rect(0, 0, W, 28, "F")
+  doc.setTextColor(...COLORS.white)
+  doc.setFontSize(18)
+  doc.setFont("helvetica", "bold")
+  doc.text("FACTURA", 14, 18)
 
-    doc.setTextColor(...WHITE)
-    doc.setFontSize(18)
-    doc.setFont("helvetica", "bold")
-    doc.text("FACTURA", 14, 18)
+  doc.setFontSize(9)
+  doc.setFont("helvetica", "normal")
+  doc.text(`Nº ${invoice.invoice_number}`, W - 14, 13, { align: "right" })
+  doc.text(`Fecha: ${formatDate(invoice.created_at)}`, W - 14, 21, { align: "right" })
 
-    doc.setFontSize(9)
-    doc.setFont("helvetica", "normal")
-    doc.text(`Nº ${invoice.invoice_number}`, W - 14, 13, { align: "right" })
-    doc.text(`Fecha: ${new Date(invoice.created_at).toLocaleDateString("es-ES")}`, W - 14, 21, { align: "right" })
+  if (logoImg && logoImg.naturalWidth > 0) {
+    doc.setFillColor(...COLORS.white)
+    doc.roundedRect(W - 54, 2, 40, 24, 2, 2, "F")
+    try { doc.addImage(logoImg, "PNG", W - 53, 3, 38, 22) } catch (e) {}
+  }
 
-    // Logo
-    if (img?.complete && img.naturalWidth > 0) {
-      doc.setFillColor(...WHITE)
-      doc.roundedRect(W - 54, 2, 40, 24, 2, 2, "F")
-      try { doc.addImage(img, "PNG", W - 53, 3, 38, 22) } catch (e) {}
-    }
+  doc.setFillColor(...COLORS.redBg)
+  doc.rect(0, 28, W, 3, "F")
 
-    doc.setFillColor(...RED_BG)
-    doc.rect(0, 28, W, 3, "F")
+  // ── BADGE ESTADO PAGO (SIN EMOJIS Y MÁS ANCHO) ────────────────────────
+  const badgeColor = isPaid ? COLORS.green : COLORS.amber
+  const badgeText  = isPaid ? "PAGADA" : "PENDIENTE DE PAGO"
+  
+  doc.setFillColor(...badgeColor)
+  doc.roundedRect(14, 36, 55, 9, 2, 2, "F") // Ancho aumentado a 55
+  doc.setTextColor(...COLORS.white)
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "bold")
+  doc.text(badgeText, 41.5, 42, { align: "center" }) // Centro calculado: 14 + (55/2)
 
-    // ── BADGE ESTADO PAGO ─────────────────────────────────────────────────
-    const badgeColor = isPaid ? GREEN : AMBER
-    doc.setFillColor(...badgeColor)
-    doc.roundedRect(14, 36, 50, 10, 2, 2, "F")
-    doc.setTextColor(...WHITE)
-    doc.setFontSize(8)
-    doc.setFont("helvetica", "bold")
-    doc.text(isPaid ? "✓  PAGADA" : "⏳  PENDIENTE DE PAGO", 39, 42.5, { align: "center" })
+  let y = 54
 
-    let y = 54
+  // ── EMISOR / CLIENTE ──────────────────────────────────────────────────
+  const colW = (W - 34) / 2
 
-    // ── BLOQUE DOS COLUMNAS: EMISOR / CLIENTE ─────────────────────────────
-    const colW = (W - 34) / 2
+  doc.setFillColor(...COLORS.grayBg)
+  doc.roundedRect(14, y, colW, 52, 3, 3, "F")
+  doc.setTextColor(...COLORS.red)
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "bold")
+  doc.text("EMISOR", 20, y + 8)
 
-    // Emisor
-    doc.setFillColor(...GRAY_BG)
-    doc.roundedRect(14, y, colW, 52, 3, 3, "F")
+  doc.setTextColor(...COLORS.dark)
+  doc.setFontSize(10)
+  doc.text("Persianas Santander S.L.", 20, y + 16)
 
-    doc.setTextColor(...RED)
-    doc.setFontSize(8)
-    doc.setFont("helvetica", "bold")
-    doc.text("EMISOR", 20, y + 8)
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(8.5)
+  doc.setTextColor(...COLORS.mid)
+  const emisorLines = [
+    "NIF: B00000000",
+    "Pol. Industrial Nueva Montaña",
+    "39011 Santander, Cantabria",
+    "942 00 00 00",
+    "info@persianassantander.com",
+  ]
+  emisorLines.forEach((l, i) => doc.text(l, 20, y + 23 + i * 6))
 
-    doc.setTextColor(...DARK)
+  const cx = 14 + colW + 6
+  doc.setFillColor(...COLORS.grayBg)
+  doc.roundedRect(cx, y, colW, 52, 3, 3, "F")
+  doc.setTextColor(...COLORS.red)
+  doc.setFontSize(8)
+  doc.setFont("helvetica", "bold")
+  doc.text("CLIENTE", cx + 6, y + 8)
+
+  doc.setTextColor(...COLORS.dark)
+  if (empresa) {
     doc.setFontSize(10)
-    doc.setFont("helvetica", "bold")
-    doc.text("Persianas Santander S.L.", 20, y + 16)
-
+    doc.text(empresa.razon_social || "—", cx + 6, y + 16)
     doc.setFont("helvetica", "normal")
     doc.setFontSize(8.5)
-    doc.setTextColor(...MID)
-    const emisorLines = [
-      "NIF: B00000000",
-      "Pol. Industrial Nueva Montaña",
-      "39011 Santander, Cantabria",
-      "942 00 00 00",
-      "info@persianassantander.com",
+    doc.setTextColor(...COLORS.mid)
+    
+    const ubicacion = [empresa.codigo_postal, empresa.ciudad, empresa.provincia].filter(Boolean).join(" ")
+    const clienteLines = [
+      `CIF/NIF: ${empresa.cif_nif || "—"}`,
+      empresa.direccion_fiscal || "—",
+      ubicacion || "—",
+      empresa.telefono || "—",
+      empresa.email_facturacion || "—",
     ]
-    emisorLines.forEach((l, i) => doc.text(l, 20, y + 23 + i * 6))
+    clienteLines.forEach((l, i) => doc.text(l, cx + 6, y + 23 + i * 6))
+  } else {
+    doc.setFontSize(9.5)
+    doc.text(order?.profiles?.email || order?.address || "—", cx + 6, y + 16)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8.5)
+    doc.setTextColor(...COLORS.mid)
+    if (order?.address) doc.text(order.address, cx + 6, y + 23)
+    if (order?.phone)   doc.text(order.phone,   cx + 6, y + 30)
+  }
 
-    // Cliente / Empresa
-    const cx = 14 + colW + 6
-    doc.setFillColor(...GRAY_BG)
-    doc.roundedRect(cx, y, colW, 52, 3, 3, "F")
+  y += 60
 
-    doc.setTextColor(...RED)
-    doc.setFontSize(8)
-    doc.setFont("helvetica", "bold")
-    doc.text("CLIENTE", cx + 6, y + 8)
-
-    if (empresa) {
-      doc.setTextColor(...DARK)
-      doc.setFontSize(10)
-      doc.setFont("helvetica", "bold")
-      doc.text(empresa.razon_social || "—", cx + 6, y + 16)
-      doc.setFont("helvetica", "normal")
-      doc.setFontSize(8.5)
-      doc.setTextColor(...MID)
-      const clienteLines = [
-        `CIF/NIF: ${empresa.cif_nif || "—"}`,
-        empresa.direccion_fiscal || "—",
-        `${empresa.codigo_postal || ""} ${empresa.ciudad || ""}, ${empresa.provincia || ""}`.trim(),
-        empresa.telefono || "—",
-        empresa.email_facturacion || "—",
-      ]
-      clienteLines.forEach((l, i) => doc.text(l, cx + 6, y + 23 + i * 6))
-    } else {
-      doc.setTextColor(...DARK)
-      doc.setFontSize(9.5)
-      doc.setFont("helvetica", "bold")
-      doc.text(order?.profiles?.email || order?.address || "—", cx + 6, y + 16)
-      doc.setFont("helvetica", "normal")
-      doc.setFontSize(8.5)
-      doc.setTextColor(...MID)
-      if (order?.address) doc.text(order.address, cx + 6, y + 23)
-      if (order?.phone)   doc.text(order.phone,   cx + 6, y + 30)
-    }
-
-    y += 60
-
-    // ── TABLA PRODUCTOS ───────────────────────────────────────────────────
-    const items = order?.items ?? invoice.items ?? []
-    autoTable(doc, {
-      startY: y,
-      head: [['Descripción', 'Medidas', 'Mecanismo', 'Colores', 'Importe']],
-      body: items.length > 0 ? items.map(i => [
+  // ── TABLA PRODUCTOS ───────────────────────────────────────────────────
+  const items = order?.items ?? invoice?.items ?? []
+  
+  const tableData = items.length > 0 
+    ? items.map(i => [
         `Persiana ${i.blind_type === 'blocking' ? 'bloqueante' : 'estándar'}${(i.quantity ?? 1) > 1 ? ` ×${i.quantity}` : ''}`,
-        `${i.width}×${i.height} mm`,
+        `${i.width ?? '-'}×${i.height ?? '-'} mm`,
         i.mechanism ?? '—',
         `Caja: ${i.box_color_name ?? '—'}\nLamas: ${i.slat_color_name ?? '—'}`,
-        `${Number(i.estimated_price * (i.quantity ?? 1)).toFixed(2)} €`,
-      ]) : [['Sin detalle de productos', '', '', '', `${Number(invoice.total_with_iva).toFixed(2)} €`]],
-      headStyles: {
-        fillColor:   DARK,
-        textColor:   WHITE,
-        fontStyle:   'bold',
-        fontSize:    8.5,
-        cellPadding: 4,
-      },
-      bodyStyles:            { fontSize: 8.5, cellPadding: 4, textColor: DARK },
-      alternateRowStyles:    { fillColor: GRAY_BG },
-      columnStyles: {
-        0: { cellWidth: 58 },
-        1: { cellWidth: 28, halign: 'center' },
-        2: { cellWidth: 24, halign: 'center' },
-        3: { cellWidth: 42 },
-        4: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
-      },
-      margin: { left: 14, right: 14 },
-    })
+        formatCurrency(i.estimated_price * (i.quantity ?? 1))
+      ]) 
+    : [['Sin detalle de productos', '', '', '', formatCurrency(invoice.total_with_iva)]]
 
-    y = doc.lastAutoTable.finalY + 6
+  autoTable(doc, {
+    startY: y,
+    head: [['Descripción', 'Medidas', 'Mecanismo', 'Colores', 'Importe']],
+    body: tableData,
+    headStyles: { fillColor: COLORS.dark, textColor: COLORS.white, fontStyle: 'bold', fontSize: 8.5, cellPadding: 4 },
+    bodyStyles: { fontSize: 8.5, cellPadding: 4, textColor: COLORS.dark },
+    alternateRowStyles: { fillColor: COLORS.grayBg },
+    columnStyles: {
+      0: { cellWidth: 58 },
+      1: { cellWidth: 28, halign: 'center' },
+      2: { cellWidth: 24, halign: 'center' },
+      3: { cellWidth: 42 },
+      4: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
+    },
+    margin: { left: 14, right: 14 },
+  })
 
-    // ── TOTALES ───────────────────────────────────────────────────────────
-    const totalNoIva = Number(invoice.total_without_iva || 0)
-    const iva        = Number(invoice.iva || 0)
-    const total      = Number(invoice.total_with_iva || 0)
+  y = doc.lastAutoTable.finalY + 8
 
-    // Caja totales alineada a la derecha
-    const boxW = 80, boxX = W - 14 - boxW
-    doc.setFillColor(...GRAY_BG)
-    doc.roundedRect(boxX, y, boxW, 34, 3, 3, "F")
+  if (y + 60 > H - 20) {
+    doc.addPage()
+    y = 20
+  }
 
-    doc.setFont("helvetica", "normal")
-    doc.setFontSize(9)
-    doc.setTextColor(...MID)
-    doc.text("Base imponible",  boxX + 6, y + 9)
-    doc.text(`${totalNoIva.toFixed(2)} €`, boxX + boxW - 6, y + 9,  { align: "right" })
-    doc.text("IVA (21%)",       boxX + 6, y + 17)
-    doc.text(`${iva.toFixed(2)} €`,        boxX + boxW - 6, y + 17, { align: "right" })
+  // ── TOTALES ───────────────────────────────────────────────────────────
+  const totalNoIva = Number(invoice.total_without_iva || 0)
+  const iva        = Number(invoice.iva || 0)
+  const total      = Number(invoice.total_with_iva || 0)
 
-    doc.setDrawColor(220, 220, 220)
-    doc.setLineWidth(0.3)
-    doc.line(boxX + 6, y + 21, boxX + boxW - 6, y + 21)
+  const boxW = 80
+  const boxX = W - 14 - boxW
+  
+  doc.setFillColor(...COLORS.grayBg)
+  doc.roundedRect(boxX, y, boxW, 34, 3, 3, "F")
 
-    doc.setFillColor(...RED)
-    doc.roundedRect(boxX, y + 23, boxW, 11, 2, 2, "F")
-    doc.setTextColor(...WHITE)
-    doc.setFontSize(11)
-    doc.setFont("helvetica", "bold")
-    doc.text(`TOTAL  ${total.toFixed(2)} €`, boxX + boxW / 2, y + 30.5, { align: "center" })
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.setTextColor(...COLORS.mid)
+  doc.text("Base imponible",  boxX + 6, y + 9)
+  doc.text(formatCurrency(totalNoIva), boxX + boxW - 6, y + 9,  { align: "right" })
+  doc.text("IVA (21%)",       boxX + 6, y + 17)
+  doc.text(formatCurrency(iva),        boxX + boxW - 6, y + 17, { align: "right" })
 
-    y += 44
+  doc.setDrawColor(...COLORS.border)
+  doc.setLineWidth(0.3)
+  doc.line(boxX + 6, y + 21, boxX + boxW - 6, y + 21)
 
-    // ── NOTA PAGO ─────────────────────────────────────────────────────────
-    if (!isPaid) {
-      doc.setFillColor(255, 251, 235)
-      doc.roundedRect(14, y, W - 28, 14, 3, 3, "F")
-      doc.setTextColor(...AMBER)
-      doc.setFontSize(8.5)
-      doc.setFont("helvetica", "bold")
-      doc.text("⏳  Pendiente de pago — Por favor realiza la transferencia a la cuenta indicada por la empresa.", 20, y + 9)
-    } else {
-      doc.setFillColor(240, 253, 244)
-      doc.roundedRect(14, y, W - 28, 14, 3, 3, "F")
-      doc.setTextColor(...GREEN)
-      doc.setFontSize(8.5)
-      doc.setFont("helvetica", "bold")
-      doc.text("✓  Pago recibido — Gracias por confiar en Persianas Santander.", 20, y + 9)
-    }
+  doc.setFillColor(...COLORS.red)
+  doc.roundedRect(boxX, y + 23, boxW, 11, 2, 2, "F")
+  doc.setTextColor(...COLORS.white)
+  doc.setFontSize(11)
+  doc.setFont("helvetica", "bold")
+  doc.text(`TOTAL  ${formatCurrency(total)}`, boxX + boxW / 2, y + 30.5, { align: "center" })
 
-    // ── FOOTER ────────────────────────────────────────────────────────────
-    doc.setFillColor(...GRAY_BG)
+  // ── NOTA PAGO (CORREGIDA Y CON TEXT WRAP) ─────────────────────────────
+  const noteY = y + 8 
+  const noteW = W - 34 - boxW // Ancho dinámico para no pisar la caja de totales
+  
+  doc.setFillColor(...(isPaid ? COLORS.greenBg : COLORS.amberBg))
+  doc.roundedRect(14, noteY, noteW, 16, 3, 3, "F") // Alto aumentado ligeramente
+  
+  doc.setTextColor(...(isPaid ? COLORS.green : COLORS.amber))
+  doc.setFontSize(8.5)
+  doc.setFont("helvetica", "bold")
+  
+  const noteText = isPaid 
+    ? "Pago recibido. Gracias por confiar en nosotros." 
+    : "Pendiente de pago. Por favor realiza la transferencia a la cuenta indicada por la empresa."
+  
+  // Usamos maxWidth para que salte de línea si es muy largo
+  doc.text(noteText, 18, noteY + 7, { maxWidth: noteW - 8 })
+
+  // ── FOOTER ────────────────────────────────────────────────────────────
+  const pageCount = doc.internal.getNumberOfPages()
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i)
+    doc.setFillColor(...COLORS.grayBg)
     doc.rect(0, H - 16, W, 16, "F")
-    doc.setDrawColor(220, 220, 220)
+    doc.setDrawColor(...COLORS.border)
     doc.setLineWidth(0.3)
     doc.line(0, H - 16, W, H - 16)
-    doc.setTextColor(...LIGHT)
+    
+    doc.setTextColor(...COLORS.light)
     doc.setFontSize(8)
     doc.setFont("helvetica", "normal")
     doc.text("Persianas Santander S.L.  ·  Polígono Industrial Nueva Montaña, Santander", W / 2, H - 9,  { align: "center" })
     doc.text("942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com",  W / 2, H - 4, { align: "center" })
-
-    doc.save(`Factura_${invoice.invoice_number}.pdf`)
   }
 
-  if (img.complete && img.naturalWidth > 0) { render() }
-  else { img.onload = render; img.onerror = render }
+  doc.save(`Factura_${invoice.invoice_number}.pdf`)
 }
