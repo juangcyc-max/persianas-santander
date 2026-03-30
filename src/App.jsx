@@ -15,6 +15,7 @@ import ProfessionalDashboard from './pages/ProfessionalDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import Cart from './pages/Cart'
 import NotFound from './pages/NotFound'
+import { ProtectedRoute, AdminRoute, ProfessionalRoute } from './shared/ProtectedRoute'
 import { PoliticaPrivacidad, PoliticaCookies, TerminosCondiciones } from './pages/LegalPages'
 import { ForgotPassword, ResetPassword } from './pages/PasswordPages'
 
@@ -70,8 +71,8 @@ function App() {
         <ToastProvider>
           <CartProvider>
           <Routes>
-            <Route path="/panel-profesional" element={<ProfessionalDashboard />} />
-            <Route path="/admin"             element={<AdminDashboard />} />
+            <Route path="/panel-profesional" element={<ProfessionalRoute><ProfessionalDashboard /></ProfessionalRoute>} />
+            <Route path="/admin"             element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/inicio"            element={<SmartRedirect />} />
             <Route path="/*" element={
               <div className="min-h-screen bg-gray-50 w-full">
@@ -82,9 +83,9 @@ function App() {
                     <Route path="/login"               element={<Login />} />
                     <Route path="/registro"            element={<Register />} />
                     <Route path="/configurador"        element={<Configurator />} />
-                    <Route path="/mis-configuraciones" element={<MisConfiguraciones />} />
-                  <Route path="/mis-pedidos"         element={<MisPedidos />} />
-                    <Route path="/cesta"               element={<Cart />} />
+                    <Route path="/mis-configuraciones" element={<ProtectedRoute><MisConfiguraciones /></ProtectedRoute>} />
+                    <Route path="/mis-pedidos"         element={<ProtectedRoute><MisPedidos /></ProtectedRoute>} />
+                    <Route path="/cesta"               element={<ProtectedRoute><Cart /></ProtectedRoute>} />
                     <Route path="/privacidad"          element={<PoliticaPrivacidad />} />
                     <Route path="/cookies"             element={<PoliticaCookies />} />
                     <Route path="/terminos"            element={<TerminosCondiciones />} />
