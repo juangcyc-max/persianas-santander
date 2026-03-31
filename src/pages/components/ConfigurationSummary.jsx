@@ -4,7 +4,7 @@ function ConfigurationSummary({
   boxColor, slatColor,
   winchesterColors,
 }) {
-  const getColorName = (hex) => winchesterColors.find(c => c.hex === hex)?.name ?? hex
+  const getColor = (hex) => winchesterColors.find(c => c.hex === hex) ?? { name: hex, gama: null }
 
   const labels = {
     blindType:  { normal: 'Estándar',     blocking: 'Bloqueante' },
@@ -80,15 +80,20 @@ function ConfigurationSummary({
           </div>
           <span className="text-sm text-gray-500 flex-1">Colores</span>
           <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-md px-2 py-1">
-              <div className="w-3 h-3 rounded-sm border border-gray-200" style={{ backgroundColor: boxColor }} />
-              <span className="text-xs text-gray-600 max-w-[60px] truncate">{getColorName(boxColor)}</span>
-            </div>
-            <span className="text-gray-300 text-xs">/</span>
-            <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-md px-2 py-1">
-              <div className="w-3 h-3 rounded-sm border border-gray-200" style={{ backgroundColor: slatColor }} />
-              <span className="text-xs text-gray-600 max-w-[60px] truncate">{getColorName(slatColor)}</span>
-            </div>
+            {[{ hex: boxColor, label: 'Caj.' }, { hex: slatColor, label: 'Lam.' }].map(({ hex, label }) => {
+              const c = getColor(hex)
+              return (
+                <div key={label} className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-md px-2 py-1">
+                  <div className="w-3 h-3 rounded-sm border border-gray-200 flex-shrink-0" style={{ backgroundColor: hex }} />
+                  <span className="text-xs font-medium text-gray-700 max-w-[55px] truncate">{c.name}</span>
+                  {c.gama && (
+                    <span className="text-xs text-gray-400 border-l border-gray-200 pl-1 flex-shrink-0">
+                      {c.gama.replace('Grupo ', 'G').replace('Base', 'B')}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>

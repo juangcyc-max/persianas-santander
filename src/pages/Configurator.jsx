@@ -39,24 +39,28 @@ function Configurator() {
   const [showCustomerForm, setShowCustomerForm] = useState(false)
 
   const winchesterColors = [
-    { name: '3005',          hex: '#5E2028' }, // Rojo vino
-    { name: 'Bronce',        hex: '#828559' }, // Bronce oliva
-    { name: '8017',          hex: '#44221A' }, // Marrón chocolate
-    { name: '6009',          hex: '#27352A' }, // Verde abeto
-    { name: 'Negro',         hex: '#1A1A1A' }, // Negro
-    { name: 'Winchester',    hex: '#C49A6C', wood: true }, // Madera roble claro
-    { name: 'Madera Oscuro', hex: '#5D3A1A', wood: true }, // Madera oscura
-    { name: 'Madera 176',    hex: '#A0724A', wood: true }, // Madera media
-    { name: '7011',          hex: '#52595D' }, // Gris hierro
-    { name: 'Natural',       hex: '#E0E0DC' }, // Natural / aluminio
-    { name: '6005',          hex: '#0F4336' }, // Verde musgo
-    { name: '7016',          hex: '#293133' }, // Gris antracita
-    { name: 'Marfil',        hex: '#F2ECCA' }, // Marfil
-    { name: 'Gris Sable',    hex: '#7E8B6E' }, // Gris sable
-    { name: '8014',          hex: '#4E3829' }, // Marrón sepia
-    { name: 'Madera 120',    hex: '#C4A06A', wood: true }, // Madera clara
-    { name: 'Inox',          hex: '#C8C8C8' }, // Acero inoxidable
-    { name: 'Gris Moteado',  hex: '#7A7A7A' }, // Gris moteado
+    // ── GRUPO BASE ────────────────────────────────────────────────────────
+    { name: 'Marfil',        hex: '#F2ECCA', gama: 'Grupo Base' },
+    // ── GRUPO 1 ───────────────────────────────────────────────────────────
+    { name: '3005',          hex: '#5E2028', gama: 'Grupo 1' },
+    { name: '6005',          hex: '#0F4336', gama: 'Grupo 1' },
+    { name: '6009',          hex: '#27352A', gama: 'Grupo 1' },
+    { name: '7011',          hex: '#52595D', gama: 'Grupo 1' },
+    { name: '8014',          hex: '#4E3829', gama: 'Grupo 1' },
+    { name: 'Natural',       hex: '#E8E8E4', gama: 'Grupo 1' },
+    { name: 'Negro',         hex: '#1A1A1A', gama: 'Grupo 1' },
+    // ── GRUPO 2 ───────────────────────────────────────────────────────────
+    { name: 'Bronce',        hex: '#828559', gama: 'Grupo 2' },
+    { name: '7016',          hex: '#2F3538', gama: 'Grupo 2' },
+    { name: '8017',          hex: '#44221A', gama: 'Grupo 2' },
+    { name: 'Gris Sable',    hex: '#8A8C7E', gama: 'Grupo 2' },
+    // ── GRUPO 3 ───────────────────────────────────────────────────────────
+    { name: 'Winchester',    hex: '#C49A6C', gama: 'Grupo 3', wood: true },
+    { name: 'Madera 120',    hex: '#C4A06A', gama: 'Grupo 3', wood: true },
+    { name: 'Madera 176',    hex: '#A0724A', gama: 'Grupo 3', wood: true },
+    { name: 'Madera Oscuro', hex: '#5D3A1A', gama: 'Grupo 3', wood: true },
+    { name: 'Inox',          hex: '#C8C8C8', gama: 'Grupo 3' },
+    { name: 'Gris Moteado',  hex: '#7A7A7A', gama: 'Grupo 3' },
   ]
 
   const calculatePrice = () => {
@@ -77,7 +81,9 @@ function Configurator() {
     blindType, mechanism, orientation, motorType, slatType,
     width, height, depth, boxColor, slatColor,
     boxColorName:  winchesterColors.find(c => c.hex === boxColor)?.name,
+    boxColorGama:  winchesterColors.find(c => c.hex === boxColor)?.gama,
     slatColorName: winchesterColors.find(c => c.hex === slatColor)?.name,
+    slatColorGama: winchesterColors.find(c => c.hex === slatColor)?.gama,
     estimatedPrice: calculatePrice(),
     customerData,
   }
