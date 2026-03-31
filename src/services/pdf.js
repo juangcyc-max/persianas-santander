@@ -83,12 +83,12 @@ function addFooter(doc) {
 }
 
 // ── GENERADOR PRINCIPAL ───────────────────────────────────────────────────
-export async function generateBudgetPDF(customerData = {}, configuration = {}) {
+export async function generateBudgetPDF(customerData = {}, configuration = {}, { skipSave = false, budgetNumberOverride = null } = {}) {
   try {
     const doc = new jsPDF()
     const W = doc.internal.pageSize.width
     const H = doc.internal.pageSize.height
-    const budgetNumber = `PS-${Date.now().toString().slice(-6)}`
+    const budgetNumber = budgetNumberOverride ?? `PS-${Date.now().toString().slice(-6)}`
     const today = formatDate(new Date())
 
     const isPro = configuration.userType === 'professional'
@@ -262,34 +262,36 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}) {
     }
 
     // ── GUARDAR EN SUPABASE ───────────────────────────────────────────────
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        await supabase.from('budgets').insert({
-          user_id:           user.id,
-          budget_number:     budgetNumber,
-          customer_name:     customerData.name || null,
-          customer_phone:    customerData.phone || null,
-          customer_email:    customerData.email || null,
-          customer_address:  customerData.address || null,
-          blind_type:        configuration.blindType,
-          mechanism:         configuration.mechanism,
-          width:             configuration.width,
-          height:            configuration.height,
-          depth:             configuration.depth,
-          box_color_name:    configuration.boxColorName,
-          slat_color_name:   configuration.slatColorName,
-          price_without_iva: baseImponible,
-          total_price:       total,
-          iva:               iva,
-          total_with_iva:    total,
-          user_type:         user.user_metadata?.user_type ?? 'public',
-          customer_data:     customerData,
-          status:            'pending',
-        })
+    if (!skipSave) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          await supabase.from('budgets').insert({
+            user_id:           user.id,
+            budget_number:     budgetNumber,
+            customer_name:     customerData.name || null,
+            customer_phone:    customerData.phone || null,
+            customer_email:    customerData.email || null,
+            customer_address:  customerData.address || null,
+            blind_type:        configuration.blindType,
+            mechanism:         configuration.mechanism,
+            width:             configuration.width,
+            height:            configuration.height,
+            depth:             configuration.depth,
+            box_color_name:    configuration.boxColorName,
+            slat_color_name:   configuration.slatColorName,
+            price_without_iva: baseImponible,
+            total_price:       total,
+            iva:               iva,
+            total_with_iva:    total,
+            user_type:         user.user_metadata?.user_type ?? 'public',
+            customer_data:     customerData,
+            status:            'pending',
+          })
+        }
+      } catch (dbErr) {
+        console.error('Fallo al guardar en Supabase:', dbErr)
       }
-    } catch (dbErr) {
-      console.error('Fallo al guardar en Supabase:', dbErr)
     }
 
     // ── DESCARGA ──────────────────────────────────────────────────────────
@@ -299,4 +301,34 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}) {
   } catch (error) {
     console.error("Error generando PDF:", error)
   }
+}
+
+// Regenera y descarga el PDF de un presupuesto ya guardado en Supabase
+export async function redownloadBudgetPDF(budget) {
+  const customerData = budget.customer_data ?? {
+    name:    budget.customer_name,
+    phone:   budget.customer_phone,
+    email:   budget.customer_email,
+    address: budget.customer_address,
+  }
+  const configuration = {
+    blindType:     budget.blind_type,
+    mechanism:     budget.mechanism,
+    motorType:     budget.motor_type,
+    slatType:      budget.slat_type,
+    orientation:   budget.orientation,
+    width:         budget.width,
+    height:        budget.height,
+    depth:         budget.depth,
+    boxColorName:  budget.box_color_name,
+    boxColorGama:  budget.box_color_gama,
+    slatColorName: budget.slat_color_name,
+    slatColorGama: budget.slat_color_gama,
+    estimatedPrice: budget.total_with_iva,
+    userType:      budget.user_type,
+  }
+  return generateBudgetPDF(customerData, configuration, {
+    skipSave: true,
+    budgetNumberOverride: budget.budget_number,
+  })
 }
