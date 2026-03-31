@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { generateInvoicePDF } from '../services/invoicePDF'
+import { getProfessionalDiscount, setProfessionalDiscount } from '../services/settings'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
@@ -693,6 +694,9 @@ export default function AdminDashboard() {
           <button onClick={loadOrders} className="ml-2 text-red-600 hover:underline">Actualizar</button>
         </p>
 
+        {/* ── DESCUENTO PROFESIONAL ── */}
+        <AdminDiscountSection />
+
         {/* ── ANALYTICS ── */}
         <AdminAnalyticsSection />
 
@@ -853,6 +857,59 @@ function AdminInvoicesSection() {
             </table>
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── DESCUENTO PROFESIONAL ────────────────────────────────────────────────
+function AdminDiscountSection() {
+  const [discount, setDiscount] = useState(20)
+  const [input,    setInput]    = useState('20')
+  const [saving,   setSaving]   = useState(false)
+  const [saved,    setSaved]    = useState(false)
+
+  useEffect(() => {
+    getProfessionalDiscount().then(d => { setDiscount(d); setInput(String(d)) })
+  }, [])
+
+  async function handleSave() {
+    const val = parseFloat(input)
+    if (isNaN(val) || val < 0 || val > 100) return
+    setSaving(true)
+    const ok = await setProfessionalDiscount(val)
+    setSaving(false)
+    if (ok) {
+      setDiscount(val)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 p-5">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex-1">
+          <p className="text-sm font-bold text-gray-900">Descuento para profesionales</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Se aplica automáticamente en el configurador, presupuestos y cesta. Actualmente: <span className="font-semibold text-red-700">{discount}%</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input
+              type="number" min="0" max="100" step="1"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              className="w-24 px-3 py-2 pr-7 rounded-xl border border-gray-300 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-red-200"
+            />
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-gray-400">%</span>
+          </div>
+          <button onClick={handleSave} disabled={saving}
+            className="px-4 py-2 bg-red-700 hover:bg-red-800 text-white text-sm font-bold rounded-xl transition-colors disabled:opacity-60 min-w-[90px]">
+            {saving ? '…' : saved ? '✓ Guardado' : 'Guardar'}
+          </button>
+        </div>
       </div>
     </div>
   )

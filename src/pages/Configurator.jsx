@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
+import { getProfessionalDiscount } from '../services/settings'
 import BlindPreview from './components/BlindPreview'
 import BlindTypeSelector from './components/BlindTypeSelector'
 import MeasurementsForm from './components/MeasurementsForm'
@@ -18,10 +19,13 @@ function Configurator() {
   const [isProfessional, setIsProfessional] = useState(false)
   const [savedConfigId,  setSavedConfigId]  = useState(null) // ID de la config guardada
 
+  const [proDiscount, setProDiscount] = useState(20)
+
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setIsProfessional(user?.user_metadata?.user_type === 'professional')
     })
+    getProfessionalDiscount().then(setProDiscount)
   }, [])
 
   const [boxColor,   setBoxColor]   = useState('#F2ECCA')
@@ -74,7 +78,7 @@ function Configurator() {
     const base       = areaSqm * basePerSqm * mechMult * slatMult
     const depthCost  = d > 200 ? (d - 200) * 0.5 : 0
     const total      = (base + depthCost) * 1.21
-    return userType === 'professional' ? total * 0.8 : total
+    return userType === 'professional' ? total * (1 - proDiscount / 100) : total
   }
 
   const configuration = {
@@ -134,6 +138,7 @@ function Configurator() {
                   blindType={blindType}
                   mechanism={mechanism}
                   userType={userType}
+                  proDiscount={proDiscount}
                 />
               </div>
 
@@ -149,6 +154,7 @@ function Configurator() {
                 <SaveConfigurationButton
                   configuration={configuration}
                   onSuccess={handleSaveSuccess}
+                  proDiscount={proDiscount}
                 />
 
                 {/* 2. Añadir a la cesta — aparece solo cuando hay una config guardada */}

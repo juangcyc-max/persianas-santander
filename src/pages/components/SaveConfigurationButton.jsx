@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../services/supabase/client'
 
-function SaveConfigurationButton({ configuration, onSuccess }) {
+function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 }) {
   const [loading, setLoading] = useState(false)
   const [status,  setStatus]  = useState(null) // null | 'success' | 'error' | 'auth'
   const [message, setMessage] = useState('')
@@ -42,7 +42,7 @@ function SaveConfigurationButton({ configuration, onSuccess }) {
           box_color_name:       configuration.boxColorName,
           slat_color_name:      configuration.slatColorName,
           price_public:         basePrice,
-          price_professional:   basePrice * 0.8,
+          price_professional:   basePrice * (1 - proDiscount / 100),
           estimated_price:      configuration.estimatedPrice,
         }])
         .select()

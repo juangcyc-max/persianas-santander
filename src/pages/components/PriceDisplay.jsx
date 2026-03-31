@@ -1,12 +1,10 @@
 // PriceDisplay recibe el precio ya calculado desde Configurator (única fuente de verdad)
-function PriceDisplay({ estimatedPrice, userType, mechanism, blindType }) {
+function PriceDisplay({ estimatedPrice, userType, mechanism, blindType, proDiscount = 20 }) {
   const fmt = (n) =>
     new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(n)
 
-  // Recalcular subtotales para mostrar el desglose
-  // El estimatedPrice ya incluye IVA y descuento profesional
-  // Desglose visual: precio sin IVA, IVA, descuento si aplica
-  const priceBeforeDiscount = userType === 'professional' ? estimatedPrice / 0.8 : estimatedPrice
+  const mult                = 1 - proDiscount / 100
+  const priceBeforeDiscount = userType === 'professional' ? estimatedPrice / mult : estimatedPrice
   const priceWithoutIva     = priceBeforeDiscount / 1.21
   const iva                 = priceBeforeDiscount - priceWithoutIva
   const discount            = userType === 'professional' ? priceBeforeDiscount - estimatedPrice : 0
@@ -37,7 +35,7 @@ function PriceDisplay({ estimatedPrice, userType, mechanism, blindType }) {
         </div>
         {userType === 'professional' && (
           <div className="flex justify-between text-green-300 font-medium">
-            <span>Descuento profesional (−20%)</span>
+            <span>Descuento profesional (−{proDiscount}%)</span>
             <span>−{fmt(discount)}</span>
           </div>
         )}

@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
 import { sanitizeText, sanitizeNumber } from '../services/sanitize'
+import { getProfessionalDiscount } from '../services/settings'
 
 const HORAS = ['08:00','09:00','10:00','11:00','12:00','13:00','16:00','17:00','18:00','19:00']
 
@@ -67,6 +68,9 @@ export default function Cart() {
   const navigate = useNavigate()
   const { items, totalPrice, totalWithIva, removeFromCart, clearCart, user } = useCart()
   const isProfessional = user?.user_metadata?.user_type === 'professional'
+  const [proDiscount, setProDiscount] = useState(20)
+
+  useEffect(() => { getProfessionalDiscount().then(setProDiscount) }, [])
 
   const [step,     setStep]     = useState('cart')   // 'cart' | 'checkout' | 'success'
   const [loading,  setLoading]  = useState(false)
@@ -372,14 +376,14 @@ export default function Cart() {
                 </div>
                 {isProfessional && (
                   <div className="flex justify-between text-sm text-green-700">
-                    <span className="font-semibold">Descuento profesional (−20%)</span>
-                    <span className="font-semibold">−{fmt(totalWithIva * 0.2)}</span>
+                    <span className="font-semibold">Descuento profesional (−{proDiscount}%)</span>
+                    <span className="font-semibold">−{fmt(totalWithIva * (proDiscount / 100))}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-base pt-2 border-t border-gray-200">
                   <span>Total estimado</span>
                   <span className="text-red-700">
-                    {isProfessional ? fmt(totalWithIva * 0.8) : fmt(totalWithIva)}
+                    {isProfessional ? fmt(totalWithIva * (1 - proDiscount / 100)) : fmt(totalWithIva)}
                   </span>
                 </div>
                 <p className="text-xs text-gray-400">* Precio orientativo. El técnico confirmará el precio definitivo.</p>
