@@ -174,6 +174,11 @@ export default function ProfessionalDashboard() {
     setPresupuestos(prev => prev.filter(p => p.id !== id))
   }
 
+  async function handleDeleteConfig(id) {
+    await supabase.from('blind_configurations').delete().eq('id', id)
+    setConfiguraciones(prev => prev.filter(c => c.id !== id))
+  }
+
   async function handleLogout() {
     await supabase.auth.signOut()
     navigate('/')
@@ -306,7 +311,7 @@ export default function ProfessionalDashboard() {
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">Medidas</th>
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">Fecha</th>
                           <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Precio</th>
-                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Cesta</th>
+                          <th className="text-right px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Acciones</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
@@ -319,7 +324,18 @@ export default function ProfessionalDashboard() {
                             <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{c.width} × {c.height} mm</td>
                             <td className="px-5 py-3 text-gray-400 hidden lg:table-cell">{fmtDate(c.created_at)}</td>
                             <td className="px-5 py-3 text-right font-bold text-red-700">{fmt(c.estimated_price)}</td>
-                            <td className="px-5 py-3 text-right"><AddToCartFromDashboard configId={c.id} /></td>
+                            <td className="px-5 py-3 text-right">
+                              <div className="inline-flex items-center gap-2">
+                                <AddToCartFromDashboard configId={c.id} />
+                                <button onClick={() => handleDeleteConfig(c.id)}
+                                  className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
