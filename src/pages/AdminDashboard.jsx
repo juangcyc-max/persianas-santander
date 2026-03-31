@@ -432,7 +432,30 @@ export default function AdminDashboard() {
     if (!isAdmin) { setUnauthorized(true); setLoading(false); return }
 
     setUser(user)
+    await cleanupCancelledInvoices()
     await loadOrders()
+  }
+
+  async function cleanupCancelledInvoices() {
+    try {
+      // Obtener IDs de pedidos cancelados
+      const { data: cancelledOrders } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('status', 'cancelled')
+
+      if (!cancelledOrders?.length) return
+
+      const cancelledIds = cancelledOrders.map(o => o.id)
+
+      // Eliminar todas las facturas vinculadas a pedidos cancelados
+      await supabase
+        .from('invoices')
+        .delete()
+        .in('order_id', cancelledIds)
+    } catch (err) {
+      console.error('Error limpiando facturas canceladas:', err)
+    }
   }
 
   async function loadOrders() {
