@@ -868,19 +868,37 @@ function AdminAnalyticsSection() {
   async function loadStats() {
     setLoading(true)
     const [
-      { count: totalUsers },
-      { count: totalBudgets },
       { data: ordersData },
+      { data: budgetsData },
       { data: invoicesData },
+      { data: profilesData },
     ] = await Promise.all([
-      supabase.from('profiles').select('*', { count: 'exact', head: true }),
-      supabase.from('budgets').select('*',  { count: 'exact', head: true }),
-      supabase.from('orders').select('status, total_with_iva, user_type, created_at'),
+      supabase.from('orders').select('status, total_with_iva, user_type, user_id, created_at'),
+      supabase.from('budgets').select('user_id, user_type'),
       supabase.from('invoices').select('total_with_iva, payment_status'),
+      supabase.from('profiles').select('id, user_type, role'),
     ])
 
     const orders   = ordersData   ?? []
+    const budgets  = budgetsData  ?? []
     const invoices = invoicesData ?? []
+    const profiles = profilesData ?? []
+
+    // Contactos únicos: union de user_ids en orders + budgets
+    const contactIds = new Set([
+      ...orders.map(o => o.user_id).filter(Boolean),
+      ...budgets.map(b => b.user_id).filter(Boolean),
+    ])
+
+    // Desglose por tipo usando orders (fuente fiable) + profiles
+    const proIds  = new Set([
+      ...orders.filter(o => o.user_type === 'professional').map(o => o.user_id),
+      ...budgets.filter(b => b.user_type === 'professional').map(b => b.user_id),
+      ...profiles.filter(p => p.user_type === 'professional').map(p => p.id),
+    ])
+    const totalContacts  = contactIds.size
+    const proContacts    = [...contactIds].filter(id => proIds.has(id)).length
+    const partContacts   = totalContacts - proContacts
 
     const active     = orders.filter(o => o.status !== 'cancelled')
     const completed  = orders.filter(o => o.status === 'completed')
@@ -905,15 +923,15 @@ function AdminAnalyticsSection() {
     const maxOrders = Math.max(...byMonth.map(m => m.orders), 1)
 
     setStats({
-      totalUsers:      totalUsers  ?? 0,
-      totalBudgets:    totalBudgets ?? 0,
+      totalContacts, proContacts, partContacts,
+      totalBudgets:    budgets.length,
       totalOrders:     orders.length,
       completedOrders: completed.length,
       cancelledOrders: cancelled.length,
       proOrders:       orders.filter(o => o.user_type === 'professional').length,
       partOrders:      orders.filter(o => o.user_type !== 'professional').length,
       totalRev, paidRev, pendingRev,
-      conversion: totalBudgets > 0 ? ((orders.length / totalBudgets) * 100).toFixed(1) : '0.0',
+      conversion: budgets.length > 0 ? ((orders.length / budgets.length) * 100).toFixed(1) : '0.0',
       byMonth, maxOrders,
     })
     setLoading(false)
@@ -930,12 +948,12 @@ function AdminAnalyticsSection() {
   if (!stats) return null
 
   const kpis = [
-    { label: 'Contactos registrados', value: fmtN(stats.totalUsers),    sub: 'usuarios totales',          color: 'text-gray-900',  bg: 'bg-gray-50'   },
-    { label: 'Presupuestos generados',value: fmtN(stats.totalBudgets),  sub: 'desde el inicio',            color: 'text-blue-700',  bg: 'bg-blue-50'   },
-    { label: 'Pedidos realizados',    value: fmtN(stats.totalOrders),   sub: `${stats.cancelledOrders} cancelados`, color: 'text-amber-700', bg: 'bg-amber-50'  },
-    { label: 'Pedidos completados',   value: fmtN(stats.completedOrders),sub: 'instalaciones finalizadas', color: 'text-green-700', bg: 'bg-green-50'  },
-    { label: 'Tasa de conversión',    value: `${stats.conversion}%`,    sub: 'presupuesto → pedido',       color: 'text-purple-700',bg: 'bg-purple-50' },
-    { label: 'Facturación cobrada',   value: fmt(stats.paidRev),        sub: `${fmt(stats.pendingRev)} pendiente`, color: 'text-red-700', bg: 'bg-red-50' },
+    { label: 'Contactos activos',     value: fmtN(stats.totalContacts),  sub: `${stats.proContacts} pro · ${stats.partContacts} particular`, color: 'text-gray-900',  bg: 'bg-gray-50'   },
+    { label: 'Presupuestos generados',value: fmtN(stats.totalBudgets),   sub: 'desde el inicio',            color: 'text-blue-700',  bg: 'bg-blue-50'   },
+    { label: 'Pedidos realizados',    value: fmtN(stats.totalOrders),    sub: `${stats.cancelledOrders} cancelados`, color: 'text-amber-700', bg: 'bg-amber-50'  },
+    { label: 'Pedidos completados',   value: fmtN(stats.completedOrders),sub: 'instalaciones finalizadas',  color: 'text-green-700', bg: 'bg-green-50'  },
+    { label: 'Tasa de conversión',    value: `${stats.conversion}%`,     sub: 'presupuesto → pedido',       color: 'text-purple-700',bg: 'bg-purple-50' },
+    { label: 'Facturación cobrada',   value: fmt(stats.paidRev),         sub: `${fmt(stats.pendingRev)} pendiente`, color: 'text-red-700', bg: 'bg-red-50' },
   ]
 
   return (
