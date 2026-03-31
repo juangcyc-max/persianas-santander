@@ -134,9 +134,26 @@ function OrderModal({ order, onClose, onUpdate }) {
     }).eq('id', order.id)
     setSaving(false)
     if (!error) {
+      // Si se cancela el pedido, eliminar la factura asociada automáticamente
+      if (status === 'cancelled' && existingInvoice) {
+        await supabase.from('invoices').delete().eq('id', existingInvoice.id)
+        setExistingInvoice(null)
+      }
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
       onUpdate()
+    }
+  }
+
+  async function handleDeleteOrder() {
+    if (!window.confirm('¿Eliminar definitivamente este pedido cancelado? Esta acción no se puede deshacer.')) return
+    if (existingInvoice) {
+      await supabase.from('invoices').delete().eq('id', existingInvoice.id)
+    }
+    const { error } = await supabase.from('orders').delete().eq('id', order.id)
+    if (!error) {
+      onUpdate()
+      onClose()
     }
   }
 
@@ -275,6 +292,18 @@ function OrderModal({ order, onClose, onUpdate }) {
                 {saving && <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                 {saved ? '✓ Guardado' : saving ? 'Guardando...' : 'Guardar cambios'}
               </button>
+
+              {/* Eliminar pedido (solo cancelados) */}
+              {status === 'cancelled' && (
+                <button onClick={handleDeleteOrder}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-700 font-semibold text-sm rounded-xl transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Eliminar pedido
+                </button>
+              )}
 
               {/* Email al cliente */}
               <button onClick={handleSendEmail} disabled={sendingEmail}
@@ -442,6 +471,14 @@ export default function AdminDashboard() {
     }
   }
 
+  async function handleDeleteOrderDirect(order) {
+    if (!window.confirm(`¿Eliminar definitivamente el pedido #${order.id.slice(0,8).toUpperCase()}? Esta acción no se puede deshacer.`)) return
+    const { data: inv } = await supabase.from('invoices').select('id').eq('order_id', order.id).maybeSingle()
+    if (inv) await supabase.from('invoices').delete().eq('id', inv.id)
+    const { error } = await supabase.from('orders').delete().eq('id', order.id)
+    if (!error) loadOrders()
+  }
+
   const filtered = orders.filter(o => {
     const matchFilter = filter === 'all' || o.status === filter
     const matchSearch = !search ||
@@ -603,10 +640,22 @@ export default function AdminDashboard() {
                       <td className="px-4 py-3 font-bold text-gray-900 whitespace-nowrap">{fmt(order.total_with_iva)}</td>
                       <td className="px-4 py-3"><StatusBadge status={order.status} /></td>
                       <td className="px-4 py-3">
-                        <button onClick={() => setSelectedOrder(order)}
-                          className="text-xs font-semibold text-red-700 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
-                          Gestionar →
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => setSelectedOrder(order)}
+                            className="text-xs font-semibold text-red-700 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
+                            Gestionar →
+                          </button>
+                          {order.status === 'cancelled' && (
+                            <button onClick={() => handleDeleteOrderDirect(order)}
+                              title="Eliminar pedido cancelado"
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
