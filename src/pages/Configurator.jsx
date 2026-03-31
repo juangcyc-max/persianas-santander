@@ -44,9 +44,9 @@ function Configurator() {
     { name: '8017',          hex: '#44221A' }, // Marrón chocolate
     { name: '6009',          hex: '#27352A' }, // Verde abeto
     { name: 'Negro',         hex: '#1A1A1A' }, // Negro
-    { name: 'Winchester',    hex: '#C49A6C' }, // Madera roble claro
-    { name: 'Madera Oscuro', hex: '#5D3A1A' }, // Madera oscura
-    { name: 'Madera 176',    hex: '#A0724A' }, // Madera media
+    { name: 'Winchester',    hex: '#C49A6C', wood: true }, // Madera roble claro
+    { name: 'Madera Oscuro', hex: '#5D3A1A', wood: true }, // Madera oscura
+    { name: 'Madera 176',    hex: '#A0724A', wood: true }, // Madera media
     { name: '7011',          hex: '#52595D' }, // Gris hierro
     { name: 'Natural',       hex: '#E0E0DC' }, // Natural / aluminio
     { name: '6005',          hex: '#0F4336' }, // Verde musgo
@@ -54,7 +54,7 @@ function Configurator() {
     { name: 'Marfil',        hex: '#F2ECCA' }, // Marfil
     { name: 'Gris Sable',    hex: '#7E8B6E' }, // Gris sable
     { name: '8014',          hex: '#4E3829' }, // Marrón sepia
-    { name: 'Madera 120',    hex: '#C4A06A' }, // Madera clara
+    { name: 'Madera 120',    hex: '#C4A06A', wood: true }, // Madera clara
     { name: 'Inox',          hex: '#C8C8C8' }, // Acero inoxidable
     { name: 'Gris Moteado',  hex: '#7A7A7A' }, // Gris moteado
   ]

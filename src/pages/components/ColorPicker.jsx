@@ -1,5 +1,7 @@
 function ColorPicker({ label, selectedColor, onColorChange, colors }) {
-  const selectedName = colors.find(c => c.hex === selectedColor)?.name ?? '—'
+  const selectedColor_ = colors.find(c => c.hex === selectedColor)
+  const selectedName   = selectedColor_?.name ?? '—'
+  const selectedIsWood = selectedColor_?.wood ?? false
 
   const hexToLuma = (hex) => {
     try {
@@ -8,6 +10,27 @@ function ColorPicker({ label, selectedColor, onColorChange, colors }) {
       const b = parseInt(hex.slice(5,7),16)
       return (r*299 + g*587 + b*114) / 1000
     } catch { return 128 }
+  }
+
+  const woodGrain = (hex) => {
+    const r = parseInt(hex.slice(1,3),16)
+    const g = parseInt(hex.slice(3,5),16)
+    const b = parseInt(hex.slice(5,7),16)
+    const dark  = `rgb(${Math.max(0,r-35)},${Math.max(0,g-28)},${Math.max(0,b-20)})`
+    const mid   = `rgb(${Math.max(0,r-18)},${Math.max(0,g-14)},${Math.max(0,b-10)})`
+    const light = `rgb(${Math.min(255,r+20)},${Math.min(255,g+16)},${Math.min(255,b+10)})`
+    return `repeating-linear-gradient(
+      100deg,
+      ${hex} 0px,
+      ${mid}  1px,
+      ${hex}  3px,
+      ${light} 5px,
+      ${hex}  7px,
+      ${dark}  8px,
+      ${hex}  10px,
+      ${mid}  12px,
+      ${hex}  15px
+    )`
   }
 
   return (
@@ -19,7 +42,7 @@ function ColorPicker({ label, selectedColor, onColorChange, colors }) {
         <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-2.5 py-1.5">
           <div
             className="w-4 h-4 rounded border border-gray-200 shadow-sm flex-shrink-0"
-            style={{ backgroundColor: selectedColor }}
+            style={selectedIsWood ? { background: woodGrain(selectedColor) } : { backgroundColor: selectedColor }}
           />
           <span className="text-xs font-medium text-gray-600 max-w-[120px] truncate">
             {selectedName}
@@ -45,7 +68,7 @@ function ColorPicker({ label, selectedColor, onColorChange, colors }) {
                 }
                 ${isLight ? 'border border-gray-200' : ''}
               `}
-              style={{ backgroundColor: color.hex }}
+              style={color.wood ? { background: woodGrain(color.hex) } : { backgroundColor: color.hex }}
             >
               {isSelected && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-lg">
