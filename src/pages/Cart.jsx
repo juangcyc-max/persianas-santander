@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
 import { sanitizeText, sanitizeNumber } from '../services/sanitize'
-import { getProfessionalDiscount } from '../services/settings'
+import { getProfessionalDiscount, getProfessionalDiscountForUser } from '../services/settings'
 
 const HORAS = ['08:00','09:00','10:00','11:00','12:00','13:00','16:00','17:00','18:00','19:00']
 
@@ -70,7 +70,13 @@ export default function Cart() {
   const isProfessional = user?.user_metadata?.user_type === 'professional'
   const [proDiscount, setProDiscount] = useState(20)
 
-  useEffect(() => { getProfessionalDiscount().then(setProDiscount) }, [])
+  useEffect(() => {
+    if (isProfessional && user?.id) {
+      getProfessionalDiscountForUser(user.id).then(setProDiscount)
+    } else {
+      getProfessionalDiscount().then(setProDiscount)
+    }
+  }, [user?.id, isProfessional])
 
   const [step,     setStep]     = useState('cart')   // 'cart' | 'checkout' | 'success'
   const [loading,  setLoading]  = useState(false)

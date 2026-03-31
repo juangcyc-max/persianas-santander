@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
-import { getProfessionalDiscount } from '../services/settings'
+import { getProfessionalDiscount, getProfessionalDiscountForUser } from '../services/settings'
 import BlindPreview from './components/BlindPreview'
 import BlindTypeSelector from './components/BlindTypeSelector'
 import MeasurementsForm from './components/MeasurementsForm'
@@ -23,9 +23,14 @@ function Configurator() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      setIsProfessional(user?.user_metadata?.user_type === 'professional')
+      const isPro = user?.user_metadata?.user_type === 'professional'
+      setIsProfessional(isPro)
+      if (isPro && user?.id) {
+        getProfessionalDiscountForUser(user.id).then(setProDiscount)
+      } else {
+        getProfessionalDiscount().then(setProDiscount)
+      }
     })
-    getProfessionalDiscount().then(setProDiscount)
   }, [])
 
   const [boxColor,   setBoxColor]   = useState('#F2ECCA')

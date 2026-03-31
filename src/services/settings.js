@@ -27,3 +27,26 @@ export async function setProfessionalDiscount(percent) {
   if (!error) sessionStorage.setItem(SESSION_KEY, String(percent))
   return !error
 }
+
+// Descuento individual por profesional (professional_data.discount_percent)
+// Si no tiene row o columna, cae al descuento global
+export async function getProfessionalDiscountForUser(userId) {
+  if (!userId) return getProfessionalDiscount()
+  try {
+    const { data } = await supabase
+      .from('professional_data')
+      .select('discount_percent')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (data?.discount_percent != null) return parseFloat(data.discount_percent)
+  } catch {}
+  return getProfessionalDiscount()
+}
+
+export async function setProfessionalDiscountForUser(userId, percent) {
+  const { error } = await supabase
+    .from('professional_data')
+    .update({ discount_percent: percent })
+    .eq('user_id', userId)
+  return !error
+}

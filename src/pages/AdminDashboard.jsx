@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { generateInvoicePDF } from '../services/invoicePDF'
-import { getProfessionalDiscount, setProfessionalDiscount } from '../services/settings'
+import { getProfessionalDiscount, setProfessionalDiscount, setProfessionalDiscountForUser } from '../services/settings'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
@@ -890,9 +890,9 @@ function AdminDiscountSection() {
     <div className="bg-white rounded-xl border border-gray-200 p-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
         <div className="flex-1">
-          <p className="text-sm font-bold text-gray-900">Descuento para profesionales</p>
+          <p className="text-sm font-bold text-gray-900">Descuento por defecto (nuevos profesionales)</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            Se aplica automáticamente en el configurador, presupuestos y cesta. Actualmente: <span className="font-semibold text-red-700">{discount}%</span>
+            Se aplica cuando el profesional no tiene descuento individual configurado. Actualmente: <span className="font-semibold text-red-700">{discount}%</span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -1077,6 +1077,40 @@ function AdminAnalyticsSection() {
   )
 }
 
+// ── CELDA DE DESCUENTO INDIVIDUAL ────────────────────────────────────────
+function DiscountCell({ userId, initial }) {
+  const [value,  setValue]  = useState(String(initial))
+  const [saving, setSaving] = useState(false)
+  const [saved,  setSaved]  = useState(false)
+
+  async function save() {
+    const n = parseFloat(value)
+    if (isNaN(n) || n < 0 || n > 100) return
+    setSaving(true)
+    const ok = await setProfessionalDiscountForUser(userId, n)
+    setSaving(false)
+    if (ok) { setSaved(true); setTimeout(() => setSaved(false), 2000) }
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <div className="relative">
+        <input
+          type="number" min="0" max="100" step="1"
+          value={value}
+          onChange={e => setValue(e.target.value)}
+          className="w-16 px-2 py-1 pr-5 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-red-200"
+        />
+        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+      </div>
+      <button onClick={save} disabled={saving}
+        className={`px-2 py-1 text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${saved ? 'bg-green-600 text-white' : 'bg-red-700 hover:bg-red-800 text-white'}`}>
+        {saving ? '…' : saved ? '✓' : 'OK'}
+      </button>
+    </div>
+  )
+}
+
 // ── SECCIÓN PROFESIONALES ADMIN ───────────────────────────────────────────
 function AdminProfessionalsSection() {
   const [professionals, setProfessionals] = useState([])
@@ -1118,8 +1152,6 @@ function AdminProfessionalsSection() {
     URL.revokeObjectURL(url)
   }
 
-  const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -1146,7 +1178,7 @@ function AdminProfessionalsSection() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {['Razón social', 'CIF/NIF', 'Teléfono', 'Ciudad', 'Email cuenta', 'Email facturación'].map(h => (
+                  {['Razón social', 'CIF/NIF', 'Teléfono', 'Ciudad', 'Email cuenta', 'Email facturación', 'Descuento'].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -1160,6 +1192,7 @@ function AdminProfessionalsSection() {
                     <td className="px-4 py-3 text-gray-600">{p.ciudad ?? '—'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{p.profiles?.email ?? '—'}</td>
                     <td className="px-4 py-3 text-gray-500 text-xs">{p.email_facturacion ?? '—'}</td>
+                    <td className="px-4 py-3"><DiscountCell userId={p.user_id} initial={p.discount_percent ?? 20} /></td>
                   </tr>
                 ))}
               </tbody>
