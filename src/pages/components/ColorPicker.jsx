@@ -16,21 +16,16 @@ function ColorPicker({ label, selectedColor, onColorChange, colors }) {
     const r = parseInt(hex.slice(1,3),16)
     const g = parseInt(hex.slice(3,5),16)
     const b = parseInt(hex.slice(5,7),16)
-    const dark  = `rgb(${Math.max(0,r-35)},${Math.max(0,g-28)},${Math.max(0,b-20)})`
-    const mid   = `rgb(${Math.max(0,r-18)},${Math.max(0,g-14)},${Math.max(0,b-10)})`
-    const light = `rgb(${Math.min(255,r+20)},${Math.min(255,g+16)},${Math.min(255,b+10)})`
-    return `repeating-linear-gradient(
-      100deg,
-      ${hex} 0px,
-      ${mid}  1px,
-      ${hex}  3px,
-      ${light} 5px,
-      ${hex}  7px,
-      ${dark}  8px,
-      ${hex}  10px,
-      ${mid}  12px,
-      ${hex}  15px
-    )`
+    const vd = `rgba(${Math.max(0,r-75)},${Math.max(0,g-60)},${Math.max(0,b-42)},0.95)`
+    const dk = `rgba(${Math.max(0,r-50)},${Math.max(0,g-40)},${Math.max(0,b-28)},0.85)`
+    const lt = `rgba(${Math.min(255,r+50)},${Math.min(255,g+40)},${Math.min(255,b+25)},0.75)`
+    const vl = `rgba(${Math.min(255,r+70)},${Math.min(255,g+56)},${Math.min(255,b+35)},0.55)`
+    return [
+      `repeating-linear-gradient(96deg, transparent 0px, ${dk} 1px, transparent 2px, transparent 6px)`,
+      `repeating-linear-gradient(98deg, transparent 0px, ${vd} 1px, ${dk} 2.5px, transparent 4px, transparent 13px)`,
+      `repeating-linear-gradient(94deg, transparent 0px, transparent 5px, ${lt} 6px, ${vl} 7px, transparent 8.5px, transparent 20px)`,
+      `linear-gradient(97deg, rgba(${Math.max(0,r-30)},${Math.max(0,g-24)},${Math.max(0,b-16)},1) 0%, ${hex} 40%, rgba(${Math.max(0,r-20)},${Math.max(0,g-16)},${Math.max(0,b-10)},1) 100%)`
+    ].join(', ')
   }
 
   return (
