@@ -693,6 +693,9 @@ export default function AdminDashboard() {
           <button onClick={loadOrders} className="ml-2 text-red-600 hover:underline">Actualizar</button>
         </p>
 
+        {/* ── ANALYTICS ── */}
+        <AdminAnalyticsSection />
+
         {/* ── SECCIÓN FACTURAS ADMIN ── */}
         <AdminInvoicesSection />
 
@@ -738,11 +741,43 @@ function AdminInvoicesSection() {
   const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
   const fmtDate = (d) => d ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)) : '—'
 
+  function exportCSV() {
+    const headers = ['Nº Factura', 'Fecha', 'Base imponible', 'IVA', 'Total con IVA', 'Estado pago']
+    const rows = invoices.map(inv => [
+      inv.invoice_number,
+      inv.created_at ? new Date(inv.created_at).toLocaleDateString('es-ES') : '—',
+      (inv.total_without_iva ?? 0).toFixed(2).replace('.', ','),
+      (inv.iva ?? 0).toFixed(2).replace('.', ','),
+      (inv.total_with_iva ?? 0).toFixed(2).replace('.', ','),
+      inv.payment_status === 'paid' ? 'Pagada' : 'Pendiente de pago',
+    ])
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(';')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `facturas_${new Date().toISOString().slice(0,10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-900">Facturas</h2>
-        <button onClick={loadInvoices} className="text-xs text-red-600 hover:underline">Actualizar</button>
+        <div className="flex items-center gap-3">
+          {invoices.length > 0 && (
+            <button onClick={exportCSV}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 hover:text-green-800 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Exportar CSV
+            </button>
+          )}
+          <button onClick={loadInvoices} className="text-xs text-red-600 hover:underline">Actualizar</button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -818,6 +853,150 @@ function AdminInvoicesSection() {
             </table>
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ── ANALYTICS SECTION ────────────────────────────────────────────────────
+function AdminAnalyticsSection() {
+  const [stats,   setStats]   = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => { loadStats() }, [])
+
+  async function loadStats() {
+    setLoading(true)
+    const [
+      { count: totalUsers },
+      { count: totalBudgets },
+      { data: ordersData },
+      { data: invoicesData },
+    ] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }),
+      supabase.from('budgets').select('*',  { count: 'exact', head: true }),
+      supabase.from('orders').select('status, total_with_iva, user_type, created_at'),
+      supabase.from('invoices').select('total_with_iva, payment_status'),
+    ])
+
+    const orders   = ordersData   ?? []
+    const invoices = invoicesData ?? []
+
+    const active     = orders.filter(o => o.status !== 'cancelled')
+    const completed  = orders.filter(o => o.status === 'completed')
+    const cancelled  = orders.filter(o => o.status === 'cancelled')
+    const totalRev   = active.reduce((a, o) => a + (o.total_with_iva ?? 0), 0)
+    const paidRev    = invoices.filter(i => i.payment_status === 'paid').reduce((a, i) => a + (i.total_with_iva ?? 0), 0)
+    const pendingRev = invoices.filter(i => i.payment_status !== 'paid').reduce((a, i) => a + (i.total_with_iva ?? 0), 0)
+
+    // Pedidos por mes (últimos 6 meses)
+    const now    = new Date()
+    const months = Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+      return { label: d.toLocaleString('es-ES', { month: 'short' }), year: d.getFullYear(), month: d.getMonth() }
+    })
+    const byMonth = months.map(m => ({
+      label:  m.label,
+      orders: orders.filter(o => {
+        const d = new Date(o.created_at)
+        return d.getFullYear() === m.year && d.getMonth() === m.month
+      }).length,
+    }))
+    const maxOrders = Math.max(...byMonth.map(m => m.orders), 1)
+
+    setStats({
+      totalUsers:      totalUsers  ?? 0,
+      totalBudgets:    totalBudgets ?? 0,
+      totalOrders:     orders.length,
+      completedOrders: completed.length,
+      cancelledOrders: cancelled.length,
+      proOrders:       orders.filter(o => o.user_type === 'professional').length,
+      partOrders:      orders.filter(o => o.user_type !== 'professional').length,
+      totalRev, paidRev, pendingRev,
+      conversion: totalBudgets > 0 ? ((orders.length / totalBudgets) * 100).toFixed(1) : '0.0',
+      byMonth, maxOrders,
+    })
+    setLoading(false)
+  }
+
+  const fmt  = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
+  const fmtN = (n) => new Intl.NumberFormat('es-ES').format(n ?? 0)
+
+  if (loading) return (
+    <div className="bg-white rounded-xl border border-gray-200 p-8 flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+  if (!stats) return null
+
+  const kpis = [
+    { label: 'Contactos registrados', value: fmtN(stats.totalUsers),    sub: 'usuarios totales',          color: 'text-gray-900',  bg: 'bg-gray-50'   },
+    { label: 'Presupuestos generados',value: fmtN(stats.totalBudgets),  sub: 'desde el inicio',            color: 'text-blue-700',  bg: 'bg-blue-50'   },
+    { label: 'Pedidos realizados',    value: fmtN(stats.totalOrders),   sub: `${stats.cancelledOrders} cancelados`, color: 'text-amber-700', bg: 'bg-amber-50'  },
+    { label: 'Pedidos completados',   value: fmtN(stats.completedOrders),sub: 'instalaciones finalizadas', color: 'text-green-700', bg: 'bg-green-50'  },
+    { label: 'Tasa de conversión',    value: `${stats.conversion}%`,    sub: 'presupuesto → pedido',       color: 'text-purple-700',bg: 'bg-purple-50' },
+    { label: 'Facturación cobrada',   value: fmt(stats.paidRev),        sub: `${fmt(stats.pendingRev)} pendiente`, color: 'text-red-700', bg: 'bg-red-50' },
+  ]
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-gray-900">Análisis del negocio</h2>
+        <button onClick={loadStats} className="text-xs text-red-600 hover:underline">Actualizar</button>
+      </div>
+
+      {/* KPI grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        {kpis.map(({ label, value, sub, color, bg }) => (
+          <div key={label} className={`rounded-xl border border-gray-200 p-4 ${bg}`}>
+            <p className={`text-2xl font-black ${color}`}>{value}</p>
+            <p className="text-sm font-semibold text-gray-700 mt-0.5">{label}</p>
+            <p className="text-xs text-gray-400 mt-0.5">{sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Desglose tipo cliente */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <p className="text-sm font-bold text-gray-700 mb-3">Pedidos por tipo de cliente</p>
+          <div className="space-y-3">
+            {[
+              { label: 'Profesionales', value: stats.proOrders,  total: stats.totalOrders, color: 'bg-blue-500'  },
+              { label: 'Particulares',  value: stats.partOrders, total: stats.totalOrders, color: 'bg-gray-400'  },
+            ].map(({ label, value, total, color }) => {
+              const pct = total > 0 ? Math.round((value / total) * 100) : 0
+              return (
+                <div key={label}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="font-medium text-gray-700">{label}</span>
+                    <span className="text-gray-500">{value} ({pct}%)</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div className={`${color} h-2 rounded-full transition-all`} style={{ width: `${pct}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Mini gráfico de barras — pedidos por mes */}
+        <div className="bg-white rounded-xl border border-gray-200 p-5">
+          <p className="text-sm font-bold text-gray-700 mb-3">Pedidos últimos 6 meses</p>
+          <div className="flex items-end gap-2 h-20">
+            {stats.byMonth.map(({ label, orders }) => (
+              <div key={label} className="flex-1 flex flex-col items-center gap-1">
+                <span className="text-xs font-bold text-gray-700">{orders || ''}</span>
+                <div
+                  className="w-full bg-red-600 rounded-t transition-all"
+                  style={{ height: `${Math.max((orders / stats.maxOrders) * 64, orders > 0 ? 4 : 0)}px` }}
+                />
+                <span className="text-xs text-gray-400 capitalize">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
