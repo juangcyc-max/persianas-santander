@@ -94,6 +94,7 @@ function Configurator() {
     slatColorName: winchesterColors.find(c => c.hex === slatColor)?.name,
     slatColorGama: winchesterColors.find(c => c.hex === slatColor)?.gama,
     estimatedPrice: calculatePrice(),
+    proDiscount,
     customerData,
   }
 

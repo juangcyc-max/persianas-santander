@@ -92,11 +92,13 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
     const today = formatDate(new Date())
 
     const isPro = configuration.userType === 'professional'
+    const proDiscount = Number(configuration.proDiscount ?? 20)
     const total = Number(configuration.estimatedPrice || 0)
     const baseImponible = total / 1.21
     const iva = total - baseImponible
-    
-    const totalWithoutDiscount = isPro ? total / 0.8 : total
+
+    const mult = 1 - proDiscount / 100
+    const totalWithoutDiscount = isPro ? total / mult : total
     const discountAmount = isPro ? totalWithoutDiscount - total : 0
 
     const logoImg = await loadImage("/persianassantanderlogo.png")
@@ -186,7 +188,7 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
 
     if (isPro) {
       doc.setTextColor(...COLORS.greenText)
-      doc.text("Descuento profesional (−20%)", col1, y + 29)
+      doc.text(`Descuento profesional (−${proDiscount}%)`, col1, y + 29)
       doc.text(`−${formatCurrency(discountAmount)}`, col2, y + 29, { align: "right" })
     }
 
@@ -311,21 +313,32 @@ export async function redownloadBudgetPDF(budget) {
     email:   budget.customer_email,
     address: budget.customer_address,
   }
+
+  let proDiscount = 20
+  if (budget.user_id && budget.user_type === 'professional') {
+    try {
+      const { data } = await supabase.from('professional_data')
+        .select('discount_percent').eq('user_id', budget.user_id).maybeSingle()
+      if (data?.discount_percent != null) proDiscount = parseFloat(data.discount_percent)
+    } catch {}
+  }
+
   const configuration = {
-    blindType:     budget.blind_type,
-    mechanism:     budget.mechanism,
-    motorType:     budget.motor_type,
-    slatType:      budget.slat_type,
-    orientation:   budget.orientation,
-    width:         budget.width,
-    height:        budget.height,
-    depth:         budget.depth,
-    boxColorName:  budget.box_color_name,
-    boxColorGama:  budget.box_color_gama,
-    slatColorName: budget.slat_color_name,
-    slatColorGama: budget.slat_color_gama,
+    blindType:      budget.blind_type,
+    mechanism:      budget.mechanism,
+    motorType:      budget.motor_type,
+    slatType:       budget.slat_type,
+    orientation:    budget.orientation,
+    width:          budget.width,
+    height:         budget.height,
+    depth:          budget.depth,
+    boxColorName:   budget.box_color_name,
+    boxColorGama:   budget.box_color_gama,
+    slatColorName:  budget.slat_color_name,
+    slatColorGama:  budget.slat_color_gama,
     estimatedPrice: budget.total_with_iva,
-    userType:      budget.user_type,
+    userType:       budget.user_type,
+    proDiscount,
   }
   return generateBudgetPDF(customerData, configuration, {
     skipSave: true,
