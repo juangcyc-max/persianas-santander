@@ -24,8 +24,8 @@ function Configurator() {
     })
   }, [])
 
-  const [boxColor,   setBoxColor]   = useState('#F5F5F5')
-  const [slatColor,  setSlatColor]  = useState('#C4A77D')
+  const [boxColor,   setBoxColor]   = useState('#F2ECCA')
+  const [slatColor,  setSlatColor]  = useState('#C49A6C')
   const [width,      setWidth]      = useState(1000)
   const [height,     setHeight]     = useState(1200)
   const [depth,      setDepth]      = useState(150)
@@ -39,30 +39,24 @@ function Configurator() {
   const [showCustomerForm, setShowCustomerForm] = useState(false)
 
   const winchesterColors = [
-    { name: 'Blanco puro',    hex: '#F5F5F5' },
-    { name: 'Marfil',         hex: '#FFFFF0' },
-    { name: 'Fresno claro',   hex: '#E8E0D2' },
-    { name: 'Arce suave',     hex: '#F3E5DC' },
-    { name: 'Aluminio',       hex: '#C0C0C0' },
-    { name: 'Gris plata',     hex: '#A2A2A2' },
-    { name: 'Roble dorado',   hex: '#C4A77D' },
-    { name: 'Pino natural',   hex: '#DBCABB' },
-    { name: 'Teak salvaje',   hex: '#B19F83' },
-    { name: 'Sapelly',        hex: '#9C7F6B' },
-    { name: 'Cerezo clásico', hex: '#8D6E63' },
-    { name: 'Gris cuarzo',    hex: '#6F7A85' },
-    { name: 'Gris tráfico',   hex: '#707476' },
-    { name: 'Gris carbono',   hex: '#3D3D3D' },
-    { name: 'Gris basalto',   hex: '#4D5C63' },
-    { name: 'Nogal oscuro',   hex: '#5D4037' },
-    { name: 'Caoba premium',  hex: '#4E342E' },
-    { name: 'Bronce metal',   hex: '#6F4E37' },
-    { name: 'Rojo vino',      hex: '#7C2D3A' },
-    { name: 'Verde musgo',    hex: '#4B5320' },
-    { name: 'Azul báltico',   hex: '#00416A' },
-    { name: 'Antracita',      hex: '#373F41' },
-    { name: 'Wengué',         hex: '#2B2B2B' },
-    { name: 'Negro satinado', hex: '#1A1A1A' },
+    { name: '3005',          hex: '#5E2028' }, // Rojo vino
+    { name: 'Bronce',        hex: '#828559' }, // Bronce oliva
+    { name: '8017',          hex: '#44221A' }, // Marrón chocolate
+    { name: '6009',          hex: '#27352A' }, // Verde abeto
+    { name: 'Negro',         hex: '#1A1A1A' }, // Negro
+    { name: 'Winchester',    hex: '#C49A6C' }, // Madera roble claro
+    { name: 'Madera Oscuro', hex: '#5D3A1A' }, // Madera oscura
+    { name: 'Madera 176',    hex: '#A0724A' }, // Madera media
+    { name: '7011',          hex: '#52595D' }, // Gris hierro
+    { name: 'Natural',       hex: '#E0E0DC' }, // Natural / aluminio
+    { name: '6005',          hex: '#0F4336' }, // Verde musgo
+    { name: '7016',          hex: '#293133' }, // Gris antracita
+    { name: 'Marfil',        hex: '#F2ECCA' }, // Marfil
+    { name: 'Gris Sable',    hex: '#7E8B6E' }, // Gris sable
+    { name: '8014',          hex: '#4E3829' }, // Marrón sepia
+    { name: 'Madera 120',    hex: '#C4A06A' }, // Madera clara
+    { name: 'Inox',          hex: '#C8C8C8' }, // Acero inoxidable
+    { name: 'Gris Moteado',  hex: '#7A7A7A' }, // Gris moteado
   ]
 
   const calculatePrice = () => {

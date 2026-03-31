@@ -27,7 +27,7 @@ function ColorPicker({ label, selectedColor, onColorChange, colors }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-8 gap-1.5">
+      <div className="grid grid-cols-6 gap-1.5">
         {colors.map((color) => {
           const isSelected = selectedColor === color.hex
           const isLight    = hexToLuma(color.hex) > 220
@@ -70,7 +70,7 @@ function ColorPicker({ label, selectedColor, onColorChange, colors }) {
       </div>
 
       <p className="text-xs text-gray-400 mt-2">
-        {colors.length} colores disponibles · Colección Winchester
+        {colors.length} colores disponibles · Colección ACEPER
       </p>
     </div>
   )
