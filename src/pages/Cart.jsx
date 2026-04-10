@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
 import { sanitizeText } from '../services/sanitize'
@@ -65,7 +65,6 @@ function CartItem({ item, onRemove }) {
 
 // ── CESTA PRINCIPAL ───────────────────────────────────────────────────────
 export default function Cart() {
-  const navigate = useNavigate()
   const { items, totalPrice, totalWithIva, removeFromCart, clearCart, user } = useCart()
   const isProfessional = user?.user_metadata?.user_type === 'professional'
   const [proDiscount, setProDiscount] = useState(20)
@@ -125,7 +124,7 @@ export default function Cart() {
         total_price:    totalPrice,
         total_with_iva: totalWithIva,
         status:         'pending',
-        ...(!isProfessional && {
+        ...(!isProfessional && !sinInstalacion && {
           address:        sanitizeText(address),
           phone:          sanitizeText(phone),
           preferred_date: date,

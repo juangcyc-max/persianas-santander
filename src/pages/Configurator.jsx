@@ -13,7 +13,6 @@ import GuideSelector from './components/GuideSelector'
 import PriceDisplay from './components/PriceDisplay'
 import ConfigurationSummary from './components/ConfigurationSummary'
 import SaveConfigurationButton from './components/SaveConfigurationButton'
-import AddToCartButton from './components/AddToCartButton'
 import CustomerForm from './components/CustomerForm'
 
 // ─── Tablas de precios por m² ──────────────────────────────────────────────
@@ -65,7 +64,6 @@ function getPricePerSqm(table, gama) {
 
 function Configurator() {
   const [isProfessional, setIsProfessional] = useState(false)
-  const [savedConfigId, setSavedConfigId] = useState(null)
   const [proDiscount, setProDiscount] = useState(20)
   const [userType, setUserType] = useState('public')
 
@@ -212,8 +210,7 @@ function Configurator() {
     customerData,
   }
 
-  const handleSaveSuccess = (savedConfig) => {
-    if (savedConfig?.id) setSavedConfigId(savedConfig.id)
+  const handleSaveSuccess = () => {
     setShowCustomerForm(false)
   }
 
@@ -280,14 +277,6 @@ function Configurator() {
                   onSuccess={handleSaveSuccess}
                   proDiscount={proDiscount}
                 />
-                {savedConfigId && (
-                  <AddToCartButton configurationId={savedConfigId} />
-                )}
-                {!savedConfigId && (
-                  <p className="text-xs text-center text-gray-400">
-                    Guarda la configuración primero para poder añadirla a la cesta
-                  </p>
-                )}
                 <button
                   onClick={() => setShowCustomerForm(true)}
                   className="w-full py-3 px-6 rounded-xl font-semibold bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors text-sm"
