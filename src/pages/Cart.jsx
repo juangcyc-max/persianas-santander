@@ -124,13 +124,11 @@ export default function Cart() {
         total_price:    totalPrice,
         total_with_iva: totalWithIva,
         status:         'pending',
-        ...(!isProfessional && !sinInstalacion && {
-          address:        sanitizeText(address),
-          phone:          sanitizeText(phone),
-          preferred_date: date,
-          preferred_time: time,
-          notes:          sanitizeText(notes),
-        }),
+        address:        (!isProfessional && !sinInstalacion) ? sanitizeText(address) : null,
+        phone:          (!isProfessional && !sinInstalacion) ? sanitizeText(phone)   : null,
+        preferred_date: (!isProfessional && !sinInstalacion) ? date                  : null,
+        preferred_time: (!isProfessional && !sinInstalacion) ? time                  : null,
+        notes:          (!isProfessional && !sinInstalacion) ? sanitizeText(notes)   : null,
       }
 
       const { data: order, error: orderError } = await supabase
@@ -143,7 +141,7 @@ export default function Cart() {
       await clearCart()
       setStep('success')
     } catch (err) {
-      setError('Error al procesar la solicitud. Inténtalo de nuevo.')
+      setError(`Error al procesar la solicitud: ${err.message}`)
       console.error(err)
     } finally {
       setLoading(false)
