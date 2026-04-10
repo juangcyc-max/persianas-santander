@@ -52,45 +52,58 @@ const loadImage = (src) => new Promise((resolve) => {
 })
 
 // ── COMPONENTES COMPARTIDOS ───────────────────────────────────────────────
+
+/** Etiqueta de sección con barra lateral de color */
+function sectionLabel(doc, x, y, text, color = COLORS.red) {
+  doc.setFillColor(...color)
+  doc.rect(x, y - 4.5, 2, 6, 'F')
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...COLORS.light)
+  doc.text(text.toUpperCase(), x + 5, y)
+}
+
 function addPageHeader(doc, logoImg, title, number, today, brandColor = COLORS.red) {
   const W = doc.internal.pageSize.width
   doc.setFillColor(...brandColor)
-  doc.rect(0, 0, W, 28, "F")
+  doc.rect(0, 0, W, 32, 'F')
+
+  // Línea de acento
+  doc.setFillColor(brandColor[0] + 30, brandColor[1] + 10, brandColor[2] + 10)
+  doc.rect(0, 32, W, 1.5, 'F')
 
   doc.setTextColor(...COLORS.white)
-  doc.setFontSize(18)
-  doc.setFont("helvetica", "bold")
-  doc.text(title, 14, 18)
+  doc.setFontSize(22)
+  doc.setFont('helvetica', 'bold')
+  doc.text(title, 14, 22)
 
-  doc.setFontSize(9)
-  doc.setFont("helvetica", "normal")
-  doc.text(`Nº ${number}`, W - 14, 13, { align: "right" })
-  doc.text(`Fecha: ${today}`, W - 14, 21, { align: "right" })
+  doc.setFontSize(8.5)
+  doc.setFont('helvetica', 'normal')
+  doc.text(`Nº ${number}`, W - 14, 13, { align: 'right' })
+  doc.text(`Fecha: ${today}`, W - 14, 22, { align: 'right' })
 
   if (logoImg && logoImg.naturalWidth > 0) {
     doc.setFillColor(...COLORS.white)
-    doc.roundedRect(W - 54, 2, 40, 24, 2, 2, "F")
-    try { doc.addImage(logoImg, "PNG", W - 53, 3, 38, 22) } catch {}
+    doc.roundedRect(W - 58, 2.5, 42, 27, 3, 3, 'F')
+    try { doc.addImage(logoImg, 'PNG', W - 57, 3.5, 40, 25) } catch {}
   }
-
-  doc.setFillColor(brandColor[0] + 40, brandColor[1] + 40, brandColor[2] + 40)
-  doc.rect(0, 28, W, 3, "F")
 }
 
-function addPageFooter(doc, footerLines) {
+function addPageFooter(doc, footerLines, page, pageCount) {
   const W = doc.internal.pageSize.width
   const H = doc.internal.pageSize.height
   doc.setFillColor(...COLORS.grayBg)
-  doc.rect(0, H - 16, W, 16, "F")
+  doc.rect(0, H - 14, W, 14, 'F')
   doc.setDrawColor(...COLORS.border)
-  doc.setLineWidth(0.3)
-  doc.line(0, H - 16, W, H - 16)
+  doc.setLineWidth(0.2)
+  doc.line(0, H - 14, W, H - 14)
   doc.setTextColor(...COLORS.light)
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "normal")
-  footerLines.forEach((line, i) => {
-    doc.text(line, W / 2, H - 9 + i * 5, { align: "center" })
-  })
+  doc.setFontSize(7.5)
+  doc.setFont('helvetica', 'normal')
+  const line1 = footerLines[0] || ''
+  const line2 = footerLines[1] ? `${footerLines[1]}  ·  Pág. ${page}/${pageCount}` : `Pág. ${page}/${pageCount}`
+  doc.text(line1, W / 2, H - 8,   { align: 'center' })
+  doc.text(line2, W / 2, H - 3.5, { align: 'center' })
 }
 
 function addPriceBlock(doc, y, breakdown, isPro, proDiscount, brandColor = COLORS.red) {
@@ -108,15 +121,12 @@ function addPriceBlock(doc, y, breakdown, isPro, proDiscount, brandColor = COLOR
   doc.setFillColor(...COLORS.grayBg)
   doc.roundedRect(14, y, W - 28, blockHeight, 3, 3, "F")
 
-  doc.setTextColor(...brandColor)
-  doc.setFontSize(8)
-  doc.setFont("helvetica", "bold")
-  doc.text("RESUMEN ECONÓMICO", 20, y + 7)
+  sectionLabel(doc, 20, y + 8, 'Resumen económico', brandColor)
 
   const col1 = 20
   const col2 = W - 18
 
-  let ly = y + 14
+  let ly = y + 16
 
   // Líneas de desglose (producto, cajón, guías, motor, instalación)
   if (lines.length > 0) {
@@ -290,7 +300,7 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
       addPageFooter(doc, [
         "Persianas Santander S.L.  ·  NIF: B39476726  ·  C/ Isla Oleo, Nave 9 - Pol. Nueva Montaña, 39011 Santander",
         "942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com",
-      ])
+      ], i, pageCount)
     }
 
     // ── GUARDAR EN SUPABASE ───────────────────────────────────────────────
@@ -522,7 +532,7 @@ export async function generateClientBudgetPDF({
       addPageFooter(doc, [
         footerLine1 || "Empresa profesional",
         footerLine2 || "",
-      ])
+      ], i, pageCount)
     }
 
     const safeCustomerName = (customerData.name || "Cliente").trim().replace(/[^a-z0-9]/gi, "_")
@@ -690,7 +700,7 @@ export async function generateClientInvoicePDF({
       addPageFooter(doc, [
         footerLine1 || "Empresa profesional",
         footerLine2 || "",
-      ])
+      ], i, pageCount)
     }
 
     const safeCustomerName = (customerData.name || "Cliente").trim().replace(/[^a-z0-9]/gi, "_")
