@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../services/supabase/client'
+import { useCart } from '../../context/CartContext'
 
 // ─── Preview SVG generado dinámicamente (sin imágenes rotas) ────────────────
 function BlindSVGPreview({ boxColor = '#dc2626', slatColor = '#ffffff' }) {
@@ -119,6 +120,17 @@ const ActionButton = ({ onClick, label, variant = 'default', disabled, children 
 
 // ─── Tarjeta de configuración ────────────────────────────────────────────────
 const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => {
+  const { addToCart } = useCart()
+  const [addingCart,  setAddingCart]  = useState(false)
+  const [addedToCart, setAddedToCart] = useState(false)
+
+  async function handleAddToCart() {
+    setAddingCart(true)
+    const { error } = await addToCart(config.id)
+    setAddingCart(false)
+    if (!error) setAddedToCart(true)
+  }
+
   const price = new Intl.NumberFormat('es-ES', {
     style: 'currency', currency: 'EUR', minimumFractionDigits: 2,
   }).format(config.estimated_price || 0)
@@ -189,18 +201,48 @@ const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => 
           </div>
         </dl>
 
-        <footer className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <span className="text-lg font-black text-red-700">{price}</span>
-          <div className="flex items-center gap-1">
-            <ActionButton onClick={() => onView(config)} label="Ver" />
-            <ActionButton onClick={() => onDuplicate(config)} label="Duplicar" />
-            <ActionButton
-              onClick={() => onDelete(config.id)}
-              label="Eliminar"
-              variant="danger"
-              disabled={isProcessing}
-            />
+        <footer className="pt-3 border-t border-gray-100 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-lg font-black text-red-700">{price}</span>
+            <div className="flex items-center gap-1">
+              <ActionButton onClick={() => onView(config)} label="Ver" />
+              <ActionButton onClick={() => onDuplicate(config)} label="Duplicar" />
+              <ActionButton
+                onClick={() => onDelete(config.id)}
+                label="Eliminar"
+                variant="danger"
+                disabled={isProcessing}
+              />
+            </div>
           </div>
+          <button
+            onClick={handleAddToCart}
+            disabled={addingCart || addedToCart}
+            className={`w-full py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+              addedToCart
+                ? 'bg-green-100 text-green-700 cursor-default'
+                : 'bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-60'
+            }`}
+          >
+            {addingCart ? (
+              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : addedToCart ? (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Añadido a la cesta
+              </>
+            ) : (
+              <>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+                Añadir a la cesta
+              </>
+            )}
+          </button>
         </footer>
       </div>
     </article>
