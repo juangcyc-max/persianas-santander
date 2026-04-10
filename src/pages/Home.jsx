@@ -361,6 +361,16 @@ export default function Home() {
               <Link to="/cookies"    className="hover:text-gray-600 transition-colors">Cookies</Link>
             </div>
           </div>
+          <div className="border-t border-gray-100 pt-4 mt-2 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-300">
+            <a href="https://persianassantander.com/" target="_blank" rel="noopener noreferrer"
+              className="hover:text-gray-500 transition-colors">
+              Sitio web anterior: persianassantander.com
+            </a>
+            <a href="https://mindbride.net" target="_blank" rel="noopener noreferrer"
+              className="hover:text-gray-500 transition-colors">
+              Diseño y desarrollo: mindbride.net
+            </a>
+          </div>
         </div>
       </footer>
 
