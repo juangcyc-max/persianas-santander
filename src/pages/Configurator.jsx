@@ -85,7 +85,7 @@ function Configurator() {
   const [mechanism,    setMechanism]    = useState('muelle')
   const [orientation,  setOrientation]  = useState('izquierda')
   const [motorType,    setMotorType]    = useState('mecanico')
-  const [guideType,    setGuideType]    = useState('none')        // none | v25 | h25
+  const [guideType,    setGuideType]    = useState('v25')         // v25 | h25
   const [installacion, setInstallacion] = useState(true)
   const [width,        setWidth]        = useState(1000)
   const [height,       setHeight]       = useState(1200)

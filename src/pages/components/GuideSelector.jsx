@@ -39,13 +39,6 @@ function GuideSelector({ guideType, onGuideTypeChange, installacion, onInstallac
 
   const guides = [
     {
-      id: 'none',
-      title: 'Sin guías',
-      subtitle: '—',
-      desc: 'Sin guías laterales.',
-      diagram: null,
-    },
-    {
       id: 'v25',
       title: 'Guía modelo V25',
       subtitle: '5 €/ml',
