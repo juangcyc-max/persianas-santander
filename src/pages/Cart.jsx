@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
 import { sanitizeText } from '../services/sanitize'
 import { getProfessionalDiscount, getProfessionalDiscountForUser } from '../services/settings'
+import { notifyNewOrder, confirmOrderToClient } from '../services/email'
 
 const HORAS = ['08:00','09:00','10:00','11:00','12:00','13:00','16:00','17:00','18:00','19:00']
 
@@ -132,13 +133,15 @@ export default function Cart() {
         notes:          (!isProfessional && !sinInstalacion) ? sanitizeText(notes)   : null,
       }
 
-      console.log('sinInstalacion:', sinInstalacion, '| orderData:', JSON.stringify(orderData))
-      const { data: order, error: orderError } = await supabase
+      const { error: orderError } = await supabase
         .from('orders').insert(orderData).select().single()
       if (orderError) throw orderError
 
-      // Enviar email a la fábrica via EmailJS
-      await sendEmailToFactory(order, orderData)
+      // Emails automáticos vía Resend (no bloquean el flujo)
+      await Promise.all([
+        notifyNewOrder(orderData, user.email),
+        confirmOrderToClient(orderData, user.email),
+      ])
 
       await clearCart()
       setStep('success')
@@ -150,35 +153,6 @@ export default function Cart() {
       console.error('Order error:', JSON.stringify(err))
     } finally {
       setLoading(false)
-    }
-  }
-
-  async function sendEmailToFactory(order, data) {
-    try {
-      const itemsList = data.items.map(i =>
-        `- Persiana ${i.blind_type === 'blocking' ? 'bloqueante' : 'estándar'} ${i.width}×${i.height}mm, ${i.mechanism}, Caja:${i.box_color_name}, Lamas:${i.slat_color_name} → ${fmt(i.estimated_price)}`
-      ).join('\n')
-
-      const citaInfo = !isProfessional
-        ? `\n\nCITA DE MEDICIÓN SOLICITADA:\nDirección: ${data.address}\nTeléfono: ${data.phone}\nFecha preferida: ${data.preferred_date} a las ${data.preferred_time}\nNotas: ${data.notes || 'Ninguna'}`
-        : '\n\nPEDIDO PROFESIONAL (instalación propia)'
-
-      // Usar EmailJS si está configurado, sino fallback a Supabase edge function
-      const { emailjs } = window
-      if (emailjs) {
-        await emailjs.send('service_id', 'template_factory', {
-          order_id:    order.id,
-          user_email:  user.email,
-          user_type:   data.user_type,
-          items_list:  itemsList,
-          total_price: fmt(data.total_price),
-          total_iva:   fmt(data.total_with_iva),
-          cita_info:   citaInfo,
-        })
-      }
-    } catch (e) {
-      console.warn('Email no enviado:', e)
-      // No bloqueamos el flujo si el email falla
     }
   }
 

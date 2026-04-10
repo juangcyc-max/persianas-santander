@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { generateInvoicePDF } from '../services/invoicePDF'
 import { setProfessionalDiscountForUser } from '../services/settings'
+import { notifyStatusChange, confirmAppointment } from '../services/email'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
@@ -141,6 +142,20 @@ function OrderModal({ order, onClose, onUpdate }) {
         await supabase.from('invoices').delete().eq('id', existingInvoice.id)
         setExistingInvoice(null)
       }
+      // Email automático al cliente si cambió el estado
+      const clientEmail = order.profiles?.email
+      if (clientEmail) {
+        const statusLabels = { pending: 'Pendiente', confirmed: 'Confirmado', completed: 'Completado', cancelled: 'Cancelado' }
+        notifyStatusChange({
+          userEmail:     clientEmail,
+          orderId:       order.id,
+          status,
+          statusLabel:   statusLabels[status] ?? status,
+          confirmedDate,
+          confirmedTime,
+          adminNotes,
+        })
+      }
       setSaved(true)
       setTimeout(() => setSaved(false), 2500)
       onUpdate()
@@ -162,17 +177,14 @@ function OrderModal({ order, onClose, onUpdate }) {
   async function handleSendEmail() {
     setSendingEmail(true)
     try {
-      // Usar EmailJS para enviar confirmación al cliente
-      if (window.emailjs) {
-        await window.emailjs.send('service_id', 'template_confirm_client', {
-          to_email:       order.profiles?.email,
-          client_name:    order.profiles?.email?.split('@')[0],
-          order_id:       order.id,
-          confirmed_date: confirmedDate,
-          confirmed_time: confirmedTime,
-          address:        order.address,
-          admin_notes:    adminNotes,
-          status:         STATUS_MAP[status]?.label,
+      const clientEmail = order.profiles?.email
+      if (clientEmail) {
+        await confirmAppointment({
+          userEmail:     clientEmail,
+          confirmedDate,
+          confirmedTime,
+          address:       order.address,
+          adminNotes,
         })
       }
       setEmailSent(true)

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { sendBudgetEmail } from '../../services/email'
+import { sendBudgetResend } from '../../services/email'
 import { generateBudgetPDF } from '../../services/pdf'
 
 function CustomerForm({ customerData = {}, onCustomerDataChange, configuration = {}, onSubmit }) {
@@ -30,7 +30,7 @@ function CustomerForm({ customerData = {}, onCustomerDataChange, configuration =
 
     setSending(true)
     try {
-      const result = await sendBudgetEmail(customerData, configuration)
+      const result = await sendBudgetResend(customerData, configuration)
       if (result.success) {
         setSent(true)
         onSubmit?.()
