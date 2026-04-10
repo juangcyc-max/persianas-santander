@@ -207,11 +207,126 @@ function OrderCard({ order, invoice }) {
   )
 }
 
+// ── DATOS DE FACTURACIÓN ──────────────────────────────────────────────────
+function BillingDataSection({ userId }) {
+  const EMPTY = { nombre: '', apellidos: '', dni_nif: '', direccion: '', codigo_postal: '', ciudad: '', telefono: '' }
+  const [data,    setData]    = useState(null)   // null = cargando
+  const [edit,    setEdit]    = useState(EMPTY)
+  const [editing, setEditing] = useState(false)
+  const [saving,  setSaving]  = useState(false)
+  const [saved,   setSaved]   = useState(false)
+
+  useEffect(() => {
+    supabase.from('client_data').select('*').eq('user_id', userId).maybeSingle()
+      .then(({ data: d }) => {
+        setData(d ?? {})
+        if (d) setEdit({ nombre: d.nombre ?? '', apellidos: d.apellidos ?? '', dni_nif: d.dni_nif ?? '', direccion: d.direccion ?? '', codigo_postal: d.codigo_postal ?? '', ciudad: d.ciudad ?? '', telefono: d.telefono ?? '' })
+      })
+  }, [userId])
+
+  async function handleSave() {
+    setSaving(true)
+    await supabase.from('client_data').upsert({ ...edit, user_id: userId, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+    setData(edit)
+    setSaving(false)
+    setSaved(true)
+    setEditing(false)
+    setTimeout(() => setSaved(false), 2500)
+  }
+
+  if (data === null) return null
+
+  const hasData = data.nombre || data.dni_nif
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 mb-6 overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4">
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <span className="text-sm font-semibold text-gray-700">Datos de facturación</span>
+          {saved && <span className="text-xs text-green-600 font-medium">✓ Guardado</span>}
+        </div>
+        <button onClick={() => setEditing(e => !e)}
+          className="text-xs font-semibold text-red-700 hover:text-red-800 transition-colors">
+          {editing ? 'Cancelar' : hasData ? 'Editar' : 'Añadir'}
+        </button>
+      </div>
+
+      {!editing && hasData && (
+        <div className="px-5 pb-4 grid grid-cols-2 gap-x-6 gap-y-1 text-sm border-t border-gray-100 pt-3">
+          <div><span className="text-gray-400 text-xs">Nombre</span><p className="text-gray-800 font-medium">{data.nombre} {data.apellidos}</p></div>
+          <div><span className="text-gray-400 text-xs">DNI/NIF</span><p className="text-gray-800 font-medium">{data.dni_nif || '—'}</p></div>
+          <div><span className="text-gray-400 text-xs">Dirección</span><p className="text-gray-800">{data.direccion || '—'}</p></div>
+          <div><span className="text-gray-400 text-xs">CP / Ciudad</span><p className="text-gray-800">{[data.codigo_postal, data.ciudad].filter(Boolean).join(' ') || '—'}</p></div>
+          <div><span className="text-gray-400 text-xs">Teléfono</span><p className="text-gray-800">{data.telefono || '—'}</p></div>
+        </div>
+      )}
+
+      {!editing && !hasData && (
+        <p className="px-5 pb-4 text-sm text-gray-400 border-t border-gray-100 pt-3">
+          Sin datos guardados. Añádelos para que aparezcan en tus facturas.
+        </p>
+      )}
+
+      {editing && (
+        <div className="px-5 pb-5 border-t border-gray-100 pt-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Nombre</label>
+              <input value={edit.nombre} onChange={e => setEdit(p => ({...p, nombre: e.target.value}))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Apellidos</label>
+              <input value={edit.apellidos} onChange={e => setEdit(p => ({...p, apellidos: e.target.value}))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">DNI / NIF</label>
+            <input value={edit.dni_nif} onChange={e => setEdit(p => ({...p, dni_nif: e.target.value}))}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Dirección de facturación</label>
+            <input value={edit.direccion} onChange={e => setEdit(p => ({...p, direccion: e.target.value}))}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Código postal</label>
+              <input value={edit.codigo_postal} onChange={e => setEdit(p => ({...p, codigo_postal: e.target.value}))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Ciudad</label>
+              <input value={edit.ciudad} onChange={e => setEdit(p => ({...p, ciudad: e.target.value}))}
+                className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Teléfono</label>
+            <input value={edit.telefono} onChange={e => setEdit(p => ({...p, telefono: e.target.value}))}
+              className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+          </div>
+          <button onClick={handleSave} disabled={saving}
+            className="w-full py-2.5 bg-red-700 hover:bg-red-800 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-60">
+            {saving ? 'Guardando…' : 'Guardar datos'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── PÁGINA PRINCIPAL ──────────────────────────────────────────────────────
 export default function MisPedidos() {
   const [orders,  setOrders]  = useState([])
   const [loading, setLoading] = useState(true)
   const [filter,  setFilter]  = useState('all')
+  const [userId,  setUserId]  = useState(null)
 
   useEffect(() => {
     loadOrders()
@@ -221,6 +336,7 @@ export default function MisPedidos() {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setLoading(false); return }
+    setUserId(user.id)
 
     // 1. Cargar pedidos
     const { data: ordersData } = await supabase
@@ -267,6 +383,9 @@ export default function MisPedidos() {
             + Nueva configuración
           </Link>
         </div>
+
+        {/* Datos de facturación */}
+        {userId && <BillingDataSection userId={userId} />}
 
         {/* Filtros */}
         {orders.length > 0 && (
