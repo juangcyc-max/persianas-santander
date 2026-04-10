@@ -75,8 +75,8 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
   // Logo
   if (logoImg && logoImg.naturalWidth > 0) {
     doc.setFillColor(...C.white)
-    doc.roundedRect(W - 58, 2.5, 42, 27, 3, 3, 'F')
-    try { doc.addImage(logoImg, 'PNG', W - 57, 3.5, 40, 25) } catch {}
+    doc.roundedRect(W - 52, 3, 38, 26, 2, 2, 'F')
+    try { doc.addImage(logoImg, 'PNG', W - 51, 4, 36, 24) } catch {}
   }
 
   // ── BADGE ESTADO ──────────────────────────────────────────────────────
