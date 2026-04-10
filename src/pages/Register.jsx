@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
+import { sanitizeText } from '../services/sanitize'
 
 // ── Indicador de pasos ────────────────────────────────────────────────────
 function StepBar({ current, steps }) {
@@ -151,18 +152,21 @@ export default function Register() {
       const userId = data.user?.id
       if (!userId) throw new Error('No se pudo obtener el ID de usuario')
 
-      // 2. Crear perfil (puede fallar si RLS no permite insert antes de confirmar — en ese caso el trigger lo hará)
+      // 2. Crear perfil
       await supabase.from('profiles').upsert({
         id:        userId,
-        email:     email,
+        email:     sanitizeText(email),
         user_type: accType === 'professional' ? 'professional' : 'public',
-      }).then(() => {}) // ignorar error si RLS lo bloquea hasta confirmar
+      }).then(() => {})
 
       // 3. Si es profesional, guardar datos de empresa
       if (accType === 'professional' && e2Data) {
+        const sanitizedE2 = Object.fromEntries(
+          Object.entries(e2Data).map(([k, v]) => [k, typeof v === 'string' ? sanitizeText(v) : v])
+        )
         await supabase.from('professional_data').upsert({
           user_id: userId,
-          ...e2Data,
+          ...sanitizedE2,
         }).then(() => {})
       }
 

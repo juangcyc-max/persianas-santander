@@ -1,12 +1,19 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
-const ADMIN_EMAIL    = 'adminpersianassantander@gmail.com'
+const ADMIN_EMAIL    = 'adminpersianassantander@gmail.com' // email oficial admin
 const FROM           = 'Persianas Santander <noreply@persianassantander.es>'
 
-const cors = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = ['https://persianassantander.es', 'https://www.persianassantander.es']
+
+function getCors(req: Request) {
+  const origin = req.headers.get('origin') ?? ''
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Vary': 'Origin',
+  }
 }
 
 function fmt(n: number) {
@@ -194,7 +201,8 @@ function tplPresupuestoCliente(d: any) {
 
 // ── Servidor ────────────────────────────────────────────────────────────────
 
-serve(async (req) => {
+serve(async (req: Request) => {
+  const cors = getCors(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
   try {

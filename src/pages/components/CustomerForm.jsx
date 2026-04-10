@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { sendBudgetResend } from '../../services/email'
 import { generateBudgetPDF } from '../../services/pdf'
+import { sanitizeObject } from '../../services/sanitize'
 
 function CustomerForm({ customerData = {}, onCustomerDataChange, configuration = {}, onSubmit }) {
   const [sending,   setSending]   = useState(false)
@@ -30,7 +31,7 @@ function CustomerForm({ customerData = {}, onCustomerDataChange, configuration =
 
     setSending(true)
     try {
-      const result = await sendBudgetResend(customerData, configuration)
+      const result = await sendBudgetResend(sanitizeObject(customerData), configuration)
       if (result.success) {
         setSent(true)
         onSubmit?.()
@@ -49,7 +50,7 @@ function CustomerForm({ customerData = {}, onCustomerDataChange, configuration =
     if (Object.keys(errs).length) { setErrors(errs); return }
     setPdfLoading(true)
     try {
-      await generateBudgetPDF(customerData, configuration)
+      await generateBudgetPDF(sanitizeObject(customerData), configuration)
     } catch {
       setErrors({ _global: 'Error generando el PDF. Inténtalo de nuevo.' })
     } finally {
