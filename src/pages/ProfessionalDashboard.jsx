@@ -111,12 +111,11 @@ function ClientBudgetModal({ config, logoUrl, onGenerate, onClose }) {
     if (Object.keys(e).length) { setErrors(e); return }
 
     setGenerating(true)
-    await onGenerate(config, parseFloat(clientPrice), {
-      name:    clientName,
-      phone:   clientPhone,
-      email:   clientEmail,
-      address: clientAddress,
-    })
+    await onGenerate(
+      { ...config, productType: config.blind_type, blindType: config.blind_type },
+      parseFloat(clientPrice),
+      { name: clientName, phone: clientPhone, email: clientEmail, address: clientAddress }
+    )
     setGenerating(false)
     onClose()
   }

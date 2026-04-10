@@ -198,7 +198,9 @@ function Configurator() {
   const priceBreakdown = calculatePriceBreakdown()
 
   const configuration = {
-    productType, boxType, mechanism, orientation, motorType, guideType, installacion,
+    productType,
+    blindType: productType, // alias para compatibilidad con BD y PDF
+    boxType, mechanism, orientation, motorType, guideType, installacion,
     width, height,
     boxColor, slatColor,
     boxColorName:  winchesterColors.find(c => c.hex === boxColor)?.name,
