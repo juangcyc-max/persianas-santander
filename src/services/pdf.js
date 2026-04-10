@@ -73,7 +73,6 @@ function addPageHeader(doc, logoImg, title, number, today, brandColor = COLORS.r
     try { doc.addImage(logoImg, "PNG", W - 53, 3, 38, 22) } catch {}
   }
 
-  doc.setFillColor(...brandColor[0], brandColor[1], brandColor[2])
   doc.setFillColor(brandColor[0] + 40, brandColor[1] + 40, brandColor[2] + 40)
   doc.rect(0, 28, W, 3, "F")
 }
