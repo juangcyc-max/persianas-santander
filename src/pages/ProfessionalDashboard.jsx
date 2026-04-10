@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
 import { generateInvoicePDF } from '../services/invoicePDF'
-import { redownloadBudgetPDF, generateClientBudgetPDF } from '../services/pdf'
+import { redownloadBudgetPDF, generateClientBudgetPDF, generateClientInvoicePDF } from '../services/pdf'
 
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
 const fmtDate = (d) => d ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)) : '—'
@@ -205,6 +205,118 @@ function ClientBudgetModal({ config, logoUrl, onGenerate, onClose }) {
   )
 }
 
+function ClientInvoiceModal({ config, logoUrl, onGenerate, onClose }) {
+  const [clientName,     setClientName]     = useState('')
+  const [clientPhone,    setClientPhone]    = useState('')
+  const [clientEmail,    setClientEmail]    = useState('')
+  const [clientAddress,  setClientAddress]  = useState('')
+  const [clientNif,      setClientNif]      = useState('')
+  const [clientPrice,    setClientPrice]    = useState('')
+  const [invoiceNumber,  setInvoiceNumber]  = useState(`F-${Date.now().toString().slice(-6)}`)
+  const [generating,     setGenerating]     = useState(false)
+  const [errors,         setErrors]         = useState({})
+
+  const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
+
+  async function handleGenerate() {
+    const e = {}
+    if (!clientName.trim()) e.name = 'Obligatorio'
+    if (!clientPrice || isNaN(parseFloat(clientPrice)) || parseFloat(clientPrice) <= 0) e.price = 'Introduce un precio válido'
+    if (Object.keys(e).length) { setErrors(e); return }
+    setGenerating(true)
+    await onGenerate(
+      { ...config, productType: config.blind_type, blindType: config.blind_type },
+      parseFloat(clientPrice),
+      { name: clientName, phone: clientPhone, email: clientEmail, address: clientAddress, nif: clientNif },
+      invoiceNumber
+    )
+    setGenerating(false)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div>
+            <h2 className="font-bold text-gray-900">Factura para tu cliente</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Se generará con tu logo y datos de empresa</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm">
+            <p className="font-semibold text-gray-700">{config.blind_type ?? 'Persiana'}</p>
+            <p className="text-gray-400 text-xs">{config.width} × {config.height} mm · {config.mechanism}</p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Nº de factura</label>
+            <input type="text" value={invoiceNumber} onChange={e => setInvoiceNumber(e.target.value)}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-colors" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">Importe total (con IVA) *</label>
+            <div className="relative">
+              <input type="number" min="0" step="0.01" value={clientPrice}
+                onChange={e => { setClientPrice(e.target.value); setErrors(p => ({...p, price: ''})) }}
+                placeholder="0,00"
+                className={`w-full px-3.5 py-2.5 pr-8 rounded-xl border text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-colors ${errors.price ? 'border-red-300 bg-red-50' : 'border-gray-300'}`} />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
+            </div>
+            {errors.price && <p className="text-xs text-red-600 mt-1">{errors.price}</p>}
+            {clientPrice && !isNaN(parseFloat(clientPrice)) && (
+              <p className="text-xs text-gray-400 mt-1">
+                Base: {fmt(parseFloat(clientPrice) / 1.21)} · IVA: {fmt(parseFloat(clientPrice) - parseFloat(clientPrice) / 1.21)}
+              </p>
+            )}
+          </div>
+
+          <hr className="border-gray-100" />
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Datos del cliente / receptor</p>
+
+          {[
+            { label: 'Nombre *',   value: clientName,    set: setClientName,    err: errors.name, placeholder: 'Juan García' },
+            { label: 'NIF / DNI',  value: clientNif,     set: setClientNif,     placeholder: '12345678A' },
+            { label: 'Teléfono',   value: clientPhone,   set: setClientPhone,   placeholder: '600 123 456' },
+            { label: 'Email',      value: clientEmail,   set: setClientEmail,   placeholder: 'cliente@email.com' },
+            { label: 'Dirección',  value: clientAddress, set: setClientAddress, placeholder: 'Calle Mayor 1' },
+          ].map(({ label, value, set, err, placeholder }) => (
+            <div key={label}>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+              <input type="text" value={value} placeholder={placeholder}
+                onChange={e => { set(e.target.value); if (err) setErrors(p => ({...p, name: ''})) }}
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-colors ${err ? 'border-red-300 bg-red-50' : 'border-gray-300'}`} />
+              {err && <p className="text-xs text-red-600 mt-1">{err}</p>}
+            </div>
+          ))}
+
+          {!logoUrl && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-xs text-amber-700">
+              No tienes logo subido. Ve a "Mi empresa" para añadirlo.
+            </div>
+          )}
+
+          <button onClick={handleGenerate} disabled={generating}
+            className="w-full py-3 bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+            {generating
+              ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Generando…</>
+              : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Descargar factura PDF</>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ProfessionalDashboard() {
   const navigate = useNavigate()
   const { itemCount } = useCart()
@@ -223,7 +335,8 @@ export default function ProfessionalDashboard() {
   const [empresaErrors,    setEmpresaErrors]    = useState({})
   const [logoUrl,          setLogoUrl]          = useState(null)
   const [uploadingLogo,    setUploadingLogo]    = useState(false)
-  const [clientBudgetModal, setClientBudgetModal] = useState(null) // config seleccionada
+  const [clientBudgetModal,  setClientBudgetModal]  = useState(null)
+  const [clientInvoiceModal, setClientInvoiceModal] = useState(null)
 
   const REQUIRED_FIELDS = ['razon_social', 'cif_nif', 'telefono', 'direccion_fiscal', 'codigo_postal', 'ciudad', 'provincia', 'email_facturacion']
 
@@ -326,6 +439,17 @@ export default function ProfessionalDashboard() {
       empresa: empresa ?? {},
       logoUrl,
       clientPrice,
+    })
+  }
+
+  async function handleGenerateClientInvoice(config, clientPrice, clientData, invoiceNumber) {
+    await generateClientInvoicePDF({
+      customerData: clientData,
+      configuration: config,
+      empresa: empresa ?? {},
+      logoUrl,
+      clientPrice,
+      invoiceNumber,
     })
   }
 
@@ -481,7 +605,14 @@ export default function ProfessionalDashboard() {
                                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                   </svg>
-                                  Presupuesto cliente
+                                  Presupuesto
+                                </button>
+                                <button onClick={() => setClientInvoiceModal(c)}
+                                  className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 hover:text-green-800 bg-green-50 hover:bg-green-100 px-2.5 py-1.5 rounded-lg transition-colors">
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                  </svg>
+                                  Factura
                                 </button>
                                 <AddToCartFromDashboard configId={c.id} />
                                 <button onClick={() => handleDeleteConfig(c.id)}
@@ -726,6 +857,16 @@ export default function ProfessionalDashboard() {
           logoUrl={logoUrl}
           onGenerate={handleGenerateClientBudget}
           onClose={() => setClientBudgetModal(null)}
+        />
+      )}
+
+      {/* ── MODAL FACTURA PARA CLIENTE ── */}
+      {clientInvoiceModal && (
+        <ClientInvoiceModal
+          config={clientInvoiceModal}
+          logoUrl={logoUrl}
+          onGenerate={handleGenerateClientInvoice}
+          onClose={() => setClientInvoiceModal(null)}
         />
       )}
 

@@ -533,6 +533,174 @@ export async function generateClientBudgetPDF({
   }
 }
 
+// ── FACTURA DEL PROFESIONAL PARA SU CLIENTE ──────────────────────────────
+export async function generateClientInvoicePDF({
+  customerData = {},
+  configuration = {},
+  empresa = {},
+  logoUrl = null,
+  clientPrice,
+  invoiceNumber = null,
+}) {
+  try {
+    const doc = new jsPDF()
+    const W = doc.internal.pageSize.width
+    const H = doc.internal.pageSize.height
+    const iNumber = invoiceNumber ?? `F-${Date.now().toString().slice(-6)}`
+    const today = formatDate(new Date())
+
+    const finalPrice = Number(clientPrice || 0)
+    const subtotalSinIva = finalPrice / 1.21
+    const iva = finalPrice - subtotalSinIva
+
+    const logoImg = logoUrl ? await loadImage(logoUrl) : null
+    const brandColor = COLORS.blue
+
+    let y = 38
+
+    // ── BLOQUE EMISOR ─────────────────────────────────────────────────────
+    doc.setFillColor(...COLORS.grayBg)
+    doc.roundedRect(14, y, W - 28, 42, 3, 3, "F")
+    doc.setTextColor(...brandColor)
+    doc.setFontSize(8)
+    doc.setFont("helvetica", "bold")
+    doc.text("DATOS DEL EMISOR", 20, y + 7)
+    doc.setTextColor(...COLORS.dark)
+    doc.setFontSize(10)
+    doc.setFont("helvetica", "bold")
+    doc.text(empresa.razon_social || "Empresa no especificada", 20, y + 15)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.setTextColor(...COLORS.mid)
+    if (empresa.cif_nif)           doc.text(`CIF/NIF: ${empresa.cif_nif}`, 20, y + 22)
+    if (empresa.direccion_fiscal)  doc.text(empresa.direccion_fiscal, 20, y + 29)
+    const cityLine = [empresa.codigo_postal, empresa.ciudad, empresa.provincia].filter(Boolean).join(" · ")
+    if (cityLine) doc.text(cityLine, 20, y + 36)
+    if (empresa.telefono)          doc.text(`Tel: ${empresa.telefono}`, W - 14, y + 22, { align: "right" })
+    if (empresa.email_facturacion) doc.text(empresa.email_facturacion, W - 14, y + 29, { align: "right" })
+    y += 50
+
+    // ── BLOQUE CLIENTE ────────────────────────────────────────────────────
+    doc.setFillColor(...COLORS.grayBg)
+    doc.roundedRect(14, y, W - 28, 36, 3, 3, "F")
+    doc.setTextColor(...brandColor)
+    doc.setFontSize(8)
+    doc.setFont("helvetica", "bold")
+    doc.text("DATOS DEL CLIENTE / RECEPTOR", 20, y + 7)
+    doc.setTextColor(...COLORS.dark)
+    doc.setFontSize(10)
+    doc.text(customerData.name || "Cliente no especificado", 20, y + 15)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.setTextColor(...COLORS.mid)
+    const contactInfo = [customerData.phone, customerData.email].filter(Boolean).join("  ·  ")
+    doc.text(contactInfo || "Sin datos de contacto", 20, y + 22)
+    if (customerData.address) doc.text(customerData.address, 20, y + 29)
+    if (customerData.nif) doc.text(`NIF: ${customerData.nif}`, W - 14, y + 22, { align: "right" })
+    y += 44
+
+    // ── TABLA CONCEPTOS ───────────────────────────────────────────────────
+    const productLabel = LABELS.productType[configuration.productType ?? configuration.blindType] ?? 'Persiana'
+    const boxLabel = LABELS.boxType[configuration.boxType] ?? ''
+    const guideLabel = LABELS.guideType[configuration.guideType] ?? ''
+    const hasMotor = configuration.mechanism === 'motor'
+
+    const invoiceLines = [
+      { concepto: productLabel, detalle: `${configuration.width || 0} × ${configuration.height || 0} mm · ${configuration.slatColorName ?? ''}` },
+      boxLabel && { concepto: boxLabel, detalle: configuration.boxColorName ?? '' },
+      guideLabel && guideLabel !== 'Sin guías' && { concepto: guideLabel, detalle: '2 uds.' },
+      hasMotor && { concepto: `Motor ${LABELS.motorType[configuration.motorType] ?? ''}`, detalle: '' },
+      configuration.installacion !== false && { concepto: 'Instalación', detalle: 'Incluida' },
+    ].filter(Boolean)
+
+    autoTable(doc, {
+      startY: y,
+      head: [['CONCEPTO', 'DETALLE', 'IMPORTE']],
+      body: invoiceLines.map((line, i) => [
+        line.concepto,
+        line.detalle,
+        i === 0 ? formatCurrency(subtotalSinIva) : '—',
+      ]),
+      headStyles: { fillColor: brandColor, textColor: COLORS.white, fontStyle: 'bold', fontSize: 9, cellPadding: 5 },
+      bodyStyles: { fontSize: 9, cellPadding: 4, textColor: COLORS.dark },
+      alternateRowStyles: { fillColor: COLORS.grayBg },
+      columnStyles: {
+        0: { fontStyle: 'bold', cellWidth: 80, textColor: COLORS.mid },
+        1: { cellWidth: 'auto' },
+        2: { cellWidth: 35, halign: 'right' },
+      },
+      margin: { left: 14, right: 14, top: 38, bottom: 20 },
+    })
+    y = doc.lastAutoTable.finalY + 12
+
+    // ── BLOQUE TOTALES ────────────────────────────────────────────────────
+    if (y > H - 60) { doc.addPage(); y = 38 }
+    doc.setFillColor(...COLORS.grayBg)
+    doc.roundedRect(14, y, W - 28, 45, 3, 3, "F")
+    doc.setTextColor(...brandColor)
+    doc.setFontSize(8)
+    doc.setFont("helvetica", "bold")
+    doc.text("TOTALES", 20, y + 7)
+
+    const col1 = 20, col2 = W - 18
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.setTextColor(...COLORS.mid)
+    doc.text("Base imponible", col1, y + 16)
+    doc.text(formatCurrency(subtotalSinIva), col2, y + 16, { align: "right" })
+    doc.text("IVA (21%)", col1, y + 23)
+    doc.text(formatCurrency(iva), col2, y + 23, { align: "right" })
+
+    doc.setDrawColor(...COLORS.border)
+    doc.setLineWidth(0.3)
+    doc.line(14, y + 30, W - 14, y + 30)
+
+    doc.setFillColor(...brandColor)
+    doc.roundedRect(W - 80, y + 32, 66, 14, 2, 2, "F")
+    doc.setTextColor(...COLORS.white)
+    doc.setFontSize(12)
+    doc.setFont("helvetica", "bold")
+    doc.text(`TOTAL: ${formatCurrency(finalPrice)}`, W - 47, y + 41, { align: "center" })
+    doc.setTextColor(...COLORS.mid)
+    doc.setFontSize(8)
+    doc.setFont("helvetica", "normal")
+    doc.text("IVA incluido", col1, y + 41)
+    y += 58
+
+    // ── CONDICIONES DE PAGO ───────────────────────────────────────────────
+    if (y > H - 50) { doc.addPage(); y = 38 }
+    doc.setTextColor(...brandColor)
+    doc.setFontSize(8)
+    doc.setFont("helvetica", "bold")
+    doc.text("FORMA DE PAGO Y CONDICIONES", 14, y + 6)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8)
+    doc.setTextColor(...COLORS.mid)
+    doc.text("Pago al contado o según condiciones acordadas con el cliente.", 14, y + 13)
+    doc.text("Esta factura tiene validez fiscal como documento oficial de pago.", 14, y + 20)
+
+    // ── CABECERAS Y PIES ──────────────────────────────────────────────────
+    const footerLine1 = [empresa.razon_social, empresa.cif_nif].filter(Boolean).join("  ·  ")
+    const footerLine2 = [empresa.telefono, empresa.email_facturacion].filter(Boolean).join("  ·  ")
+
+    const pageCount = doc.internal.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      addPageHeader(doc, logoImg, "FACTURA", iNumber, today, brandColor)
+      addPageFooter(doc, [
+        footerLine1 || "Empresa profesional",
+        footerLine2 || "",
+      ])
+    }
+
+    const safeCustomerName = (customerData.name || "Cliente").trim().replace(/[^a-z0-9]/gi, "_")
+    doc.save(`Factura_${safeCustomerName}_${iNumber}.pdf`)
+
+  } catch (error) {
+    console.error("Error generando factura cliente:", error)
+  }
+}
+
 // ── REGENERAR PDF DE PRESUPUESTO EXISTENTE ────────────────────────────────
 export async function redownloadBudgetPDF(budget) {
   const customerData = budget.customer_data ?? {
