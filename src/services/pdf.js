@@ -246,7 +246,7 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
     y = doc.lastAutoTable.finalY + 12
 
     // ── BLOQUE PRECIO ─────────────────────────────────────────────────────
-    y = addPriceBlock(doc, y, { subtotalSinIva, iva, totalConIva, finalPrice, discount }, isPro, proDiscount)
+    y = addPriceBlock(doc, y, { subtotalSinIva, iva, totalConIva: priceBeforeDiscount, finalPrice, discount }, isPro, proDiscount)
 
     // ── QR Y CONDICIONES ──────────────────────────────────────────────────
     if (y > H - 85) { doc.addPage(); y = 38 }
