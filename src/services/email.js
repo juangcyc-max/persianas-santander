@@ -65,7 +65,7 @@ export function confirmOrderToClient(orderData, userEmail) {
 }
 
 /** Notifica al cliente un cambio de estado */
-export function notifyStatusChange({ userEmail, orderId, status, statusLabel, confirmedDate, confirmedTime, adminNotes }) {
+export function notifyStatusChange({ userEmail, orderId, status, statusLabel, confirmedDate, confirmedTime }) {
   return callSendEmail('status_change', {
     user_email:     userEmail,
     order_id:       orderId,
@@ -73,18 +73,30 @@ export function notifyStatusChange({ userEmail, orderId, status, statusLabel, co
     status_label:   statusLabel,
     confirmed_date: confirmedDate,
     confirmed_time: confirmedTime,
-    admin_notes:    adminNotes,
   })
 }
 
 /** Confirma al cliente la cita de medición */
-export function confirmAppointment({ userEmail, confirmedDate, confirmedTime, address, adminNotes }) {
+export function confirmAppointment({ userEmail, confirmedDate, confirmedTime, address }) {
   return callSendEmail('appointment_confirmation', {
     user_email:     userEmail,
     confirmed_date: confirmedDate,
     confirmed_time: confirmedTime,
     address,
-    admin_notes:    adminNotes,
+  })
+}
+
+/** Envía la factura al cliente por email */
+export function sendInvoiceEmail({ userEmail, invoice, orderId, items }) {
+  return callSendEmail('send_invoice', {
+    user_email:        userEmail,
+    order_id:          orderId,
+    invoice_number:    invoice.invoice_number,
+    total_without_iva: invoice.total_without_iva,
+    iva:               invoice.iva,
+    total_with_iva:    invoice.total_with_iva,
+    payment_status:    invoice.payment_status,
+    items:             items ?? [],
   })
 }
 

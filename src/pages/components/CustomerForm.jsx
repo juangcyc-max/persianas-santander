@@ -2,12 +2,14 @@ import { useState } from 'react'
 import { sendBudgetResend } from '../../services/email'
 import { generateBudgetPDF } from '../../services/pdf'
 import { sanitizeObject } from '../../services/sanitize'
+import { useRateLimit } from '../../services/useRateLimit'
 
 function CustomerForm({ customerData = {}, onCustomerDataChange, configuration = {}, onSubmit }) {
   const [sending,   setSending]   = useState(false)
   const [pdfLoading,setPdfLoading]= useState(false)
   const [errors,    setErrors]    = useState({})
   const [sent,      setSent]      = useState(false)
+  const { secondsLeft, consume } = useRateLimit(60_000)
 
   const handleChange = (field, value) => {
     onCustomerDataChange({ ...customerData, [field]: value })
@@ -28,6 +30,7 @@ function CustomerForm({ customerData = {}, onCustomerDataChange, configuration =
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length) { setErrors(errs); return }
+    if (!consume()) { setErrors({ _global: `Espera ${secondsLeft}s antes de volver a enviar.` }); return }
 
     setSending(true)
     try {

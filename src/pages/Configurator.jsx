@@ -53,6 +53,16 @@ const MOTOR_PRICES = { mecanico: 120, mando_distancia: 260 }
 const GUIDE_PRICE_PER_ML = { v25: 5, h25: 7 }
 const INSTALACION_PRICE = 100
 const MIN_SQM = 1.5
+const CART_KEY = 'ps_cart'
+
+function loadCart() {
+  try {
+    const raw = localStorage.getItem(CART_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
 
 function getGamaFromColor(colors, hex) {
   return colors.find(c => c.hex === hex)?.gama ?? 'Grupo Base'
@@ -79,19 +89,27 @@ function Configurator() {
     })
   }, [])
 
-  // Estado de configuración
-  const [productType,  setProductType]  = useState('laminada')   // laminada | autoblocante | sistema_mini
-  const [boxType,      setBoxType]      = useState('aluminio')    // aluminio | pvc | sin_cajon
-  const [mechanism,    setMechanism]    = useState('muelle')
-  const [orientation,  setOrientation]  = useState('izquierda')
-  const [motorType,    setMotorType]    = useState('mecanico')
-  const [guideType,    setGuideType]    = useState('v25')         // v25 | h25
-  const [installacion, setInstallacion] = useState(true)
-  const [width,        setWidth]        = useState(1000)
-  const [height,       setHeight]       = useState(1200)
-  const [boxColor,     setBoxColor]     = useState('#F2ECCA')
-  const [slatColor,    setSlatColor]    = useState('#C49A6C')
+  // Estado de configuración (persistido en localStorage)
+  const [productType,  setProductType]  = useState(() => loadCart().productType  ?? 'laminada')
+  const [boxType,      setBoxType]      = useState(() => loadCart().boxType      ?? 'aluminio')
+  const [mechanism,    setMechanism]    = useState(() => loadCart().mechanism    ?? 'muelle')
+  const [orientation,  setOrientation]  = useState(() => loadCart().orientation  ?? 'izquierda')
+  const [motorType,    setMotorType]    = useState(() => loadCart().motorType    ?? 'mecanico')
+  const [guideType,    setGuideType]    = useState(() => loadCart().guideType    ?? 'v25')
+  const [installacion, setInstallacion] = useState(() => loadCart().installacion ?? true)
+  const [width,        setWidth]        = useState(() => loadCart().width        ?? 1000)
+  const [height,       setHeight]       = useState(() => loadCart().height       ?? 1200)
+  const [boxColor,     setBoxColor]     = useState(() => loadCart().boxColor     ?? '#F2ECCA')
+  const [slatColor,    setSlatColor]    = useState(() => loadCart().slatColor    ?? '#C49A6C')
   const [customerData, setCustomerData] = useState({ name: '', phone: '', email: '', address: '' })
+
+  // Guardar configuración en localStorage cuando cambie
+  useEffect(() => {
+    localStorage.setItem(CART_KEY, JSON.stringify({
+      productType, boxType, mechanism, orientation, motorType,
+      guideType, installacion, width, height, boxColor, slatColor,
+    }))
+  }, [productType, boxType, mechanism, orientation, motorType, guideType, installacion, width, height, boxColor, slatColor])
   const [showCustomerForm, setShowCustomerForm] = useState(false)
 
   // Forzar motor si el tipo lo requiere

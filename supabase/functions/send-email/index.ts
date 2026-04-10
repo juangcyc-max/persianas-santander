@@ -132,20 +132,12 @@ function tplCambioEstado(d: any) {
        </div>`
     : ''
 
-  const notasBlock = d.admin_notes
-    ? `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin:16px 0">
-        <strong style="color:#374151;font-size:13px">Nota:</strong>
-        <span style="color:#6b7280;font-size:13px"> ${d.admin_notes}</span>
-       </div>`
-    : ''
-
   return layout(`
     <h2 style="color:#111;margin-top:0;font-size:18px">Actualización de tu pedido</h2>
     <div style="border-left:4px solid ${color};background:#f9fafb;padding:14px 18px;border-radius:4px;margin:16px 0">
       <span style="font-size:18px;font-weight:bold;color:${color}">${label}</span>
     </div>
     ${citaBlock}
-    ${notasBlock}
     <p style="color:#9ca3af;font-size:12px">Pedido #${(d.order_id ?? '').slice(0,8).toUpperCase()}</p>
   `)
 }
@@ -158,8 +150,52 @@ function tplConfirmacionCita(d: any) {
       <div style="margin-bottom:10px"><strong style="color:#166534">Hora:</strong>  <span style="color:#374151">${d.confirmed_time}</span></div>
       <div><strong style="color:#166534">Dirección:</strong> <span style="color:#374151">${d.address}</span></div>
     </div>
-    ${d.admin_notes ? `<p style="color:#374151;font-size:14px"><strong>Nota:</strong> ${d.admin_notes}</p>` : ''}
     <p style="color:#374151;font-size:14px">Nuestro técnico se presentará en la dirección indicada. Si necesitas modificar algo, no dudes en contactarnos.</p>
+  `)
+}
+
+function tplFacturaCliente(d: any) {
+  const items = (d.items ?? []).map((i: any) => `
+    <tr>
+      <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;font-size:14px">
+        Persiana ${i.blind_type === 'blocking' ? 'bloqueante' : 'estándar'} · ${i.width}×${i.height}mm
+        <br><span style="color:#9ca3af;font-size:12px">Caja: ${i.box_color_name} · Lamas: ${i.slat_color_name}</span>
+      </td>
+      <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;text-align:right;font-weight:bold;font-size:14px">${fmt(i.estimated_price * (i.quantity ?? 1))}</td>
+    </tr>`).join('')
+
+  const pagoBlock = d.payment_status === 'paid'
+    ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:14px;margin:16px 0">
+        <strong style="color:#166534">✓ Factura pagada</strong>
+       </div>`
+    : `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:14px;margin:16px 0">
+        <strong style="color:#92400e">Pendiente de pago</strong><br>
+        <span style="color:#78350f;font-size:13px">Formas de pago: Bizum, transferencia bancaria o efectivo.<br>
+        Contacto: <a href="tel:+34942000000" style="color:#b91c1c">+34 942 00 00 00</a></span>
+       </div>`
+
+  return layout(`
+    <h2 style="color:#111;margin-top:0;font-size:18px">📄 Tu factura — ${d.invoice_number}</h2>
+    <p style="color:#6b7280;font-size:14px;margin-top:0">Pedido #${(d.order_id ?? '').slice(0,8).toUpperCase()}</p>
+    <table style="width:100%;border-collapse:collapse;margin:16px 0">${items}
+      <tr>
+        <td style="padding:12px 8px;font-size:13px;color:#6b7280">Base imponible</td>
+        <td style="padding:12px 8px;text-align:right;font-size:13px;color:#6b7280">${fmt(d.total_without_iva)}</td>
+      </tr>
+      <tr>
+        <td style="padding:4px 8px;font-size:13px;color:#6b7280">IVA (21%)</td>
+        <td style="padding:4px 8px;text-align:right;font-size:13px;color:#6b7280">${fmt(d.iva)}</td>
+      </tr>
+      <tr>
+        <td style="padding:12px 8px;font-weight:bold;font-size:15px">Total con IVA</td>
+        <td style="padding:12px 8px;text-align:right;font-weight:bold;color:#b91c1c;font-size:18px">${fmt(d.total_with_iva)}</td>
+      </tr>
+    </table>
+    ${pagoBlock}
+    <p style="color:#9ca3af;font-size:12px;margin-top:24px">
+      Persianas Santander · NIF B39476726<br>
+      Polígono Nueva Montaña, C/ Isla Oleo, Nave 9 · Santander
+    </p>
   `)
 }
 
@@ -223,6 +259,10 @@ serve(async (req: Request) => {
 
       case 'appointment_confirmation':
         await send(data.user_email, 'Cita de medición confirmada — Persianas Santander', tplConfirmacionCita(data))
+        break
+
+      case 'send_invoice':
+        await send(data.user_email, `Tu factura ${data.invoice_number} — Persianas Santander`, tplFacturaCliente(data))
         break
 
       case 'budget_request':

@@ -155,16 +155,17 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
     startY: y,
     head: [['Descripción', 'Medidas', 'Mecanismo', 'Colores', 'Importe']],
     body: tableData,
-    headStyles: { fillColor: COLORS.dark, textColor: COLORS.white, fontStyle: 'bold', fontSize: 8.5, cellPadding: 4 },
-    bodyStyles: { fontSize: 8.5, cellPadding: 4, textColor: COLORS.dark },
+    headStyles: { fillColor: COLORS.dark, textColor: COLORS.white, fontStyle: 'bold', fontSize: 8.5, cellPadding: 3.5 },
+    bodyStyles: { fontSize: 8.5, cellPadding: 3.5, textColor: COLORS.dark, overflow: 'linebreak' },
     alternateRowStyles: { fillColor: COLORS.grayBg },
     columnStyles: {
-      0: { cellWidth: 58 },
-      1: { cellWidth: 28, halign: 'center' },
-      2: { cellWidth: 24, halign: 'center' },
-      3: { cellWidth: 42 },
+      0: { cellWidth: 56 },
+      1: { cellWidth: 26, halign: 'center' },
+      2: { cellWidth: 22, halign: 'center' },
+      3: { cellWidth: 40 },
       4: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
     },
+    tableWidth: doc.internal.pageSize.width - 28,
     margin: { left: 14, right: 14 },
   })
 

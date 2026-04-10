@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { generateInvoicePDF } from '../services/invoicePDF'
 import { setProfessionalDiscountForUser } from '../services/settings'
-import { notifyStatusChange, confirmAppointment } from '../services/email'
+import { notifyStatusChange, confirmAppointment, sendInvoiceEmail } from '../services/email'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
@@ -70,38 +70,45 @@ function OrderModal({ order, onClose, onUpdate }) {
     setExistingInvoice(data ?? null)
   }
 
+  // Crea el registro de factura en BD (sin descargar PDF)
+  async function createInvoiceRecord() {
+    const totalSinIva = (order.total_with_iva ?? 0) / 1.21
+    const iva         = (order.total_with_iva ?? 0) - totalSinIva
+    const invoiceNum  = `FAC-${Date.now().toString().slice(-8)}`
+
+    const { data: inv, error } = await supabase
+      .from('invoices')
+      .insert({
+        order_id:           order.id,
+        user_id:            order.user_id,
+        invoice_number:     invoiceNum,
+        payment_status:     'pending_payment',
+        total_without_iva:  totalSinIva,
+        iva:                iva,
+        total_with_iva:     order.total_with_iva,
+        items:              order.items,
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    setExistingInvoice(inv)
+    return inv
+  }
+
+  // Botón manual: crea registro (si no existe) y descarga el PDF
   async function handleGenerateInvoice() {
     setGeneratingInvoice(true)
     try {
-      const totalSinIva = (order.total_with_iva ?? 0) / 1.21
-      const iva         = (order.total_with_iva ?? 0) - totalSinIva
-      const invoiceNum  = `FAC-${Date.now().toString().slice(-8)}`
+      let inv = existingInvoice
+      if (!inv) inv = await createInvoiceRecord()
 
-      const { data: inv, error } = await supabase
-        .from('invoices')
-        .insert({
-          order_id:           order.id,
-          user_id:            order.user_id,
-          invoice_number:     invoiceNum,
-          payment_status:     'pending_payment',
-          total_without_iva:  totalSinIva,
-          iva:                iva,
-          total_with_iva:     order.total_with_iva,
-          items:              order.items,
-        })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      // Cargar datos de empresa del profesional
       const { data: empresaData } = await supabase
         .from('professional_data')
         .select('*')
         .eq('user_id', order.user_id)
         .maybeSingle()
 
-      setExistingInvoice(inv)
       generateInvoicePDF(inv, order, empresaData)
     } catch (e) {
       console.error('Error generando factura:', e)
@@ -142,6 +149,11 @@ function OrderModal({ order, onClose, onUpdate }) {
         await supabase.from('invoices').delete().eq('id', existingInvoice.id)
         setExistingInvoice(null)
       }
+      // Auto-generar factura cuando se confirma el pedido (si no existe aún)
+      if (status === 'confirmed' && !existingInvoice) {
+        try { await createInvoiceRecord() } catch (e) { console.error('Auto-factura:', e) }
+      }
+
       // Email automático al cliente si cambió el estado
       const clientEmail = order.profiles?.email
       if (clientEmail) {
@@ -153,7 +165,6 @@ function OrderModal({ order, onClose, onUpdate }) {
           statusLabel:   statusLabels[status] ?? status,
           confirmedDate,
           confirmedTime,
-          adminNotes,
         })
       }
       setSaved(true)
@@ -179,13 +190,23 @@ function OrderModal({ order, onClose, onUpdate }) {
     try {
       const clientEmail = order.profiles?.email
       if (clientEmail) {
-        await confirmAppointment({
-          userEmail:     clientEmail,
-          confirmedDate,
-          confirmedTime,
-          address:       order.address,
-          adminNotes,
-        })
+        if (existingInvoice) {
+          // Enviar factura al cliente
+          await sendInvoiceEmail({
+            userEmail: clientEmail,
+            invoice:   existingInvoice,
+            orderId:   order.id,
+            items:     order.items,
+          })
+        } else {
+          // Sin factura: enviar confirmación de cita
+          await confirmAppointment({
+            userEmail:     clientEmail,
+            confirmedDate,
+            confirmedTime,
+            address:       order.address,
+          })
+        }
       }
       setEmailSent(true)
       setTimeout(() => setEmailSent(false), 3000)
@@ -333,7 +354,7 @@ function OrderModal({ order, onClose, onUpdate }) {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                {emailSent ? '✓ Enviado' : 'Email cliente'}
+                {emailSent ? '✓ Enviado' : existingInvoice ? 'Enviar factura' : 'Email cliente'}
               </button>
 
               {/* Google Calendar */}
@@ -440,6 +461,10 @@ export default function AdminDashboard() {
   const [filter,       setFilter]       = useState('all')
   const [search,       setSearch]       = useState('')
   const [unauthorized, setUnauthorized] = useState(false)
+  const [page,         setPage]         = useState(1)
+  const [dateFrom,     setDateFrom]     = useState('')
+  const [dateTo,       setDateTo]       = useState('')
+  const PAGE_SIZE = 15
 
   useEffect(() => { checkAdmin() }, [])
 
@@ -530,8 +555,15 @@ export default function AdminDashboard() {
       o.profiles?.email?.toLowerCase().includes(search.toLowerCase()) ||
       o.address?.toLowerCase().includes(search.toLowerCase()) ||
       o.id.toLowerCase().includes(search.toLowerCase())
-    return matchFilter && matchSearch
+    const d = o.created_at ? o.created_at.slice(0, 10) : ''
+    const matchFrom = !dateFrom || d >= dateFrom
+    const matchTo   = !dateTo   || d <= dateTo
+    return matchFilter && matchSearch && matchFrom && matchTo
   })
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage   = Math.min(page, totalPages)
+  const paginated  = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   const stats = {
     total:     orders.length,
@@ -617,14 +649,33 @@ export default function AdminDashboard() {
         </div>
 
         {/* Filtros y búsqueda */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Buscar por email, dirección o ID..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input type="text" value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
+                placeholder="Buscar por email, dirección o ID..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Desde</label>
+              <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }}
+                className="px-3 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+              <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Hasta</label>
+              <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }}
+                className="px-3 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+              {(dateFrom || dateTo) && (
+                <button onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
+                  className="text-xs text-gray-400 hover:text-red-600 transition-colors"
+                  title="Limpiar fechas">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex gap-2 flex-wrap">
             {[
@@ -634,7 +685,7 @@ export default function AdminDashboard() {
               { key: 'completed', label: 'Completados'},
               { key: 'cancelled', label: 'Cancelados' },
             ].map(({ key, label }) => (
-              <button key={key} onClick={() => setFilter(key)}
+              <button key={key} onClick={() => { setFilter(key); setPage(1) }}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
                   filter === key ? 'bg-red-700 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
                 }`}>
@@ -665,7 +716,7 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {filtered.map(order => (
+                  {paginated.map(order => (
                     <tr key={order.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-4 py-3 font-mono text-xs text-gray-500">
                         #{order.id.slice(0,8).toUpperCase()}
@@ -717,6 +768,74 @@ export default function AdminDashboard() {
           )}
         </div>
 
+        {/* ── Paginación ── */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-2 pt-2 pb-1">
+            <p className="text-xs text-gray-400">
+              Página {safePage} de {totalPages} · {filtered.length} pedido{filtered.length !== 1 ? 's' : ''}
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(1)}
+                disabled={safePage === 1}
+                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Primera página"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={safePage === 1}
+                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Página anterior"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                const start = Math.max(1, Math.min(safePage - 2, totalPages - 4))
+                const p = start + i
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`w-7 h-7 rounded-lg text-xs font-semibold transition-colors ${
+                      p === safePage
+                        ? 'bg-red-700 text-white'
+                        : 'text-gray-500 hover:bg-gray-100'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              })}
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={safePage === totalPages}
+                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Página siguiente"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setPage(totalPages)}
+                disabled={safePage === totalPages}
+                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                title="Última página"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
+
         <p className="text-xs text-center text-gray-400">
           {filtered.length} pedido{filtered.length !== 1 ? 's' : ''} · Última actualización: {new Date().toLocaleTimeString('es-ES')}
           <button onClick={loadOrders} className="ml-2 text-red-600 hover:underline">Actualizar</button>
@@ -750,8 +869,10 @@ export default function AdminDashboard() {
 
 // ── SECCIÓN FACTURAS ADMIN ────────────────────────────────────────────────
 function AdminInvoicesSection() {
-  const [invoices, setInvoices] = useState([])
-  const [loading,  setLoading]  = useState(true)
+  const [invoices,    setInvoices]    = useState([])
+  const [loading,     setLoading]     = useState(true)
+  const [invDateFrom, setInvDateFrom] = useState('')
+  const [invDateTo,   setInvDateTo]   = useState('')
 
   useEffect(() => { loadInvoices() }, [])
 
@@ -765,6 +886,11 @@ function AdminInvoicesSection() {
     setLoading(false)
   }
 
+  const filteredInvoices = invoices.filter(inv => {
+    const d = inv.created_at ? inv.created_at.slice(0, 10) : ''
+    return (!invDateFrom || d >= invDateFrom) && (!invDateTo || d <= invDateTo)
+  })
+
   async function handlePaymentStatus(invoiceId, newStatus) {
     await supabase.from('invoices').update({ payment_status: newStatus }).eq('id', invoiceId)
     setInvoices(prev => prev.map(i => i.id === invoiceId ? { ...i, payment_status: newStatus } : i))
@@ -775,7 +901,7 @@ function AdminInvoicesSection() {
 
   function exportCSV() {
     const headers = ['Nº Factura', 'Fecha', 'Base imponible', 'IVA', 'Total con IVA', 'Estado pago']
-    const rows = invoices.map(inv => [
+    const rows = filteredInvoices.map(inv => [
       inv.invoice_number,
       inv.created_at ? new Date(inv.created_at).toLocaleDateString('es-ES') : '—',
       (inv.total_without_iva ?? 0).toFixed(2).replace('.', ','),
@@ -795,18 +921,36 @@ function AdminInvoicesSection() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-gray-900">Facturas</h2>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2">
           {invoices.length > 0 && (
-            <button onClick={exportCSV}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 hover:text-green-800 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors">
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Exportar CSV
-            </button>
+            <>
+              <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Desde</label>
+              <input type="date" value={invDateFrom} onChange={e => setInvDateFrom(e.target.value)}
+                className="px-3 py-1.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+              <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Hasta</label>
+              <input type="date" value={invDateTo} onChange={e => setInvDateTo(e.target.value)}
+                className="px-3 py-1.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+              {(invDateFrom || invDateTo) && (
+                <button onClick={() => { setInvDateFrom(''); setInvDateTo('') }}
+                  className="text-xs text-gray-400 hover:text-red-600 transition-colors" title="Limpiar fechas">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+              {filteredInvoices.length > 0 && (
+                <button onClick={exportCSV}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 hover:text-green-800 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Exportar CSV {(invDateFrom || invDateTo) ? `(${filteredInvoices.length})` : ''}
+                </button>
+              )}
+            </>
           )}
           <button onClick={loadInvoices} className="text-xs text-red-600 hover:underline">Actualizar</button>
         </div>
@@ -817,8 +961,10 @@ function AdminInvoicesSection() {
           <div className="flex items-center justify-center py-10">
             <div className="w-6 h-6 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
           </div>
-        ) : invoices.length === 0 ? (
-          <div className="text-center py-10 text-gray-400 text-sm">No hay facturas generadas todavía</div>
+        ) : filteredInvoices.length === 0 ? (
+          <div className="text-center py-10 text-gray-400 text-sm">
+            {invoices.length === 0 ? 'No hay facturas generadas todavía' : 'No hay facturas en ese rango de fechas'}
+          </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -830,7 +976,7 @@ function AdminInvoicesSection() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {invoices.map(inv => (
+                {filteredInvoices.map(inv => (
                   <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-mono text-xs text-gray-600">{inv.invoice_number}</td>
                     <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(inv.created_at)}</td>

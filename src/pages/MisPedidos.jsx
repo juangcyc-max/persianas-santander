@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
+import { generateInvoicePDF } from '../services/invoicePDF'
 import SEO from '../shared/SEO'
 
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
@@ -58,10 +59,28 @@ function StatusTimeline({ status, userType }) {
 }
 
 // ── Tarjeta de pedido ─────────────────────────────────────────────────────
-function OrderCard({ order }) {
-  const [expanded, setExpanded] = useState(false)
+function OrderCard({ order, invoice }) {
+  const [expanded,     setExpanded]     = useState(false)
+  const [downloading,  setDownloading]  = useState(false)
   const s = STATUS[order.status] ?? STATUS.pending
   const isParticular = order.user_type === 'public'
+
+  async function handleDownloadPDF() {
+    if (!invoice) return
+    setDownloading(true)
+    try {
+      const { data: empresaData } = await supabase
+        .from('professional_data')
+        .select('*')
+        .eq('user_id', order.user_id)
+        .maybeSingle()
+      await generateInvoicePDF(invoice, order, empresaData)
+    } catch (e) {
+      console.error('Error descargando factura:', e)
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -104,11 +123,33 @@ function OrderCard({ order }) {
           </div>
         )}
 
-        {/* Notas del admin */}
-        {order.admin_notes && (
-          <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-            <p className="text-xs font-semibold text-gray-600 mb-0.5">Nota de nuestro equipo:</p>
-            <p className="text-xs text-gray-700">{order.admin_notes}</p>
+        {/* Factura */}
+        {invoice && (
+          <div className="mt-3 flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+            <div>
+              <p className="text-xs font-semibold text-gray-700">{invoice.invoice_number}</p>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                invoice.payment_status === 'paid'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-amber-100 text-amber-700'
+              }`}>
+                {invoice.payment_status === 'paid' ? 'Pagada' : 'Pendiente de pago'}
+              </span>
+            </div>
+            <button
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              className="flex items-center gap-1.5 text-xs font-semibold text-red-700 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60"
+            >
+              {downloading
+                ? <span className="w-3.5 h-3.5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+              }
+              Descargar factura PDF
+            </button>
           </div>
         )}
 
@@ -181,13 +222,31 @@ export default function MisPedidos() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { setLoading(false); return }
 
-    const { data } = await supabase
+    // 1. Cargar pedidos
+    const { data: ordersData } = await supabase
       .from('orders')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
 
-    setOrders(data ?? [])
+    const list = ordersData ?? []
+
+    // 2. Cargar facturas para esos pedidos (por separado, sin depender de FK)
+    if (list.length > 0) {
+      const orderIds = list.map(o => o.id)
+      const { data: invoicesData } = await supabase
+        .from('invoices')
+        .select('id, order_id, invoice_number, total_without_iva, iva, total_with_iva, payment_status, created_at, items')
+        .in('order_id', orderIds)
+
+      const invoicesByOrderId = {}
+      ;(invoicesData ?? []).forEach(inv => { invoicesByOrderId[inv.order_id] = inv })
+
+      setOrders(list.map(o => ({ ...o, _invoice: invoicesByOrderId[o.id] ?? null })))
+    } else {
+      setOrders([])
+    }
+
     setLoading(false)
   }
 
@@ -254,7 +313,9 @@ export default function MisPedidos() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filtered.map(order => <OrderCard key={order.id} order={order} />)}
+            {filtered.map(order => (
+              <OrderCard key={order.id} order={order} invoice={order._invoice ?? null} />
+            ))}
           </div>
         )}
       </div>

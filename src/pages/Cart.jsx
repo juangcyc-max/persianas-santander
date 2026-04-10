@@ -133,9 +133,25 @@ export default function Cart() {
         notes:          (!isProfessional && !sinInstalacion) ? sanitizeText(notes)   : null,
       }
 
-      const { error: orderError } = await supabase
+      const { data: newOrder, error: orderError } = await supabase
         .from('orders').insert(orderData).select().single()
       if (orderError) throw orderError
+
+      // Generar factura automáticamente al crear el pedido
+      if (newOrder?.id) {
+        const totalSinIva = totalWithIva / 1.21
+        const iva         = totalWithIva - totalSinIva
+        await supabase.from('invoices').insert({
+          order_id:           newOrder.id,
+          user_id:            user.id,
+          invoice_number:     `FAC-${Date.now().toString().slice(-8)}`,
+          payment_status:     'pending_payment',
+          total_without_iva:  totalSinIva,
+          iva:                iva,
+          total_with_iva:     totalWithIva,
+          items:              orderData.items,
+        })
+      }
 
       // Emails automáticos vía Resend (no bloquean el flujo)
       await Promise.all([

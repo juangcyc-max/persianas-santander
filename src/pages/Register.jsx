@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { sanitizeText } from '../services/sanitize'
+import { useRateLimit } from '../services/useRateLimit'
 
 // ── Indicador de pasos ────────────────────────────────────────────────────
 function StepBar({ current, steps }) {
@@ -69,6 +70,7 @@ export default function Register() {
   const [loading,  setLoading]  = useState(false)
   const [errors,   setErrors]   = useState({})
   const [success,  setSuccess]  = useState(false)
+  const { secondsLeft, consume } = useRateLimit(60_000)
 
   // Paso 1
   const [email,    setEmail]    = useState('')
@@ -134,6 +136,7 @@ export default function Register() {
 
   // ── Submit final ──────────────────────────────────────────────────────
   const handleSubmit = async (e2Data = null) => {
+    if (!consume()) { setErrors({ _global: `Espera ${secondsLeft}s antes de volver a registrarte.` }); return }
     setLoading(true)
     setErrors({})
     try {
@@ -202,7 +205,7 @@ export default function Register() {
             </p>
             {accType === 'professional' && (
               <p className="text-sm text-red-700 font-medium mb-6">
-                Tu cuenta profesional con 20% de descuento está lista.
+                Tu cuenta profesional con descuento exclusivo está lista.
               </p>
             )}
             <Link to="/login"
