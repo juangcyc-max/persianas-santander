@@ -34,11 +34,14 @@ function Section({ title, children }) {
 // ══════════════════════════════════════════════════════════════════════════
 export function PoliticaPrivacidad() {
   return (
-    <LegalPage title="Política de Privacidad" lastUpdate="29 de marzo de 2026">
+    <LegalPage title="Política de Privacidad" lastUpdate="10 de abril de 2025">
       <Section title="1. Responsable del tratamiento">
         <p><strong>Persianas Santander S.L.</strong></p>
-        <p>Polígono Industrial Nueva Montaña, Santander, Cantabria</p>
-        <p>Email: info@persianassantander.com | Teléfono: 942 00 00 00</p>
+        <p>NIF: B39476726</p>
+        <p>Polígono Nueva Montaña, Calle Isla Oleo, Nave 9, Santander, Cantabria</p>
+        <p>Teléfono: +34 942 00 00 00 | WhatsApp: +34 654 99 00 00</p>
+        <p>Email: <a href="mailto:adminpersianassantander@gmail.com" className="text-red-700 hover:underline">adminpersianassantander@gmail.com</a></p>
+        <p>Web: <a href="https://persianassantander.es" className="text-red-700 hover:underline">persianassantander.es</a></p>
       </Section>
 
       <Section title="2. Datos que recopilamos">
@@ -89,12 +92,13 @@ export function PoliticaPrivacidad() {
         <ul className="list-disc pl-5 space-y-1">
           <li><strong>Supabase Inc.</strong> — proveedor de base de datos (servidores en la UE)</li>
           <li><strong>Vercel Inc.</strong> — proveedor de alojamiento web</li>
+          <li><strong>Resend Inc.</strong> — proveedor de envío de emails transaccionales</li>
           <li><strong>Obligación legal:</strong> cuando sea requerido por ley</li>
         </ul>
       </Section>
 
       <Section title="7. Sus derechos">
-        <p>Puede ejercer los siguientes derechos enviando un email a <strong>info@persianassantander.com</strong>:</p>
+        <p>Puede ejercer los siguientes derechos enviando un email a <strong>adminpersianassantander@gmail.com</strong>:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li><strong>Acceso:</strong> conocer qué datos tenemos sobre usted</li>
           <li><strong>Rectificación:</strong> corregir datos inexactos</li>
@@ -107,7 +111,7 @@ export function PoliticaPrivacidad() {
       </Section>
 
       <Section title="8. Seguridad">
-        <p>Aplicamos medidas técnicas y organizativas apropiadas para proteger sus datos, incluyendo cifrado SSL, autenticación segura y acceso restringido a los datos personales.</p>
+        <p>Aplicamos medidas técnicas y organizativas apropiadas para proteger sus datos, incluyendo cifrado SSL/TLS, autenticación segura y acceso restringido a los datos personales.</p>
       </Section>
     </LegalPage>
   )
@@ -118,7 +122,7 @@ export function PoliticaPrivacidad() {
 // ══════════════════════════════════════════════════════════════════════════
 export function PoliticaCookies() {
   return (
-    <LegalPage title="Política de Cookies" lastUpdate="29 de marzo de 2026">
+    <LegalPage title="Política de Cookies" lastUpdate="10 de abril de 2025">
       <Section title="1. ¿Qué son las cookies?">
         <p>Las cookies son pequeños archivos de texto que se almacenan en su dispositivo cuando visita nuestra web. Nos ayudan a recordar sus preferencias y a mejorar su experiencia.</p>
       </Section>
@@ -185,15 +189,26 @@ export function PoliticaCookies() {
 // ══════════════════════════════════════════════════════════════════════════
 export function TerminosCondiciones() {
   return (
-    <LegalPage title="Términos y Condiciones" lastUpdate="29 de marzo de 2026">
-      <Section title="1. Información general">
-        <p><strong>Persianas Santander S.L.</strong> (en adelante, "la empresa") es titular del sitio web persianassantander.com.</p>
-        <p>Polígono Industrial Nueva Montaña, Santander, Cantabria</p>
-        <p>Email: info@persianassantander.com</p>
+    <LegalPage title="Aviso Legal y Términos de Uso" lastUpdate="10 de abril de 2025">
+      <Section title="1. Datos identificativos">
+        <p>En cumplimiento del artículo 10 de la Ley 34/2002, de 11 de julio, de Servicios de la Sociedad de la Información y Comercio Electrónico (LSSICE), se informa:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li><strong>Denominación social:</strong> Persianas Santander S.L.</li>
+          <li><strong>NIF:</strong> B39476726</li>
+          <li><strong>Domicilio social:</strong> Polígono Nueva Montaña, Calle Isla Oleo, Nave 9, Santander, Cantabria</li>
+          <li><strong>Constitución:</strong> 22 de agosto de 2024 — Sociedad Limitada</li>
+          <li><strong>Capital social:</strong> 3.000 €</li>
+          <li><strong>Actividad:</strong> Instalación de carpintería, ferretería, persianas a medida y automatización</li>
+          <li><strong>Teléfono:</strong> +34 942 00 00 00</li>
+          <li><strong>WhatsApp:</strong> +34 654 99 00 00</li>
+          <li><strong>Email:</strong> adminpersianassantander@gmail.com</li>
+          <li><strong>Web:</strong> persianassantander.es</li>
+        </ul>
       </Section>
 
-      <Section title="2. Objeto">
-        <p>Los presentes Términos y Condiciones regulan el acceso y uso del sitio web, así como la contratación de productos y servicios ofrecidos por Persianas Santander S.L.</p>
+      <Section title="2. Objeto y condiciones de uso">
+        <p>Los presentes Términos y Condiciones regulan el acceso y uso del sitio web <strong>persianassantander.es</strong>, así como la contratación de productos y servicios ofrecidos por Persianas Santander S.L.</p>
+        <p>El acceso y uso de este sitio web implica la aceptación plena y sin reservas de las presentes condiciones.</p>
       </Section>
 
       <Section title="3. Proceso de compra">
@@ -205,45 +220,62 @@ export function TerminosCondiciones() {
         </ul>
       </Section>
 
-      <Section title="4. Precios">
+      <Section title="4. Precios e IVA">
         <ul className="list-disc pl-5 space-y-1">
           <li>Todos los precios mostrados en el configurador incluyen IVA al 21%.</li>
-          <li>Los clientes profesionales registrados tienen un descuento del 20% sobre el precio base.</li>
+          <li>Los clientes profesionales registrados disponen de un descuento aplicable sobre el precio base.</li>
           <li>Los precios pueden variar según las medidas exactas confirmadas en la visita técnica.</li>
+          <li>Persianas Santander S.L. se reserva el derecho a modificar los precios sin previo aviso.</li>
         </ul>
       </Section>
 
-      <Section title="5. Plazos de entrega">
+      <Section title="5. Plazos de entrega e instalación">
         <p>El plazo de fabricación e instalación es de <strong>7 a 15 días hábiles</strong> desde la confirmación del pedido, salvo causa de fuerza mayor o acuerdo expreso entre las partes.</p>
       </Section>
 
-      <Section title="6. Garantía">
-        <p>Todos nuestros productos tienen una garantía de <strong>10 años</strong> contra defectos de fabricación, conforme a la normativa europea de garantía de productos. La garantía no cubre:</p>
+      <Section title="6. Formas de pago">
+        <p>El pago podrá realizarse mediante:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Transferencia bancaria</li>
+          <li>Bizum</li>
+          <li>Efectivo en el momento de la instalación</li>
+        </ul>
+        <p>Para pedidos sin instalación, el pago deberá efectuarse en un plazo máximo de 48 horas desde la confirmación.</p>
+      </Section>
+
+      <Section title="7. Garantía">
+        <p>Todos nuestros productos tienen una garantía de <strong>10 años</strong> contra defectos de fabricación, conforme a la normativa europea. La garantía no cubre:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>Daños por uso incorrecto o falta de mantenimiento</li>
-          <li>Daños causados por agentes externos (vandalism, accidentes)</li>
+          <li>Daños causados por agentes externos (vandalismo, accidentes, fenómenos meteorológicos)</li>
           <li>Desgaste normal por el uso</li>
         </ul>
       </Section>
 
-      <Section title="7. Derecho de desistimiento">
-        <p>Al tratarse de productos fabricados a medida y personalizados, <strong>no aplica el derecho de desistimiento</strong> de 14 días establecido en el RDL 1/2007, conforme al artículo 103.c) de dicha norma.</p>
+      <Section title="8. Derecho de desistimiento">
+        <p>Al tratarse de productos fabricados a medida y personalizados según las especificaciones del cliente, <strong>no aplica el derecho de desistimiento</strong> de 14 días establecido en el RDL 1/2007, conforme al artículo 103.c) de dicha norma.</p>
       </Section>
 
-      <Section title="8. Propiedad intelectual">
-        <p>Todos los contenidos del sitio web (textos, imágenes, diseño, código) son propiedad de Persianas Santander S.L. o de sus proveedores de contenido, y están protegidos por las leyes de propiedad intelectual.</p>
+      <Section title="9. Propiedad intelectual">
+        <p>Todos los contenidos del sitio web (textos, imágenes, diseño, código fuente) son propiedad de Persianas Santander S.L. o de sus proveedores de contenido, y están protegidos por la Ley de Propiedad Intelectual. Queda prohibida su reproducción total o parcial sin autorización expresa.</p>
       </Section>
 
-      <Section title="9. Limitación de responsabilidad">
-        <p>La empresa no se responsabiliza de los daños que puedan derivarse del uso incorrecto de los productos instalados o de informaciones inexactas proporcionadas por el cliente (medidas, características del hueco, etc.).</p>
+      <Section title="10. Limitación de responsabilidad">
+        <p>Persianas Santander S.L. no se responsabiliza de los daños derivados del uso incorrecto de los productos instalados, ni de informaciones inexactas proporcionadas por el cliente (medidas, características del hueco, etc.).</p>
       </Section>
 
-      <Section title="10. Legislación aplicable">
-        <p>Estos términos se rigen por la legislación española. Para cualquier controversia, las partes se someten a los Juzgados y Tribunales de <strong>Santander</strong>, salvo que la ley establezca otro fuero imperativo.</p>
+      <Section title="11. Legislación aplicable y jurisdicción">
+        <p>Estos términos se rigen por la legislación española. Para cualquier controversia, las partes se someten expresamente a los Juzgados y Tribunales de <strong>Santander</strong>, renunciando a cualquier otro fuero que pudiera corresponderles, salvo que la normativa vigente establezca otro imperativo.</p>
       </Section>
 
-      <Section title="11. Contacto">
-        <p>Para cualquier consulta sobre estos términos: <strong>info@persianassantander.com</strong> | 942 00 00 00</p>
+      <Section title="12. Contacto">
+        <p>Para cualquier consulta sobre estos términos:</p>
+        <ul className="list-disc pl-5 space-y-1">
+          <li>Email: <strong>adminpersianassantander@gmail.com</strong></li>
+          <li>Teléfono: <strong>+34 942 00 00 00</strong></li>
+          <li>WhatsApp: <strong>+34 654 99 00 00</strong></li>
+          <li>Dirección: Polígono Nueva Montaña, Calle Isla Oleo, Nave 9, Santander, Cantabria</li>
+        </ul>
       </Section>
     </LegalPage>
   )
