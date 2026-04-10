@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
 import { generateInvoicePDF } from '../services/invoicePDF'
 import { redownloadBudgetPDF, generateClientBudgetPDF, generateClientInvoicePDF } from '../services/pdf'
+import { getProfessionalDiscountForUser } from '../services/settings'
 
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
 const fmtDate = (d) => d ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)) : '—'
@@ -337,6 +338,7 @@ export default function ProfessionalDashboard() {
   const [uploadingLogo,    setUploadingLogo]    = useState(false)
   const [clientBudgetModal,  setClientBudgetModal]  = useState(null)
   const [clientInvoiceModal, setClientInvoiceModal] = useState(null)
+  const [globalDiscount,   setGlobalDiscount]   = useState(20)
 
   const REQUIRED_FIELDS = ['razon_social', 'cif_nif', 'telefono', 'direccion_fiscal', 'codigo_postal', 'ciudad', 'provincia', 'email_facturacion']
 
@@ -352,13 +354,15 @@ export default function ProfessionalDashboard() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { navigate('/login'); return }
       setUser(user)
-      const [empresaRes, configRes, pedidosRes, presupuestosRes, facturasRes] = await Promise.all([
+      const [empresaRes, configRes, pedidosRes, presupuestosRes, facturasRes, discount] = await Promise.all([
         supabase.from('professional_data').select('*').eq('user_id', user.id).maybeSingle(),
         supabase.from('blind_configurations').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('budgets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('invoices').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        getProfessionalDiscountForUser(user.id),
       ])
+      setGlobalDiscount(discount)
       const emp = empresaRes.data ?? null
       setEmpresa(emp)
       setEmpresaEdit(emp ?? {})
@@ -475,7 +479,7 @@ export default function ProfessionalDashboard() {
               <img src="/persianassantanderlogo.png" alt="Persianas Santander" className="h-9 w-auto" onError={e => { e.target.src = '/persianassantanderlogo.svg' }} />
               <div className="hidden sm:block h-6 w-px bg-gray-200" />
               <span className="hidden sm:block text-sm font-semibold text-gray-700">Panel profesional</span>
-              <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">−{empresa?.discount_percent ?? 20}%</span>
+              <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">−{empresa?.discount_percent ?? globalDiscount}%</span>
             </div>
             <div className="flex items-center gap-2">
               <Link to="/cesta" className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -523,7 +527,7 @@ export default function ProfessionalDashboard() {
                   <p className="text-gray-500 text-sm mt-1">Resumen de tu actividad profesional.</p>
                 </div>
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard accent value={`−${empresa?.discount_percent ?? 20}%`} label="Descuento activo" sub="Tarifa profesional" icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z" />} />
+                  <StatCard accent value={`−${empresa?.discount_percent ?? globalDiscount}%`} label="Descuento activo" sub="Tarifa profesional" icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A2 2 0 013 12V7a2 2 0 012-2z" />} />
                   <StatCard value={configuraciones.length} label="Configuraciones" sub="guardadas" icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />} />
                   <StatCard value={pedidos.length} label="Pedidos" sub="realizados" icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />} />
                   <StatCard value={fmt(totalFacturado)} label="Total facturado" sub="con IVA" icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />} />
@@ -840,7 +844,7 @@ export default function ProfessionalDashboard() {
                     <div className="w-10 h-10 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold text-sm">{user?.email?.[0]?.toUpperCase()}</div>
                     <div>
                       <p className="text-sm font-semibold text-gray-900">{user?.email}</p>
-                      <p className="text-xs text-gray-400">Cuenta profesional · Descuento {empresa?.discount_percent ?? 20}% activo</p>
+                      <p className="text-xs text-gray-400">Cuenta profesional · Descuento {empresa?.discount_percent ?? globalDiscount}% activo</p>
                     </div>
                   </div>
                 </div>
