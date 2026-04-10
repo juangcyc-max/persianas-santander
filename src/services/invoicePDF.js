@@ -93,8 +93,8 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
   doc.setFontSize(8.5)
   doc.setTextColor(...COLORS.mid)
   const emisorLines = [
-    "NIF: B00000000",
-    "Pol. Industrial Nueva Montaña",
+    "NIF: B39476726",
+    "C/ Isla Oleo, Nave 9 - Pol. Nueva Montaña",
     "39011 Santander, Cantabria",
     "942 00 00 00",
     "info@persianassantander.com",
@@ -251,7 +251,7 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
     doc.setTextColor(...COLORS.light)
     doc.setFontSize(8)
     doc.setFont("helvetica", "normal")
-    doc.text("Persianas Santander S.L.  ·  Polígono Industrial Nueva Montaña, Santander", W / 2, H - 9,  { align: "center" })
+    doc.text("Persianas Santander S.L.  ·  NIF: B39476726  ·  C/ Isla Oleo, Nave 9 - Pol. Nueva Montaña, 39011 Santander", W / 2, H - 9,  { align: "center" })
     doc.text("942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com",  W / 2, H - 4, { align: "center" })
   }
 

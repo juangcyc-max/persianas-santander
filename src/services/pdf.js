@@ -288,7 +288,7 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
       doc.setPage(i)
       addPageHeader(doc, logoImg, "PRESUPUESTO", budgetNumber, today)
       addPageFooter(doc, [
-        "Persianas Santander S.L.  ·  Polígono Industrial Nueva Montaña, Santander",
+        "Persianas Santander S.L.  ·  NIF: B39476726  ·  C/ Isla Oleo, Nave 9 - Pol. Nueva Montaña, 39011 Santander",
         "942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com",
       ])
     }
