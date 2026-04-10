@@ -152,8 +152,8 @@ function addPriceBlock(doc, y, breakdown, isPro, proDiscount, brandColor = COLOR
 
   if (isPro && discount > 0) {
     doc.setTextColor(...COLORS.greenText)
-    doc.text(`Descuento profesional (−${proDiscount}%)`, col1, ly)
-    doc.text(`−${formatCurrency(discount)}`, col2, ly, { align: "right" })
+    doc.text(`Descuento profesional (-${proDiscount}%)`, col1, ly)
+    doc.text(`-${formatCurrency(discount)}`, col2, ly, { align: "right" })
     ly += 7
   }
 

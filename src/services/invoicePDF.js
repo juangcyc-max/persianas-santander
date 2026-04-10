@@ -82,7 +82,7 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
   // ── BADGE ESTADO ──────────────────────────────────────────────────────
   const bBg   = isPaid ? C.greenBg : C.amberBg
   const bTxt  = isPaid ? C.green   : C.amber
-  const bText = isPaid ? '✓  PAGADA' : '⏳  PENDIENTE DE PAGO'
+  const bText = isPaid ? 'PAGADA' : 'PENDIENTE DE PAGO'
   const bW    = isPaid ? 34 : 58
 
   doc.setFillColor(...bBg)
@@ -255,8 +255,8 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
     doc.text(fmt(tarifaGeneral),                  boxX + boxW - 5, ty, { align: 'right' })
     ty += 8
     doc.setTextColor(...C.green)
-    doc.text(`Dto. profesional −${proDiscount}%`, boxX + 6, ty)
-    doc.text(`−${fmt(descuentoAmt)}`,             boxX + boxW - 5, ty, { align: 'right' })
+    doc.text(`Dto. profesional -${proDiscount}%`,  boxX + 6, ty)
+    doc.text(`-${fmt(descuentoAmt)}`,             boxX + boxW - 5, ty, { align: 'right' })
     ty += 8
     doc.setTextColor(...C.mid)
   }
