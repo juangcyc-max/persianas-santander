@@ -144,8 +144,8 @@ export default function Home() {
           </div>
           <div className="grid md:grid-cols-2 gap-6">
             {[
-              { badge: 'Más popular', title: 'Persiana estándar', price: 'Desde 120 €/m²', desc: 'Ideal para viviendas, locales y oficinas. Disponible con muelle, cinta o motor.', features: ['Muelle, cinta o motor', 'Lamas normales o de seguridad', 'Garantía 10 años', 'Ancho hasta 3.000 mm'], accent: true },
-              { badge: 'Alta seguridad', title: 'Persiana bloqueante', price: 'Desde 180 €/m²', desc: 'Sistema anti-levantamiento certificado EN 1627. Exclusivo con motor.', features: ['Solo motorizada', 'Lamas de seguridad reforzadas', 'Certificado EN 1627', 'Acero + aluminio compuesto'], accent: false },
+              { badge: 'Más popular', title: 'Persiana estándar', price: 'Desde 43 €/m²', desc: 'Ideal para viviendas, locales y oficinas. Disponible con muelle, cinta o motor.', features: ['Muelle, cinta o motor', 'Lamas normales o de seguridad', 'Garantía 10 años', 'Ancho hasta 3.000 mm'], accent: true },
+              { badge: 'Alta seguridad', title: 'Persiana bloqueante', price: 'Desde 134 €/m²', desc: 'Sistema anti-levantamiento certificado EN 1627. Exclusivo con motor.', features: ['Solo motorizada', 'Lamas de seguridad reforzadas', 'Certificado EN 1627', 'Acero + aluminio compuesto'], accent: false },
             ].map(({ badge, title, price, desc, features, accent }) => (
               <div key={title} className={`rounded-xl p-8 border-2 ${accent ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>
                 <div className="flex items-start justify-between mb-4">
