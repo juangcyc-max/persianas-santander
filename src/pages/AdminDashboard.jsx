@@ -1070,10 +1070,8 @@ function AdminClientsSection() {
 
   async function loadClients() {
     setLoading(true)
-    const { data } = await supabase
-      .from('profiles')
-      .select('id, email, user_type, role, created_at')
-      .order('created_at', { ascending: false })
+    const { data, error } = await supabase.rpc('admin_get_all_users')
+    if (error) console.error('Error cargando usuarios:', error)
     setClients(data ?? [])
     setLoading(false)
   }
@@ -1132,15 +1130,15 @@ function AdminClientsSection() {
                     <td className="px-4 py-3">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                         c.user_type === 'professional' ? 'bg-blue-100 text-blue-700' :
-                        c.role === 'admin' ? 'bg-red-100 text-red-700' :
+                        c.user_type === 'admin' ? 'bg-red-100 text-red-700' :
                         'bg-gray-100 text-gray-600'
                       }`}>
-                        {c.role === 'admin' ? 'Admin' : c.user_type === 'professional' ? 'Profesional' : 'Cliente'}
+                        {c.user_type === 'admin' ? 'Admin' : c.user_type === 'professional' ? 'Profesional' : 'Cliente'}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-xs">{fmtDate(c.created_at)}</td>
                     <td className="px-4 py-3 text-right">
-                      {c.role === 'admin' ? (
+                      {c.user_type === 'admin' ? (
                         <span className="text-xs text-gray-300">—</span>
                       ) : confirm === c.id ? (
                         <div className="inline-flex items-center gap-2">
