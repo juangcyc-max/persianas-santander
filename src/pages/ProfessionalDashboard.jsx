@@ -846,14 +846,15 @@ export default function ProfessionalDashboard() {
                   <p className="text-xs text-gray-400 mb-4">Aparecerá en los presupuestos que generes para tus clientes.</p>
                   <div className="flex items-center gap-4">
                     {logoUrl ? (
-                      <img src={logoUrl} alt="Logo empresa" className="h-16 w-auto max-w-[160px] object-contain border border-gray-200 rounded-lg p-1" />
-                    ) : (
-                      <div className="h-16 w-32 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center text-gray-300">
-                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    )}
+                      <img src={logoUrl} alt="Logo empresa"
+                        className="h-16 w-auto max-w-[160px] object-contain border border-gray-200 rounded-lg p-1"
+                        onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex' }} />
+                    ) : null}
+                    <div className={`h-16 w-32 border-2 border-dashed border-gray-200 rounded-lg items-center justify-center text-gray-300 ${logoUrl ? 'hidden' : 'flex'}`}>
+                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
                     <div>
                       <label className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${uploadingLogo ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
                         {uploadingLogo
