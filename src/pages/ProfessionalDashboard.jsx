@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
 import { generateInvoicePDF } from '../services/invoicePDF'
-import { redownloadBudgetPDF } from '../services/pdf'
+import { redownloadBudgetPDF, generateClientBudgetPDF } from '../services/pdf'
 
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
 const fmtDate = (d) => d ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)) : '—'
@@ -93,6 +93,119 @@ const TABS = [
   { id: 'empresa',         label: 'Mi empresa',      icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /> },
 ]
 
+function ClientBudgetModal({ config, logoUrl, onGenerate, onClose }) {
+  const [clientName,    setClientName]    = useState('')
+  const [clientPhone,   setClientPhone]   = useState('')
+  const [clientEmail,   setClientEmail]   = useState('')
+  const [clientAddress, setClientAddress] = useState('')
+  const [clientPrice,   setClientPrice]   = useState('')
+  const [generating,    setGenerating]    = useState(false)
+  const [errors,        setErrors]        = useState({})
+
+  const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
+
+  async function handleGenerate() {
+    const e = {}
+    if (!clientName.trim())  e.name  = 'Obligatorio'
+    if (!clientPrice || isNaN(parseFloat(clientPrice)) || parseFloat(clientPrice) <= 0) e.price = 'Introduce un precio válido'
+    if (Object.keys(e).length) { setErrors(e); return }
+
+    setGenerating(true)
+    await onGenerate(config, parseFloat(clientPrice), {
+      name:    clientName,
+      phone:   clientPhone,
+      email:   clientEmail,
+      address: clientAddress,
+    })
+    setGenerating(false)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto"
+        onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <div>
+            <h2 className="font-bold text-gray-900">Presupuesto para tu cliente</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Se generará con tu logo y datos de empresa</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          {/* Resumen configuración */}
+          <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm">
+            <p className="font-semibold text-gray-700">{config.blind_type === 'blocking' ? 'Autoblocante' : config.blind_type ?? 'Persiana'}</p>
+            <p className="text-gray-400 text-xs">{config.width} × {config.height} mm · {config.mechanism} · {config.box_color_name}</p>
+          </div>
+
+          {/* Precio que cobra al cliente */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1.5">
+              Precio para el cliente (con IVA) *
+            </label>
+            <div className="relative">
+              <input
+                type="number" min="0" step="0.01"
+                value={clientPrice}
+                onChange={e => { setClientPrice(e.target.value); setErrors(p => ({...p, price: ''})) }}
+                placeholder="0,00"
+                className={`w-full px-3.5 py-2.5 pr-8 rounded-xl border text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-colors ${errors.price ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
+            </div>
+            {errors.price && <p className="text-xs text-red-600 mt-1">{errors.price}</p>}
+            {clientPrice && !isNaN(parseFloat(clientPrice)) && (
+              <p className="text-xs text-gray-400 mt-1">
+                Base imponible: {fmt(parseFloat(clientPrice) / 1.21)} · IVA: {fmt(parseFloat(clientPrice) - parseFloat(clientPrice) / 1.21)}
+              </p>
+            )}
+          </div>
+
+          <hr className="border-gray-100" />
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Datos del cliente</p>
+
+          {[
+            { label: 'Nombre *', value: clientName,    set: setClientName,    err: errors.name,  placeholder: 'Juan García' },
+            { label: 'Teléfono', value: clientPhone,   set: setClientPhone,   placeholder: '600 123 456' },
+            { label: 'Email',    value: clientEmail,   set: setClientEmail,   placeholder: 'cliente@email.com' },
+            { label: 'Dirección',value: clientAddress, set: setClientAddress, placeholder: 'Calle Mayor 1' },
+          ].map(({ label, value, set, err, placeholder }) => (
+            <div key={label}>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">{label}</label>
+              <input
+                type="text" value={value} placeholder={placeholder}
+                onChange={e => { set(e.target.value); if (err) setErrors(p => ({...p, name: ''})) }}
+                className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-colors ${err ? 'border-red-300 bg-red-50' : 'border-gray-300'}`}
+              />
+              {err && <p className="text-xs text-red-600 mt-1">{err}</p>}
+            </div>
+          ))}
+
+          {!logoUrl && (
+            <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5 text-xs text-amber-700">
+              No tienes logo subido. Ve a "Mi empresa" para añadirlo.
+            </div>
+          )}
+
+          <button onClick={handleGenerate} disabled={generating}
+            className="w-full py-3 bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+            {generating
+              ? <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Generando…</>
+              : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg> Descargar PDF</>
+            }
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ProfessionalDashboard() {
   const navigate = useNavigate()
   const { itemCount } = useCart()
@@ -109,6 +222,9 @@ export default function ProfessionalDashboard() {
   const [saveMsg,         setSaveMsg]         = useState('')
   const [showEmpresaModal, setShowEmpresaModal] = useState(false)
   const [empresaErrors,    setEmpresaErrors]    = useState({})
+  const [logoUrl,          setLogoUrl]          = useState(null)
+  const [uploadingLogo,    setUploadingLogo]    = useState(false)
+  const [clientBudgetModal, setClientBudgetModal] = useState(null) // config seleccionada
 
   const REQUIRED_FIELDS = ['razon_social', 'cif_nif', 'telefono', 'direccion_fiscal', 'codigo_postal', 'ciudad', 'provincia', 'email_facturacion']
 
@@ -138,6 +254,13 @@ export default function ProfessionalDashboard() {
       setPedidos(pedidosRes.data ?? [])
       setPresupuestos(presupuestosRes.data ?? [])
       setFacturas(facturasRes.data ?? [])
+      // Cargar logo si existe
+      if (user.id) {
+        const { data: logoData } = supabase.storage
+          .from('professional-logos')
+          .getPublicUrl(`${user.id}/logo`)
+        if (logoData?.publicUrl) setLogoUrl(logoData.publicUrl + `?t=${Date.now()}`)
+      }
       // Si no tiene datos completos, mostrar modal obligatorio
       if (!empresaCompleta(emp)) setShowEmpresaModal(true)
     } catch (err) {
@@ -177,6 +300,34 @@ export default function ProfessionalDashboard() {
   async function handleDeleteConfig(id) {
     await supabase.from('blind_configurations').delete().eq('id', id)
     setConfiguraciones(prev => prev.filter(c => c.id !== id))
+  }
+
+  async function handleUploadLogo(file) {
+    if (!file || !user) return
+    setUploadingLogo(true)
+    try {
+      const { error } = await supabase.storage
+        .from('professional-logos')
+        .upload(`${user.id}/logo`, file, { upsert: true, contentType: file.type })
+      if (!error) {
+        const { data } = supabase.storage
+          .from('professional-logos')
+          .getPublicUrl(`${user.id}/logo`)
+        setLogoUrl(data.publicUrl + `?t=${Date.now()}`)
+      }
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  async function handleGenerateClientBudget(config, clientPrice, clientData) {
+    await generateClientBudgetPDF({
+      customerData: clientData,
+      configuration: config,
+      empresa: empresa ?? {},
+      logoUrl,
+      clientPrice,
+    })
   }
 
   async function handleLogout() {
@@ -326,6 +477,13 @@ export default function ProfessionalDashboard() {
                             <td className="px-5 py-3 text-right font-bold text-red-700">{fmt(c.estimated_price)}</td>
                             <td className="px-5 py-3 text-right">
                               <div className="inline-flex items-center gap-2">
+                                <button onClick={() => setClientBudgetModal(c)}
+                                  className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors">
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                  </svg>
+                                  Presupuesto cliente
+                                </button>
                                 <AddToCartFromDashboard configId={c.id} />
                                 <button onClick={() => handleDeleteConfig(c.id)}
                                   className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
@@ -518,13 +676,41 @@ export default function ProfessionalDashboard() {
                     </button>
                   </div>
                 </div>
+                {/* Logo de empresa */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-4">Logo de empresa</p>
+                  <p className="text-xs text-gray-400 mb-4">Aparecerá en los presupuestos que generes para tus clientes.</p>
+                  <div className="flex items-center gap-4">
+                    {logoUrl ? (
+                      <img src={logoUrl} alt="Logo empresa" className="h-16 w-auto max-w-[160px] object-contain border border-gray-200 rounded-lg p-1" />
+                    ) : (
+                      <div className="h-16 w-32 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center text-gray-300">
+                        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                    <div>
+                      <label className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${uploadingLogo ? 'opacity-50 cursor-not-allowed bg-gray-50 border-gray-200 text-gray-400' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                        {uploadingLogo
+                          ? <><span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> Subiendo…</>
+                          : <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg> {logoUrl ? 'Cambiar logo' : 'Subir logo'}</>
+                        }
+                        <input type="file" accept="image/*" className="hidden" disabled={uploadingLogo}
+                          onChange={e => e.target.files?.[0] && handleUploadLogo(e.target.files[0])} />
+                      </label>
+                      <p className="text-xs text-gray-400 mt-1.5">PNG, JPG o SVG · Máx. 2 MB</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="bg-gray-50 rounded-xl border border-gray-200 p-5">
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Cuenta</p>
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold text-sm">{user?.email?.[0]?.toUpperCase()}</div>
                     <div>
                       <p className="text-sm font-semibold text-gray-900">{user?.email}</p>
-                      <p className="text-xs text-gray-400">Cuenta profesional · Descuento 20% activo</p>
+                      <p className="text-xs text-gray-400">Cuenta profesional · Descuento {empresa?.discount_percent ?? 20}% activo</p>
                     </div>
                   </div>
                 </div>
@@ -533,6 +719,16 @@ export default function ProfessionalDashboard() {
           </main>
         </div>
       </div>
+
+      {/* ── MODAL PRESUPUESTO PARA CLIENTE ── */}
+      {clientBudgetModal && (
+        <ClientBudgetModal
+          config={clientBudgetModal}
+          logoUrl={logoUrl}
+          onGenerate={handleGenerateClientBudget}
+          onClose={() => setClientBudgetModal(null)}
+        />
+      )}
 
       {/* ── MODAL OBLIGATORIO DATOS EMPRESA ── */}
       {showEmpresaModal && (
