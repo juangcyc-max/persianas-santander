@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
-import { sanitizeText, sanitizeNumber } from '../services/sanitize'
+import { sanitizeText } from '../services/sanitize'
 import { getProfessionalDiscount, getProfessionalDiscountForUser } from '../services/settings'
 
 const HORAS = ['08:00','09:00','10:00','11:00','12:00','13:00','16:00','17:00','18:00','19:00']
@@ -78,6 +78,9 @@ export default function Cart() {
     }
   }, [user?.id, isProfessional])
 
+  // Si TODOS los items son sin instalación, no hace falta cita
+  const sinInstalacion = items.length > 0 && items.every(i => i.blind_configurations?.installacion === false)
+
   const [step,     setStep]     = useState('cart')   // 'cart' | 'checkout' | 'success'
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState('')
@@ -95,7 +98,7 @@ export default function Cart() {
   const minDate = tomorrow.toISOString().split('T')[0]
 
   async function handleSubmit() {
-    if (!isProfessional) {
+    if (!isProfessional && !sinInstalacion) {
       if (!address.trim()) { setError('La dirección es obligatoria'); return }
       if (!phone.trim())   { setError('El teléfono es obligatorio'); return }
       if (!date)           { setError('Elige un día preferido'); return }
@@ -191,12 +194,18 @@ export default function Cart() {
             {isProfessional ? '¡Pedido enviado!' : '¡Solicitud recibida!'}
           </h2>
           <p className="text-gray-500 text-sm leading-relaxed mb-2">
-            {isProfessional
+            {isProfessional || sinInstalacion
               ? 'Hemos recibido tu pedido. Nos pondremos en contacto contigo para confirmar los detalles.'
               : 'Hemos recibido tu solicitud de medición. Nuestro equipo se pondrá en contacto contigo para confirmar la cita.'
             }
           </p>
-          {!isProfessional && (
+          {sinInstalacion && (
+            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mt-4 text-left">
+              <p className="text-xs font-semibold text-amber-700 mb-1">Recuerda</p>
+              <p className="text-sm text-amber-800">El pago debe realizarse en un plazo de <strong>24-48 horas</strong>. Formas de pago: Bizum, transferencia bancaria o efectivo.</p>
+            </div>
+          )}
+          {!isProfessional && !sinInstalacion && (
             <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mt-4 text-left">
               <p className="text-xs font-semibold text-blue-700 mb-1">Cita solicitada</p>
               <p className="text-sm text-blue-900">{date} a las {time}</p>
@@ -247,11 +256,13 @@ export default function Cart() {
         {/* Título */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">
-            {step === 'cart' ? 'Mi cesta' : isProfessional ? 'Confirmar pedido' : 'Solicitar cita de medición'}
+            {step === 'cart' ? 'Mi cesta' : (isProfessional || sinInstalacion) ? 'Confirmar pedido' : 'Solicitar cita de medición'}
           </h1>
           <p className="text-gray-500 text-sm mt-1">
             {step === 'cart'
               ? `${items.length} ${items.length === 1 ? 'producto' : 'productos'}`
+              : sinInstalacion
+              ? 'Solo material — recibirás las persianas fabricadas a medida'
               : isProfessional
               ? 'Confirma tu pedido y nuestro equipo se pondrá en contacto'
               : 'Un técnico irá a medir y ajustar el presupuesto definitivo'
@@ -278,7 +289,23 @@ export default function Cart() {
               </>
             )}
 
-            {step === 'checkout' && !isProfessional && (
+            {step === 'checkout' && !isProfessional && sinInstalacion && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+                <div>
+                  <h3 className="font-bold text-gray-900 mb-1">Pedido solo material</h3>
+                  <p className="text-sm text-gray-500">Recibirás las persianas fabricadas a medida. La instalación corre de tu cuenta.</p>
+                </div>
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                  <p className="text-sm font-semibold text-amber-800 mb-1">Aviso de pago</p>
+                  <p className="text-sm text-amber-700">El pago deberá realizarse en un plazo de <strong>24-48 horas</strong> tras la confirmación del pedido. Formas de pago: Bizum, transferencia bancaria o efectivo.</p>
+                </div>
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3 rounded-xl">{error}</div>
+                )}
+              </div>
+            )}
+
+            {step === 'checkout' && !isProfessional && !sinInstalacion && (
               <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
                 <div>
                   <h3 className="font-bold text-gray-900 mb-1">Cita de medición</h3>
@@ -402,7 +429,7 @@ export default function Cart() {
                     {user ? (
                       <button onClick={() => setStep('checkout')}
                         className="w-full py-3.5 bg-red-700 hover:bg-red-800 text-white font-bold text-sm rounded-xl transition-colors">
-                        {isProfessional ? 'Solicitar pedido →' : 'Solicitar cita de medición →'}
+                        {isProfessional || sinInstalacion ? 'Confirmar pedido →' : 'Solicitar cita de medición →'}
                       </button>
                     ) : (
                       <Link to="/login"
@@ -422,7 +449,7 @@ export default function Cart() {
                     <button onClick={handleSubmit} disabled={loading}
                       className="w-full py-3.5 bg-red-700 hover:bg-red-800 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
                       {loading && <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
-                      {loading ? 'Enviando...' : isProfessional ? 'Confirmar pedido' : 'Confirmar solicitud de cita'}
+                      {loading ? 'Enviando...' : (isProfessional || sinInstalacion) ? 'Confirmar pedido' : 'Confirmar solicitud de cita'}
                     </button>
                     <button onClick={() => { setStep('cart'); setError('') }}
                       className="w-full py-3 text-sm text-gray-500 hover:text-gray-700 transition-colors">
