@@ -97,7 +97,7 @@ function addPriceBlock(doc, y, breakdown, isPro, proDiscount, brandColor = COLOR
   const W = doc.internal.pageSize.width
   const H = doc.internal.pageSize.height
 
-  const { subtotalSinIva, iva, totalConIva, finalPrice, discount, lines = [] } = breakdown
+  const { subtotalSinIva, iva, finalPrice, discount, lines = [] } = breakdown
 
   const blockHeight = 12 + lines.length * 6 + (isPro ? 44 : 34)
   if (y > H - blockHeight - 20) {
@@ -676,7 +676,7 @@ export async function generateClientInvoicePDF({
     doc.setFont("helvetica", "normal")
     doc.setFontSize(8)
     doc.setTextColor(...COLORS.mid)
-    doc.text("Pago al contado o según condiciones acordadas con el cliente.", 14, y + 13)
+    doc.text("Formas de pago aceptadas: Bizum · Transferencia bancaria · Efectivo.", 14, y + 13)
     doc.text("Esta factura tiene validez fiscal como documento oficial de pago.", 14, y + 20)
 
     // ── CABECERAS Y PIES ──────────────────────────────────────────────────
