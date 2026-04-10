@@ -150,6 +150,7 @@ export default function Cart() {
           iva:                iva,
           total_with_iva:     totalWithIva,
           items:              orderData.items,
+          pro_discount:       isProfessional ? proDiscount : null,
         })
       }
 

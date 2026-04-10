@@ -177,34 +177,48 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
   }
 
   // ── TOTALES ───────────────────────────────────────────────────────────
-  const totalNoIva = Number(invoice.total_without_iva || 0)
-  const iva        = Number(invoice.iva || 0)
-  const total      = Number(invoice.total_with_iva || 0)
+  const totalNoIva   = Number(invoice.total_without_iva || 0)
+  const iva          = Number(invoice.iva || 0)
+  const total        = Number(invoice.total_with_iva || 0)
+  const isPro        = order?.user_type === 'professional'
+  const proDiscount  = invoice.pro_discount ?? null  // porcentaje entero, e.g. 20
 
   const boxW = 80
   const boxX = W - 14 - boxW
-  
+  // boxH: 9 (padding) + rows + 4 (sep) + 4 (gap) + 11 (total bar) = gray height + 11
+  // without pro: 9 + 8 (base) + 4 (iva) + 4 (sep) = 25 → gray height = 25, boxH = 36
+  // with pro:    9 + 8 + 8 (tarifa+dto) + 8 (base) + 4 (iva) + 4 (sep) = 41 → gray height = 41, boxH = 52
+  const boxH = isPro && proDiscount ? 52 : 36
+
   doc.setFillColor(...COLORS.grayBg)
-  doc.roundedRect(boxX, y, boxW, 34, 3, 3, "F")
+  doc.roundedRect(boxX, y, boxW, boxH - 11, 3, 3, "F")
 
   doc.setFont("helvetica", "normal")
   doc.setFontSize(9)
   doc.setTextColor(...COLORS.mid)
-  doc.text("Base imponible",  boxX + 6, y + 9)
-  doc.text(formatCurrency(totalNoIva), boxX + boxW - 6, y + 9,  { align: "right" })
-  doc.text("IVA (21%)",       boxX + 6, y + 17)
-  doc.text(formatCurrency(iva),        boxX + boxW - 6, y + 17, { align: "right" })
+
+  let ty = y + 9
+  if (isPro && proDiscount) {
+    const tarifaGeneral = totalNoIva / (1 - proDiscount / 100)
+    const descuentoAmt  = tarifaGeneral - totalNoIva
+    doc.text(`Tarifa general`,                   boxX + 6, ty); doc.text(formatCurrency(tarifaGeneral), boxX + boxW - 6, ty, { align: "right" }); ty += 8
+    doc.setTextColor(...COLORS.green)
+    doc.text(`Dto. profesional −${proDiscount}%`, boxX + 6, ty); doc.text(`−${formatCurrency(descuentoAmt)}`,  boxX + boxW - 6, ty, { align: "right" }); ty += 8
+    doc.setTextColor(...COLORS.mid)
+  }
+  doc.text("Base imponible", boxX + 6, ty);   doc.text(formatCurrency(totalNoIva), boxX + boxW - 6, ty,  { align: "right" }); ty += 8
+  doc.text("IVA (21%)",      boxX + 6, ty);   doc.text(formatCurrency(iva),        boxX + boxW - 6, ty,  { align: "right" }); ty += 4
 
   doc.setDrawColor(...COLORS.border)
   doc.setLineWidth(0.3)
-  doc.line(boxX + 6, y + 21, boxX + boxW - 6, y + 21)
+  doc.line(boxX + 6, ty, boxX + boxW - 6, ty); ty += 4
 
   doc.setFillColor(...COLORS.red)
-  doc.roundedRect(boxX, y + 23, boxW, 11, 2, 2, "F")
+  doc.roundedRect(boxX, ty, boxW, 11, 2, 2, "F")
   doc.setTextColor(...COLORS.white)
   doc.setFontSize(11)
   doc.setFont("helvetica", "bold")
-  doc.text(`TOTAL  ${formatCurrency(total)}`, boxX + boxW / 2, y + 30.5, { align: "center" })
+  doc.text(`TOTAL  ${formatCurrency(total)}`, boxX + boxW / 2, ty + 7.5, { align: "center" })
 
   // ── NOTA PAGO (CORREGIDA Y CON TEXT WRAP) ─────────────────────────────
   const noteY = y + 8 
