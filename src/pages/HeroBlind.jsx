@@ -2,30 +2,24 @@ import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 
 const PALETTE = [
-  { name: 'Blanco puro',    hex: '#F5F5F5', light: true  },
-  { name: 'Marfil',         hex: '#FFFFF0', light: true  },
-  { name: 'Fresno claro',   hex: '#E8E0D2', light: true  },
-  { name: 'Arce suave',     hex: '#F3E5DC', light: true  },
-  { name: 'Aluminio',       hex: '#C0C0C0', light: true  },
-  { name: 'Gris plata',     hex: '#A2A2A2', light: true  },
-  { name: 'Roble dorado',   hex: '#C4A77D', light: true  },
-  { name: 'Pino natural',   hex: '#DBCABB', light: true  },
-  { name: 'Teak salvaje',   hex: '#B19F83', light: true  },
-  { name: 'Sapelly',        hex: '#9C7F6B', light: false },
-  { name: 'Cerezo clásico', hex: '#8D6E63', light: false },
-  { name: 'Gris cuarzo',    hex: '#6F7A85', light: false },
-  { name: 'Gris tráfico',   hex: '#707476', light: false },
-  { name: 'Gris carbono',   hex: '#3D3D3D', light: false },
-  { name: 'Gris basalto',   hex: '#4D5C63', light: false },
-  { name: 'Nogal oscuro',   hex: '#5D4037', light: false },
-  { name: 'Caoba premium',  hex: '#4E342E', light: false },
-  { name: 'Bronce metal',   hex: '#6F4E37', light: false },
-  { name: 'Rojo vino',      hex: '#7C2D3A', light: false },
-  { name: 'Verde musgo',    hex: '#4B5320', light: false },
-  { name: 'Azul báltico',   hex: '#00416A', light: false },
-  { name: 'Antracita',      hex: '#373F41', light: false },
-  { name: 'Wengué',         hex: '#2B2B2B', light: false },
-  { name: 'Negro satinado', hex: '#1A1A1A', light: false },
+  { name: 'Marfil',        hex: '#F2ECCA', light: true  },
+  { name: 'Natural',       hex: '#E8E8E4', light: true  },
+  { name: 'Inox',          hex: '#C8C8C8', light: true  },
+  { name: 'Gris Sable',    hex: '#8A8C7E', light: true  },
+  { name: 'Gris Moteado',  hex: '#7A7A7A', light: false },
+  { name: '7011',          hex: '#52595D', light: false },
+  { name: '7016',          hex: '#2F3538', light: false },
+  { name: 'Bronce',        hex: '#828559', light: false },
+  { name: '8014',          hex: '#4E3829', light: false },
+  { name: '8017',          hex: '#44221A', light: false },
+  { name: '3005',          hex: '#5E2028', light: false },
+  { name: '6009',          hex: '#27352A', light: false },
+  { name: '6005',          hex: '#0F4336', light: false },
+  { name: 'Negro',         hex: '#1A1A1A', light: false },
+  { name: 'Winchester',    hex: '#C49A6C', light: true  },
+  { name: 'Madera 120',    hex: '#C4A06A', light: true  },
+  { name: 'Madera 176',    hex: '#A0724A', light: false },
+  { name: 'Madera Oscuro', hex: '#5D3A1A', light: false },
 ]
 
 function ColorDropdown({ label, selectedHex, onChange }) {
@@ -99,8 +93,8 @@ function ColorDropdown({ label, selectedHex, onChange }) {
 }
 
 export default function HeroBlind() {
-  const [boxColor,  setBoxColor]  = useState('#F5F5F5')
-  const [slatColor, setSlatColor] = useState('#C4A77D')
+  const [boxColor,  setBoxColor]  = useState('#F2ECCA')
+  const [slatColor, setSlatColor] = useState('#C49A6C')
 
   const maskStyle = (src) => ({
     maskImage:          `url(${src})`,
@@ -142,7 +136,7 @@ export default function HeroBlind() {
             Tu persiana,<br />tu color
           </h1>
           <p className="text-gray-500 text-sm leading-relaxed">
-            24 acabados Winchester. Elige el color de la caja y las lamas por separado.
+            18 acabados Winchester. Elige el color de la caja y las lamas por separado.
           </p>
         </div>
 
@@ -157,7 +151,7 @@ export default function HeroBlind() {
 
         <div className="grid grid-cols-3 gap-3">
           {[
-            { n: '24',      l: 'acabados' },
+            { n: '18',      l: 'acabados' },
             { n: '10 años', l: 'garantía'  },
             { n: '7–15d',   l: 'entrega'   },
           ].map(({ n, l }) => (
