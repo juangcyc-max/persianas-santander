@@ -22,21 +22,23 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
         return
       }
 
-      const configNumber   = `CONF-${Date.now()}-${Math.random().toString(36).substr(2,6).toUpperCase()}`
+      const configNumber   = `CONF-${Date.now()}-${Math.random().toString(36).substring(2,8).toUpperCase()}`
       const basePrice      = configuration.estimatedPrice / 1.21
+
+      // blind_type: usar productType o blindType, nunca null
+      const blindType = configuration.productType ?? configuration.blindType ?? 'laminada'
 
       const { data, error } = await supabase
         .from('blind_configurations')
         .insert([{
           user_id:              user.id,
           configuration_number: configNumber,
-          blind_type:           configuration.blindType,
+          blind_type:           blindType,
           mechanism:            configuration.mechanism,
           orientation:          configuration.orientation,
           motor_type:           configuration.motorType,
           width:                configuration.width,
           height:               configuration.height,
-          depth:                configuration.depth,
           box_color:            configuration.boxColor,
           slat_color:           configuration.slatColor,
           box_color_name:       configuration.boxColorName,
