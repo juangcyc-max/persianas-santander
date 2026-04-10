@@ -1,13 +1,15 @@
-function MeasurementsForm({ width, height, depth, onWidthChange, onHeightChange, onDepthChange }) {
+function MeasurementsForm({ productType, width, height, onWidthChange, onHeightChange }) {
+  // Límites según tipo de persiana
+  const isMini = productType === 'sistema_mini'
+  const minSize = isMini ? 700 : 300
+  const maxSize = isMini ? 5000 : 3000
+
   const measures = [
     {
       label: 'Ancho',
       unit: 'mm',
       value: width,
       onChange: onWidthChange,
-      min: 500,
-      max: 3000,
-      step: 10,
       hint: 'Medida horizontal del hueco',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -20,9 +22,6 @@ function MeasurementsForm({ width, height, depth, onWidthChange, onHeightChange,
       unit: 'mm',
       value: height,
       onChange: onHeightChange,
-      min: 500,
-      max: 3000,
-      step: 10,
       hint: 'Medida vertical del hueco',
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -30,31 +29,18 @@ function MeasurementsForm({ width, height, depth, onWidthChange, onHeightChange,
         </svg>
       ),
     },
-    {
-      label: 'Fondo de caja',
-      unit: 'mm',
-      value: depth,
-      onChange: onDepthChange,
-      min: 100,
-      max: 300,
-      step: 5,
-      hint: 'Profundidad de la caja enrolladora',
-      surcharge: depth > 200,
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-        </svg>
-      ),
-    },
   ]
 
-  const handleInput = (val, min, max, onChange) => {
+  const handleInput = (val, onChange) => {
     const n = Number(val)
-    if (!isNaN(n)) onChange(Math.min(max, Math.max(min, n)))
+    if (!isNaN(n)) onChange(Math.min(maxSize, Math.max(minSize, n)))
   }
 
-  // Cálculo del área en m²
-  const areaSqm = ((width / 1000) * (height / 1000)).toFixed(2)
+  const areaSqm = ((width / 1000) * (height / 1000))
+  const areaSqmDisplay = areaSqm.toFixed(2)
+  const MIN_SQM = 1.5
+  const billableSqm = Math.max(areaSqm, MIN_SQM).toFixed(2)
+  const belowMin = areaSqm < MIN_SQM
 
   return (
     <div>
@@ -76,8 +62,8 @@ function MeasurementsForm({ width, height, depth, onWidthChange, onHeightChange,
       </div>
 
       <div className="space-y-4">
-        {measures.map(({ label, unit, value, onChange, min, max, step, hint, surcharge, icon }) => {
-          const pct = ((value - min) / (max - min)) * 100
+        {measures.map(({ label, unit, value, onChange, hint, icon }) => {
+          const pct = ((value - minSize) / (maxSize - minSize)) * 100
           return (
             <div key={label}>
               <div className="flex items-center justify-between mb-1.5">
@@ -86,20 +72,15 @@ function MeasurementsForm({ width, height, depth, onWidthChange, onHeightChange,
                     {icon}
                   </div>
                   <label className="text-sm font-medium text-gray-700">{label}</label>
-                  {surcharge && (
-                    <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-medium">
-                      +coste
-                    </span>
-                  )}
                 </div>
                 <div className="flex items-center gap-1">
                   <input
                     type="number"
                     value={value}
-                    onChange={e => handleInput(e.target.value, min, max, onChange)}
-                    min={min}
-                    max={max}
-                    step={step}
+                    onChange={e => handleInput(e.target.value, onChange)}
+                    min={minSize}
+                    max={maxSize}
+                    step={10}
                     className="w-20 text-right px-2 py-1 rounded-lg border border-gray-300 text-sm font-bold text-gray-900
                                focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white"
                   />
@@ -107,13 +88,12 @@ function MeasurementsForm({ width, height, depth, onWidthChange, onHeightChange,
                 </div>
               </div>
 
-              {/* Slider */}
               <div className="relative">
                 <input
                   type="range"
-                  min={min}
-                  max={max}
-                  step={step}
+                  min={minSize}
+                  max={maxSize}
+                  step={10}
                   value={value}
                   onChange={e => onChange(Number(e.target.value))}
                   className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-gray-200
@@ -126,9 +106,9 @@ function MeasurementsForm({ width, height, depth, onWidthChange, onHeightChange,
                   }}
                 />
                 <div className="flex justify-between mt-1">
-                  <span className="text-xs text-gray-300">{min}</span>
+                  <span className="text-xs text-gray-300">{minSize}</span>
                   <span className="text-xs text-gray-400">{hint}</span>
-                  <span className="text-xs text-gray-300">{max}</span>
+                  <span className="text-xs text-gray-300">{maxSize}</span>
                 </div>
               </div>
             </div>
@@ -137,28 +117,31 @@ function MeasurementsForm({ width, height, depth, onWidthChange, onHeightChange,
       </div>
 
       {/* Resumen de área */}
-      <div className="mt-4 flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-          </svg>
-          Superficie total
+      <div className="mt-4 space-y-2">
+        <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+            </svg>
+            Superficie introducida
+          </div>
+          <span className="font-bold text-gray-900 text-sm">{areaSqmDisplay} m²</span>
         </div>
-        <span className="font-bold text-gray-900 text-sm">{areaSqm} m²</span>
-      </div>
 
-      {depth > 200 && (
-        <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
-          <svg className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-xs text-amber-700">
-            Fondo mayor de 200 mm. Se aplica un suplemento de <strong>0,50 €</strong> por cada mm adicional.
-          </p>
-        </div>
-      )}
+        {belowMin && (
+          <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2 text-sm text-amber-700">
+              <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Pedido mínimo 1,5 m² — se facturará
+            </div>
+            <span className="font-bold text-amber-800 text-sm">{billableSqm} m²</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

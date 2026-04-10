@@ -4,53 +4,108 @@ import { supabase } from '../services/supabase/client'
 import { getProfessionalDiscount, getProfessionalDiscountForUser } from '../services/settings'
 import BlindPreview from './components/BlindPreview'
 import BlindTypeSelector from './components/BlindTypeSelector'
+import BoxTypeSelector from './components/BoxTypeSelector'
 import MeasurementsForm from './components/MeasurementsForm'
 import ColorPicker from './components/ColorPicker'
 import MechanismSelector from './components/MechanismSelector'
 import MotorTypeSelector from './components/MotorTypeSelector'
-import SlatTypeSelector from './components/SlatTypeSelector'
+import GuideSelector from './components/GuideSelector'
 import PriceDisplay from './components/PriceDisplay'
 import ConfigurationSummary from './components/ConfigurationSummary'
 import SaveConfigurationButton from './components/SaveConfigurationButton'
 import AddToCartButton from './components/AddToCartButton'
 import CustomerForm from './components/CustomerForm'
 
+// ─── Tablas de precios por m² ──────────────────────────────────────────────
+const PRICES = {
+  laminada: {
+    'Grupo Base': 43,
+    'Grupo 1':    44.24,
+    'Grupo 2':    46.02,
+    'Grupo 3':    47.61,
+  },
+  autoblocante: {
+    'Grupo Base': 134,
+    'Grupo 1':    166.6,
+    'Grupo 2':    176.4,
+    'Grupo 3':    238,
+  },
+  sistema_mini: {
+    'Grupo Base': 197.8,
+    'Grupo 1':    234.18,
+    'Grupo 2':    244.58,
+    'Grupo 3':    323.80,
+  },
+  cajon_aluminio: {
+    'Grupo Base': 105,
+    'Grupo 1':    110,
+    'Grupo 2':    114,
+    'Grupo 3':    133,
+  },
+  cajon_pvc: {
+    'Grupo Base': 100,
+    'Grupo 1':    102,
+    'Grupo 2':    106,
+    'Grupo 3':    124.6,
+  },
+}
+
+const MOTOR_PRICES = { mecanico: 120, mando_distancia: 260 }
+const GUIDE_PRICE_PER_ML = { v25: 5, h25: 7 }
+const INSTALACION_PRICE = 100
+const MIN_SQM = 1.5
+
+function getGamaFromColor(colors, hex) {
+  return colors.find(c => c.hex === hex)?.gama ?? 'Grupo Base'
+}
+
+function getPricePerSqm(table, gama) {
+  return table[gama] ?? table['Grupo Base']
+}
+
 function Configurator() {
   const [isProfessional, setIsProfessional] = useState(false)
-  const [savedConfigId,  setSavedConfigId]  = useState(null) // ID de la config guardada
-
+  const [savedConfigId, setSavedConfigId] = useState(null)
   const [proDiscount, setProDiscount] = useState(20)
+  const [userType, setUserType] = useState('public')
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       const isPro = user?.user_metadata?.user_type === 'professional'
       setIsProfessional(isPro)
-      if (isPro && user?.id) {
-        getProfessionalDiscountForUser(user.id).then(setProDiscount)
-      } else {
-        getProfessionalDiscount().then(setProDiscount)
+      if (isPro) {
+        setUserType('professional')
+        if (user?.id) getProfessionalDiscountForUser(user.id).then(setProDiscount)
+        else getProfessionalDiscount().then(setProDiscount)
       }
     })
   }, [])
 
-  const [boxColor,   setBoxColor]   = useState('#F2ECCA')
-  const [slatColor,  setSlatColor]  = useState('#C49A6C')
-  const [width,      setWidth]      = useState(1000)
-  const [height,     setHeight]     = useState(1200)
-  const [depth,      setDepth]      = useState(150)
-  const [blindType,  setBlindType]  = useState('normal')
-  const [mechanism,  setMechanism]  = useState('muelle')
-  const [orientation,setOrientation]= useState('izquierda')
-  const [motorType,  setMotorType]  = useState('mecanico')
-  const [slatType,   setSlatType]   = useState('normal')
-  const [userType,   setUserType]   = useState('public')
+  // Estado de configuración
+  const [productType,  setProductType]  = useState('laminada')   // laminada | autoblocante | sistema_mini
+  const [boxType,      setBoxType]      = useState('aluminio')    // aluminio | pvc | sin_cajon
+  const [mechanism,    setMechanism]    = useState('muelle')
+  const [orientation,  setOrientation]  = useState('izquierda')
+  const [motorType,    setMotorType]    = useState('mecanico')
+  const [guideType,    setGuideType]    = useState('none')        // none | v25 | h25
+  const [installacion, setInstallacion] = useState(true)
+  const [width,        setWidth]        = useState(1000)
+  const [height,       setHeight]       = useState(1200)
+  const [boxColor,     setBoxColor]     = useState('#F2ECCA')
+  const [slatColor,    setSlatColor]    = useState('#C49A6C')
   const [customerData, setCustomerData] = useState({ name: '', phone: '', email: '', address: '' })
   const [showCustomerForm, setShowCustomerForm] = useState(false)
 
+  // Forzar motor si el tipo lo requiere
+  useEffect(() => {
+    if (productType === 'autoblocante' || productType === 'sistema_mini') {
+      setMechanism('motor')
+    }
+  }, [productType])
+
+  // Colores disponibles
   const winchesterColors = [
-    // ── GRUPO BASE ────────────────────────────────────────────────────────
     { name: 'Marfil',        hex: '#F2ECCA', gama: 'Grupo Base' },
-    // ── GRUPO 1 ───────────────────────────────────────────────────────────
     { name: '3005',          hex: '#5E2028', gama: 'Grupo 1' },
     { name: '6005',          hex: '#0F4336', gama: 'Grupo 1' },
     { name: '6009',          hex: '#27352A', gama: 'Grupo 1' },
@@ -58,12 +113,10 @@ function Configurator() {
     { name: '8014',          hex: '#4E3829', gama: 'Grupo 1' },
     { name: 'Natural',       hex: '#E8E8E4', gama: 'Grupo 1' },
     { name: 'Negro',         hex: '#1A1A1A', gama: 'Grupo 1' },
-    // ── GRUPO 2 ───────────────────────────────────────────────────────────
     { name: 'Bronce',        hex: '#828559', gama: 'Grupo 2' },
     { name: '7016',          hex: '#2F3538', gama: 'Grupo 2' },
     { name: '8017',          hex: '#44221A', gama: 'Grupo 2' },
     { name: 'Gris Sable',    hex: '#8A8C7E', gama: 'Grupo 2' },
-    // ── GRUPO 3 ───────────────────────────────────────────────────────────
     { name: 'Winchester',    hex: '#C49A6C', gama: 'Grupo 3', wood: true },
     { name: 'Madera 120',    hex: '#C4A06A', gama: 'Grupo 3', wood: true },
     { name: 'Madera 176',    hex: '#A0724A', gama: 'Grupo 3', wood: true },
@@ -72,33 +125,91 @@ function Configurator() {
     { name: 'Gris Moteado',  hex: '#7A7A7A', gama: 'Grupo 3' },
   ]
 
-  const calculatePrice = () => {
-    const w = parseFloat(width)  || 0
-    const h = parseFloat(height) || 0
-    const d = parseFloat(depth)  || 0
-    const basePerSqm = blindType === 'blocking' ? 180 : 120
-    const mechMult   = mechanism === 'motor' ? 1.5 : mechanism === 'cinta' ? 1.1 : 1.0
-    const slatMult   = slatType === 'seguridad' ? 1.3 : 1.0
-    const areaSqm    = (w / 1000) * (h / 1000)
-    const base       = areaSqm * basePerSqm * mechMult * slatMult
-    const depthCost  = d > 200 ? (d - 200) * 0.5 : 0
-    const total      = (base + depthCost) * 1.21
-    return userType === 'professional' ? total * (1 - proDiscount / 100) : total
+  // ─── Cálculo de precios ──────────────────────────────────────────────────
+  const calculatePriceBreakdown = () => {
+    const areaSqm = (width / 1000) * (height / 1000)
+    const billableSqm = Math.max(areaSqm, MIN_SQM)
+
+    const slatGama = getGamaFromColor(winchesterColors, slatColor)
+    const boxGama  = getGamaFromColor(winchesterColors, boxColor)
+
+    // Precio del paño según tipo y color de lama
+    const productTable = PRICES[productType]
+    const productPricePerSqm = getPricePerSqm(productTable, slatGama)
+
+    // Precio cajón (solo para laminada, y solo si tiene cajón)
+    let boxPricePerSqm = 0
+    let boxLabel = ''
+    if (productType === 'laminada' && boxType !== 'sin_cajon') {
+      const cajonTable = boxType === 'aluminio' ? PRICES.cajon_aluminio : PRICES.cajon_pvc
+      boxPricePerSqm = getPricePerSqm(cajonTable, boxGama)
+      boxLabel = boxType === 'aluminio' ? 'Cajón mini aluminio' : 'Cajón mini PVC'
+    }
+
+    // Guías: precio por metro lineal × 2 guías × altura (metros)
+    let guidesCost = 0
+    if (guideType !== 'none') {
+      const pricePerMl = GUIDE_PRICE_PER_ML[guideType]
+      guidesCost = 2 * (height / 1000) * pricePerMl
+    }
+
+    // Motor
+    const motorCost = mechanism === 'motor' ? (MOTOR_PRICES[motorType] ?? 0) : 0
+
+    // Instalación
+    const installacionCost = installacion ? INSTALACION_PRICE : 0
+
+    // Totales sin IVA
+    const subtotalSinIva =
+      productPricePerSqm * billableSqm +
+      boxPricePerSqm * billableSqm +
+      guidesCost +
+      motorCost +
+      installacionCost
+
+    const iva = subtotalSinIva * 0.21
+    const totalConIva = subtotalSinIva * 1.21
+    const discount = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
+    const finalPrice = totalConIva - discount
+
+    const productLabelMap = {
+      laminada: 'Paño laminada',
+      autoblocante: 'Paño autoblocante',
+      sistema_mini: 'Sistema mini autoblocante',
+    }
+
+    return {
+      productLabel: productLabelMap[productType] ?? productType,
+      productPricePerSqm,
+      boxLabel,
+      boxPricePerSqm,
+      guidesCost,
+      motorCost,
+      installacionCost,
+      billableSqm,
+      subtotalSinIva,
+      iva,
+      totalConIva,
+      discount,
+      finalPrice,
+    }
   }
 
+  const priceBreakdown = calculatePriceBreakdown()
+
   const configuration = {
-    blindType, mechanism, orientation, motorType, slatType,
-    width, height, depth, boxColor, slatColor,
+    productType, boxType, mechanism, orientation, motorType, guideType, installacion,
+    width, height,
+    boxColor, slatColor,
     boxColorName:  winchesterColors.find(c => c.hex === boxColor)?.name,
     boxColorGama:  winchesterColors.find(c => c.hex === boxColor)?.gama,
     slatColorName: winchesterColors.find(c => c.hex === slatColor)?.name,
     slatColorGama: winchesterColors.find(c => c.hex === slatColor)?.gama,
-    estimatedPrice: calculatePrice(),
+    estimatedPrice: priceBreakdown.finalPrice,
     proDiscount,
     customerData,
   }
 
-  // Cuando se guarda la configuración, guardamos el ID para poder añadirla a la cesta
   const handleSaveSuccess = (savedConfig) => {
     if (savedConfig?.id) setSavedConfigId(savedConfig.id)
     setShowCustomerForm(false)
@@ -107,7 +218,6 @@ function Configurator() {
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
 
-      {/* Volver al panel — solo profesionales */}
       {isProfessional && (
         <div className="bg-white border-b border-gray-100 px-4 sm:px-6 lg:px-8 py-2">
           <Link to="/panel-profesional"
@@ -120,7 +230,6 @@ function Configurator() {
         </div>
       )}
 
-      {/* Header */}
       <section className="bg-red-700 text-white py-8 md:py-12">
         <div className="w-full px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-xl md:text-3xl font-bold mb-2">Configura tu Persiana</h1>
@@ -135,46 +244,48 @@ function Configurator() {
             {/* Columna izquierda */}
             <div className="space-y-6">
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <BlindPreview boxColor={boxColor} slatColor={slatColor} width={width} blindType={blindType} />
+                <BlindPreview boxColor={boxColor} slatColor={slatColor} width={width} blindType={productType} />
               </div>
 
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <PriceDisplay
-                  estimatedPrice={calculatePrice()}
-                  blindType={blindType}
-                  mechanism={mechanism}
+                  priceBreakdown={priceBreakdown}
                   userType={userType}
                   proDiscount={proDiscount}
                 />
               </div>
 
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <ConfigurationSummary blindType={blindType} mechanism={mechanism} orientation={orientation}
-                  motorType={motorType} slatType={slatType} width={width} height={height} depth={depth}
-                  boxColor={boxColor} slatColor={slatColor} winchesterColors={winchesterColors} />
+                <ConfigurationSummary
+                  productType={productType}
+                  boxType={boxType}
+                  guideType={guideType}
+                  installacion={installacion}
+                  mechanism={mechanism}
+                  orientation={orientation}
+                  motorType={motorType}
+                  width={width}
+                  height={height}
+                  boxColor={boxColor}
+                  slatColor={slatColor}
+                  winchesterColors={winchesterColors}
+                />
               </div>
 
-              {/* Botones de acción */}
               <div className="space-y-3">
-                {/* 1. Guardar configuración — SIEMPRE primero */}
                 <SaveConfigurationButton
                   configuration={configuration}
                   onSuccess={handleSaveSuccess}
                   proDiscount={proDiscount}
                 />
-
-                {/* 2. Añadir a la cesta — aparece solo cuando hay una config guardada */}
                 {savedConfigId && (
                   <AddToCartButton configurationId={savedConfigId} />
                 )}
-
-                {/* 3. Si aún no hay config guardada, mensaje informativo */}
                 {!savedConfigId && (
                   <p className="text-xs text-center text-gray-400">
                     Guarda la configuración primero para poder añadirla a la cesta
                   </p>
                 )}
-
                 <button
                   onClick={() => setShowCustomerForm(true)}
                   className="w-full py-3 px-6 rounded-xl font-semibold bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors text-sm"
@@ -186,17 +297,41 @@ function Configurator() {
 
             {/* Columna derecha — controles */}
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 space-y-6">
-              <BlindTypeSelector blindType={blindType} onTypeChange={setBlindType} />
-              <MechanismSelector blindType={blindType} mechanism={mechanism} onMechanismChange={setMechanism}
-                orientation={orientation} onOrientationChange={setOrientation} />
+              <BlindTypeSelector blindType={productType} onTypeChange={setProductType} />
+
+              {/* Selector de cajón solo para laminada */}
+              {productType === 'laminada' && (
+                <BoxTypeSelector boxType={boxType} onBoxTypeChange={setBoxType} />
+              )}
+
+              <MechanismSelector
+                productType={productType}
+                mechanism={mechanism}
+                onMechanismChange={setMechanism}
+                orientation={orientation}
+                onOrientationChange={setOrientation}
+              />
+
               {mechanism === 'motor' && (
                 <MotorTypeSelector motorType={motorType} onMotorTypeChange={setMotorType} />
               )}
-              <SlatTypeSelector slatType={slatType} onSlatTypeChange={setSlatType} blindType={blindType} />
-              <MeasurementsForm width={width} height={height} depth={depth}
+
+              <MeasurementsForm
+                productType={productType}
+                width={width}
+                height={height}
                 onWidthChange={v  => setWidth(parseFloat(v)  || 0)}
                 onHeightChange={v => setHeight(parseFloat(v) || 0)}
-                onDepthChange={v  => setDepth(parseFloat(v)  || 0)} />
+              />
+
+              <GuideSelector
+                guideType={guideType}
+                onGuideTypeChange={setGuideType}
+                installacion={installacion}
+                onInstallacionChange={setInstallacion}
+                height={height}
+              />
+
               <ColorPicker label="Color de la Caja" selectedColor={boxColor}
                 onColorChange={setBoxColor} colors={winchesterColors} />
               <ColorPicker label="Color de las Lamas" selectedColor={slatColor}
@@ -206,7 +341,6 @@ function Configurator() {
         </div>
       </section>
 
-      {/* Modal formulario cliente */}
       {showCustomerForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative border border-gray-200">
