@@ -1064,7 +1064,8 @@ function AdminClientsSection() {
   const [loading,   setLoading]   = useState(true)
   const [search,    setSearch]    = useState('')
   const [deleting,  setDeleting]  = useState(null)
-  const [confirm,   setConfirm]   = useState(null) // userId pendiente de confirmar
+  const [confirm,   setConfirm]   = useState(null)
+  const [deleteErr, setDeleteErr] = useState('')
 
   useEffect(() => { loadClients() }, [])
 
@@ -1078,15 +1079,16 @@ function AdminClientsSection() {
 
   async function handleDelete(userId) {
     setDeleting(userId)
-    try {
-      await supabase.rpc('admin_delete_user', { target_user_id: userId })
+    setDeleteErr('')
+    const { error } = await supabase.rpc('admin_delete_user', { target_user_id: userId })
+    if (error) {
+      console.error('Error eliminando usuario:', error)
+      setDeleteErr(error.message)
+    } else {
       setClients(prev => prev.filter(c => c.id !== userId))
-    } catch (err) {
-      console.error('Error eliminando usuario:', err)
-    } finally {
-      setDeleting(null)
       setConfirm(null)
     }
+    setDeleting(null)
   }
 
   const filtered = clients.filter(c =>
@@ -1173,6 +1175,11 @@ function AdminClientsSection() {
           </div>
         )}
       </div>
+      {deleteErr && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+          Error al eliminar: {deleteErr}
+        </div>
+      )}
       <p className="text-xs text-gray-400">{filtered.length} usuario{filtered.length !== 1 ? 's' : ''} · Los admins no se pueden eliminar desde aquí</p>
     </div>
   )
