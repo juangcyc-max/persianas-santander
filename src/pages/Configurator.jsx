@@ -154,8 +154,8 @@ function Configurator() {
     // Motor
     const motorCost = mechanism === 'motor' ? (MOTOR_PRICES[motorType] ?? 0) : 0
 
-    // Instalación
-    const installacionCost = installacion ? INSTALACION_PRICE : 0
+    // Instalación: 100 €/m²
+    const installacionCost = installacion ? INSTALACION_PRICE * billableSqm : 0
 
     // Totales sin IVA
     const subtotalSinIva =

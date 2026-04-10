@@ -146,7 +146,7 @@ function GuideSelector({ guideType, onGuideTypeChange, installacion, onInstallac
             <p className={`text-xs font-bold ${installacion ? 'text-red-700' : 'text-gray-900'}`}>
               Con instalación
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">+100 €</p>
+            <p className="text-xs text-gray-400 mt-0.5">+100 €/m²</p>
           </button>
 
           <button
