@@ -132,6 +132,7 @@ export default function Cart() {
         notes:          (!isProfessional && !sinInstalacion) ? sanitizeText(notes)   : null,
       }
 
+      console.log('sinInstalacion:', sinInstalacion, '| orderData:', JSON.stringify(orderData))
       const { data: order, error: orderError } = await supabase
         .from('orders').insert(orderData).select().single()
       if (orderError) throw orderError
@@ -142,8 +143,11 @@ export default function Cart() {
       await clearCart()
       setStep('success')
     } catch (err) {
-      setError(`Error al procesar la solicitud: ${err.message}`)
-      console.error(err)
+      const code    = err?.code    ? ` [${err.code}]`    : ''
+      const details = err?.details ? ` — ${err.details}` : ''
+      const hint    = err?.hint    ? ` (${err.hint})`    : ''
+      setError(`Error: ${err?.message ?? 'desconocido'}${code}${details}${hint}`)
+      console.error('Order error:', JSON.stringify(err))
     } finally {
       setLoading(false)
     }
