@@ -127,13 +127,26 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
     ]
     clienteLines.forEach((l, i) => doc.text(l, cx + 6, y + 23 + i * 6))
   } else {
-    doc.setFontSize(9.5)
-    doc.text(order?.profiles?.email || order?.address || "—", cx + 6, y + 16)
+    const bd = order?.billing_data
+    doc.setFontSize(10)
+    const clientName = bd ? `${bd.nombre ?? ''} ${bd.apellidos ?? ''}`.trim() : (order?.profiles?.email || "—")
+    doc.text(clientName || "—", cx + 6, y + 16)
     doc.setFont("helvetica", "normal")
     doc.setFontSize(8.5)
     doc.setTextColor(...COLORS.mid)
-    if (order?.address) doc.text(order.address, cx + 6, y + 23)
-    if (order?.phone)   doc.text(order.phone,   cx + 6, y + 30)
+    if (bd) {
+      const clienteLines = [
+        bd.dni_nif      ? `DNI/NIF: ${bd.dni_nif}` : null,
+        bd.direccion    || null,
+        [bd.codigo_postal, bd.ciudad].filter(Boolean).join(' ') || null,
+        order?.phone    || null,
+        bd.email        || order?.profiles?.email || null,
+      ].filter(Boolean)
+      clienteLines.forEach((l, i) => doc.text(l, cx + 6, y + 23 + i * 6))
+    } else {
+      if (order?.address) doc.text(order.address, cx + 6, y + 23)
+      if (order?.phone)   doc.text(order.phone,   cx + 6, y + 30)
+    }
   }
 
   y += 60

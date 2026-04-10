@@ -92,6 +92,30 @@ export default function Cart() {
   const [time,     setTime]     = useState('')
   const [notes,    setNotes]    = useState('')
 
+  // Datos de facturación (particulares)
+  const [billingNombre,   setBillingNombre]   = useState('')
+  const [billingApellidos,setBillingApellidos] = useState('')
+  const [billingDni,      setBillingDni]      = useState('')
+  const [billingDireccion,setBillingDireccion] = useState('')
+  const [billingCp,       setBillingCp]       = useState('')
+  const [billingCiudad,   setBillingCiudad]   = useState('')
+
+  // Cargar datos de facturación guardados
+  useEffect(() => {
+    if (!user?.id || isProfessional) return
+    supabase.from('client_data').select('*').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => {
+        if (!data) return
+        if (data.nombre)        setBillingNombre(data.nombre)
+        if (data.apellidos)     setBillingApellidos(data.apellidos)
+        if (data.dni_nif)       setBillingDni(data.dni_nif)
+        if (data.direccion)     setBillingDireccion(data.direccion)
+        if (data.codigo_postal) setBillingCp(data.codigo_postal)
+        if (data.ciudad)        setBillingCiudad(data.ciudad)
+        if (data.telefono && !phone) setPhone(data.telefono)
+      })
+  }, [user?.id, isProfessional])
+
   // Fecha mínima = mañana
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
@@ -104,10 +128,40 @@ export default function Cart() {
       if (!date)           { setError('Elige un día preferido'); return }
       if (!time)           { setError('Elige una hora preferida'); return }
     }
+    if (!isProfessional) {
+      if (!billingNombre.trim())    { setError('El nombre es obligatorio'); return }
+      if (!billingApellidos.trim()) { setError('Los apellidos son obligatorios'); return }
+      if (!billingDni.trim())       { setError('El DNI/NIF es obligatorio'); return }
+    }
     setLoading(true)
     setError('')
 
     try {
+      // Guardar/actualizar datos de facturación del cliente particular
+      if (!isProfessional) {
+        await supabase.from('client_data').upsert({
+          user_id:       user.id,
+          nombre:        sanitizeText(billingNombre),
+          apellidos:     sanitizeText(billingApellidos),
+          dni_nif:       sanitizeText(billingDni),
+          direccion:     sanitizeText(billingDireccion),
+          codigo_postal: sanitizeText(billingCp),
+          ciudad:        sanitizeText(billingCiudad),
+          telefono:      sanitizeText(phone),
+          updated_at:    new Date().toISOString(),
+        }, { onConflict: 'user_id' })
+      }
+
+      const billingData = !isProfessional ? {
+        nombre:        sanitizeText(billingNombre),
+        apellidos:     sanitizeText(billingApellidos),
+        dni_nif:       sanitizeText(billingDni),
+        direccion:     sanitizeText(billingDireccion),
+        codigo_postal: sanitizeText(billingCp),
+        ciudad:        sanitizeText(billingCiudad),
+        email:         user.email,
+      } : null
+
       const orderData = {
         user_id:        user.id,
         user_type:      isProfessional ? 'professional' : 'public',
@@ -131,6 +185,7 @@ export default function Cart() {
         preferred_date: (!isProfessional && !sinInstalacion) ? date                  : null,
         preferred_time: (!isProfessional && !sinInstalacion) ? time                  : null,
         notes:          (!isProfessional && !sinInstalacion) ? sanitizeText(notes)   : null,
+        billing_data:   billingData,
       }
 
       const { data: newOrder, error: orderError } = await supabase
@@ -346,6 +401,55 @@ export default function Cart() {
                   <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3}
                     placeholder="Acceso al edificio, piso, instrucciones especiales..."
                     className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 resize-none" />
+                </div>
+              </div>
+            )}
+
+            {step === 'checkout' && !isProfessional && (
+              <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+                <div>
+                  <h3 className="font-bold text-gray-900 mb-0.5">Datos de facturación</h3>
+                  <p className="text-xs text-gray-400">Se guardarán para futuros pedidos</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Nombre *</label>
+                    <input type="text" value={billingNombre} onChange={e => setBillingNombre(e.target.value)}
+                      placeholder="Juan"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Apellidos *</label>
+                    <input type="text" value={billingApellidos} onChange={e => setBillingApellidos(e.target.value)}
+                      placeholder="García López"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">DNI / NIF *</label>
+                  <input type="text" value={billingDni} onChange={e => setBillingDni(e.target.value)}
+                    placeholder="12345678A"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Dirección de facturación</label>
+                  <input type="text" value={billingDireccion} onChange={e => setBillingDireccion(e.target.value)}
+                    placeholder="Calle Mayor 1, 2ºA"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Código postal</label>
+                    <input type="text" value={billingCp} onChange={e => setBillingCp(e.target.value)}
+                      placeholder="39001"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Ciudad</label>
+                    <input type="text" value={billingCiudad} onChange={e => setBillingCiudad(e.target.value)}
+                      placeholder="Santander"
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400" />
+                  </div>
                 </div>
               </div>
             )}
