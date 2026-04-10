@@ -703,6 +703,9 @@ export default function AdminDashboard() {
         {/* ── SECCIÓN PROFESIONALES ADMIN ── */}
         <AdminProfessionalsSection />
 
+        {/* ── SECCIÓN CLIENTES ADMIN ── */}
+        <AdminClientsSection />
+
       </div>
 
       {/* Modal pedido */}
@@ -1056,6 +1059,127 @@ function DiscountCell({ userId, initial }) {
 }
 
 // ── SECCIÓN PROFESIONALES ADMIN ───────────────────────────────────────────
+function AdminClientsSection() {
+  const [clients,   setClients]   = useState([])
+  const [loading,   setLoading]   = useState(true)
+  const [search,    setSearch]    = useState('')
+  const [deleting,  setDeleting]  = useState(null)
+  const [confirm,   setConfirm]   = useState(null) // userId pendiente de confirmar
+
+  useEffect(() => { loadClients() }, [])
+
+  async function loadClients() {
+    setLoading(true)
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, email, user_type, role, created_at')
+      .order('created_at', { ascending: false })
+    setClients(data ?? [])
+    setLoading(false)
+  }
+
+  async function handleDelete(userId) {
+    setDeleting(userId)
+    try {
+      await supabase.rpc('admin_delete_user', { target_user_id: userId })
+      setClients(prev => prev.filter(c => c.id !== userId))
+    } catch (err) {
+      console.error('Error eliminando usuario:', err)
+    } finally {
+      setDeleting(null)
+      setConfirm(null)
+    }
+  }
+
+  const filtered = clients.filter(c =>
+    !search ||
+    c.email?.toLowerCase().includes(search.toLowerCase()) ||
+    c.user_type?.toLowerCase().includes(search.toLowerCase())
+  )
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h2 className="text-lg font-bold text-gray-900">Todos los clientes</h2>
+        <input
+          type="text" placeholder="Buscar por email o tipo…" value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 w-64"
+        />
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-10">
+            <div className="w-6 h-6 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-10 text-gray-400 text-sm">No hay clientes registrados</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  {['Email', 'Tipo', 'Registro', 'Acciones'].map(h => (
+                    <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap ${h === 'Acciones' ? 'text-right' : 'text-left'}`}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filtered.map(c => (
+                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-gray-900 font-medium">{c.email ?? '—'}</td>
+                    <td className="px-4 py-3">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        c.user_type === 'professional' ? 'bg-blue-100 text-blue-700' :
+                        c.role === 'admin' ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-600'
+                      }`}>
+                        {c.role === 'admin' ? 'Admin' : c.user_type === 'professional' ? 'Profesional' : 'Cliente'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-400 text-xs">{fmtDate(c.created_at)}</td>
+                    <td className="px-4 py-3 text-right">
+                      {c.role === 'admin' ? (
+                        <span className="text-xs text-gray-300">—</span>
+                      ) : confirm === c.id ? (
+                        <div className="inline-flex items-center gap-2">
+                          <span className="text-xs text-red-600 font-semibold">¿Eliminar definitivamente?</span>
+                          <button
+                            onClick={() => handleDelete(c.id)}
+                            disabled={deleting === c.id}
+                            className="text-xs font-bold bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded-lg transition-colors disabled:opacity-60">
+                            {deleting === c.id ? '…' : 'Sí, eliminar'}
+                          </button>
+                          <button onClick={() => setConfirm(null)}
+                            className="text-xs font-semibold text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirm(c.id)}
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition-colors">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Eliminar
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      <p className="text-xs text-gray-400">{filtered.length} usuario{filtered.length !== 1 ? 's' : ''} · Los admins no se pueden eliminar desde aquí</p>
+    </div>
+  )
+}
+
 function AdminProfessionalsSection() {
   const [professionals, setProfessionals] = useState([])
   const [loading,       setLoading]       = useState(true)
