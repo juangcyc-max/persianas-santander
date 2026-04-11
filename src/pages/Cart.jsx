@@ -12,45 +12,90 @@ function fmt(n) {
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
 }
 
+const PRODUCT_LABELS = {
+  laminada:                  'Paño Laminado',
+  autoblocante:              'Paño Autoblocante',
+  sistema_mini_pvc:          'Sistema Mini PVC',
+  sistema_mini_aluminio:     'Sistema Mini Aluminio',
+  sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
+  solo_motor:                'Motor',
+  solo_guias:                'Guías laterales',
+  // legacy
+  sistema_mini:              'Sistema Mini Autoblocante',
+  blocking:                  'Paño Bloqueante',
+  normal:                    'Paño Estándar',
+}
+const MOTOR_LABELS  = { mecanico: 'Mecánico', mando_distancia: 'Mando a distancia' }
+const GUIDE_LABELS  = { v25: 'Guía V25 (5 €/ml)', h25: 'Guía H25 (7 €/ml)', none: 'Sin guías' }
+const MECH_LABELS   = { muelle: 'Muelle', cinta: 'Cinta', motor: 'Motor' }
+
 // ── Tarjeta de producto en la cesta ──────────────────────────────────────
 function CartItem({ item, onRemove }) {
   const config = item.blind_configurations
   if (!config) return null
+
+  const type        = config.blind_type
+  const isSoloMotor = type === 'solo_motor'
+  const isSoloGuias = type === 'solo_guias'
+  const isSistema   = ['sistema_mini_pvc','sistema_mini_aluminio','sistema_mini_autoblocante','sistema_mini'].includes(type)
+  const isPano      = !isSoloMotor && !isSoloGuias
 
   const maskStyle = (src) => ({
     maskImage: `url(${src})`, maskSize: 'contain', maskRepeat: 'no-repeat', maskPosition: 'center',
     WebkitMaskImage: `url(${src})`, WebkitMaskSize: 'contain', WebkitMaskRepeat: 'no-repeat', WebkitMaskPosition: 'center',
   })
 
+  const productName = PRODUCT_LABELS[type] ?? type
+
+  // Línea de detalle según tipo
+  let detail1 = ''
+  let detail2 = ''
+  if (isSoloMotor) {
+    detail1 = MOTOR_LABELS[config.motor_type] ?? config.motor_type ?? '—'
+  } else if (isSoloGuias) {
+    detail1 = GUIDE_LABELS[config.guide_type] ?? config.guide_type ?? '—'
+    detail2 = config.height ? `Altura: ${config.height} mm` : ''
+  } else {
+    detail1 = `${config.width ?? 0} × ${config.height ?? 0} mm · ${MECH_LABELS[config.mechanism] ?? config.mechanism ?? '—'}`
+    detail2 = isSistema
+      ? `Cajón: ${config.box_color_name ?? '—'} · Lamas: ${config.slat_color_name ?? '—'}`
+      : `Color: ${config.slat_color_name ?? '—'}`
+  }
+
   return (
     <div className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl">
-      {/* Mini preview */}
-      <div className="relative w-20 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-50">
-        <div className="absolute inset-0 transition-colors"
-          style={{ backgroundColor: config.slat_color_name ? '#C4A77D' : '#F5F5F5', ...maskStyle('/persianacompleta.png') }} />
-        <div className="absolute inset-0 transition-colors"
-          style={{ backgroundColor: config.box_color_name ? '#F5F5F5' : '#F5F5F5', ...maskStyle('/caja.png') }} />
-        <img src="/persianacompleta.png" alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-          style={{ mixBlendMode: 'multiply' }} />
+      {/* Icono / preview */}
+      <div className="relative w-20 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
+        {isSoloMotor ? (
+          <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        ) : isSoloGuias ? (
+          <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+        ) : (
+          <>
+            <div className="absolute inset-0 transition-colors"
+              style={{ backgroundColor: config.slat_color ?? '#C4A77D', ...maskStyle('/persianacompleta.png') }} />
+            <img src="/persianacompleta.png" alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+              style={{ mixBlendMode: 'multiply' }} />
+          </>
+        )}
       </div>
 
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 text-sm">
-          Persiana {config.blind_type === 'blocking' ? 'bloqueante' : 'estándar'}
-        </p>
-        <p className="text-xs text-gray-500 mt-0.5">
-          {config.width} × {config.height} mm · {config.mechanism}
-        </p>
-        <p className="text-xs text-gray-400">
-          Caja: {config.box_color_name} · Lamas: {config.slat_color_name}
-        </p>
+        <p className="font-semibold text-gray-900 text-sm">{productName}</p>
+        {detail1 && <p className="text-xs text-gray-500 mt-0.5">{detail1}</p>}
+        {detail2 && <p className="text-xs text-gray-400">{detail2}</p>}
       </div>
 
       {/* Precio */}
       <div className="text-right flex-shrink-0">
         <p className="font-bold text-gray-900">{fmt(config.estimated_price * item.quantity)}</p>
-        <p className="text-xs text-gray-400">sin IVA</p>
+        <p className="text-xs text-gray-400">IVA incl.</p>
       </div>
 
       {/* Eliminar */}
@@ -172,6 +217,8 @@ export default function Cart() {
           width:            i.blind_configurations?.width,
           height:           i.blind_configurations?.height,
           mechanism:        i.blind_configurations?.mechanism,
+          motor_type:       i.blind_configurations?.motor_type,
+          guide_type:       i.blind_configurations?.guide_type,
           estimated_price:  i.blind_configurations?.estimated_price,
           box_color_name:   i.blind_configurations?.box_color_name,
           slat_color_name:  i.blind_configurations?.slat_color_name,

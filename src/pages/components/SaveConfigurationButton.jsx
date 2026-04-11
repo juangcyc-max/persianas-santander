@@ -51,6 +51,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
           price_public:         basePrice,
           price_professional:   basePrice * (1 - proDiscount / 100),
           estimated_price:      configuration.estimatedPrice,
+          guide_type:           configuration.guideType ?? null,
           installacion:         configuration.installacion !== false,
         }])
         .select()

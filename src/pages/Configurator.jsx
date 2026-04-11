@@ -251,7 +251,8 @@ function Configurator() {
   const configuration = {
     productType,
     blindType: productType,
-    mechanism, orientation, motorType, guideType, installacion,
+    mechanism, orientation, motorType, guideType,
+    installacion: ['solo_motor', 'solo_guias'].includes(productType) ? false : installacion,
     width, height,
     boxColor:     effectiveBoxColor,
     slatColor,
