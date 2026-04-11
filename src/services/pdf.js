@@ -19,17 +19,17 @@ const COLORS = {
 
 const LABELS = {
   productType: {
-    laminada:    'Paño Laminada',
-    autoblocante:'Paño Autoblocante',
-    sistema_mini:'Sistema Mini Autoblocante',
+    laminada:                  'Paño Laminado',
+    autoblocante:              'Paño Autoblocante',
+    sistema_mini_pvc:          'Sistema Mini PVC',
+    sistema_mini_aluminio:     'Sistema Mini Aluminio',
+    sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
+    solo_motor:                'Solo Motor',
+    solo_guias:                'Solo Guías',
     // legacy
-    blocking:    'Bloqueante',
-    normal:      'Estándar',
-  },
-  boxType: {
-    aluminio:  'Cajón mini aluminio',
-    pvc:       'Cajón mini PVC',
-    sin_cajon: 'Sin cajón',
+    sistema_mini: 'Sistema Mini Autoblocante',
+    blocking:     'Bloqueante',
+    normal:       'Estándar',
   },
   mechanism:   { muelle: 'Muelle', cinta: 'Cinta manual', motor: 'Motor' },
   motorType:   { mecanico: 'Mecánico', mando_distancia: 'Mando / Radio' },
@@ -221,7 +221,7 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
 
     // ── TABLA CONFIGURACIÓN ───────────────────────────────────────────────
     const productLabel = LABELS.productType[configuration.productType ?? configuration.blindType] ?? 'Estándar'
-    const boxLabel = LABELS.boxType[configuration.boxType] ?? ''
+    const boxLabel = ''
     const guideLabel = LABELS.guideType[configuration.guideType] ?? 'Sin guías'
     const motorDisplay = configuration.mechanism === 'motor'
       ? (LABELS.motorType[configuration.motorType] || '—')
@@ -425,7 +425,7 @@ export async function generateClientBudgetPDF({
 
     // ── TABLA CONFIGURACIÓN ───────────────────────────────────────────────
     const productLabel = LABELS.productType[configuration.productType ?? configuration.blindType] ?? 'Estándar'
-    const boxLabel = LABELS.boxType[configuration.boxType] ?? ''
+    const boxLabel = ''
     const guideLabel = LABELS.guideType[configuration.guideType] ?? 'Sin guías'
     const motorDisplay = configuration.mechanism === 'motor'
       ? (LABELS.motorType[configuration.motorType] || '—')
@@ -611,7 +611,7 @@ export async function generateClientInvoicePDF({
 
     // ── TABLA CONCEPTOS ───────────────────────────────────────────────────
     const productLabel = LABELS.productType[configuration.productType ?? configuration.blindType] ?? 'Persiana'
-    const boxLabel = LABELS.boxType[configuration.boxType] ?? ''
+    const boxLabel = ''
     const guideLabel = LABELS.guideType[configuration.guideType] ?? ''
     const hasMotor = configuration.mechanism === 'motor'
 
@@ -723,7 +723,7 @@ export async function redownloadBudgetPDF(budget) {
   const configuration = {
     productType:    budget.blind_type,
     blindType:      budget.blind_type,
-    boxType:        budget.box_type,
+    boxType:        null,
     mechanism:      budget.mechanism,
     motorType:      budget.motor_type,
     guideType:      budget.guide_type,
