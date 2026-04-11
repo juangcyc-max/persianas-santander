@@ -4,7 +4,6 @@ import { supabase } from '../services/supabase/client'
 import { getProfessionalDiscount, getProfessionalDiscountForUser } from '../services/settings'
 import BlindPreview from './components/BlindPreview'
 import BlindTypeSelector from './components/BlindTypeSelector'
-import BoxTypeSelector from './components/BoxTypeSelector'
 import MeasurementsForm from './components/MeasurementsForm'
 import ColorPicker from './components/ColorPicker'
 import MechanismSelector from './components/MechanismSelector'
@@ -24,28 +23,28 @@ const PRICES = {
     'Grupo 3':    47.61,
   },
   autoblocante: {
-    'Grupo Base': 134,
+    'Grupo Base': 134.4,
     'Grupo 1':    166.6,
     'Grupo 2':    176.4,
     'Grupo 3':    238,
   },
-  sistema_mini: {
-    'Grupo Base': 197.8,
-    'Grupo 1':    234.18,
-    'Grupo 2':    244.58,
-    'Grupo 3':    323.80,
+  sistema_mini_pvc: {
+    'Grupo Base': 100,
+    'Grupo 1':    102,
+    'Grupo 2':    106,
+    'Grupo 3':    124.6,
   },
-  cajon_aluminio: {
+  sistema_mini_aluminio: {
     'Grupo Base': 105,
     'Grupo 1':    110,
     'Grupo 2':    114,
     'Grupo 3':    133,
   },
-  cajon_pvc: {
-    'Grupo Base': 100,
-    'Grupo 1':    102,
-    'Grupo 2':    106,
-    'Grupo 3':    124.6,
+  sistema_mini_autoblocante: {
+    'Grupo Base': 197.8,
+    'Grupo 1':    234.18,
+    'Grupo 2':    244.58,
+    'Grupo 3':    323.80,
   },
 }
 
@@ -54,6 +53,9 @@ const GUIDE_PRICE_PER_ML = { v25: 5, h25: 7 }
 const INSTALACION_PRICE = 100
 const MIN_SQM = 1.5
 const CART_KEY = 'ps_cart'
+
+const SISTEMAS = ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante']
+const isSistema = (type) => SISTEMAS.includes(type)
 
 function loadCart() {
   try {
@@ -89,38 +91,51 @@ function Configurator() {
     })
   }, [])
 
-  // Estado de configuración (persistido en localStorage)
   const [productType,  setProductType]  = useState(() => loadCart().productType  ?? 'laminada')
-  const [boxType,      setBoxType]      = useState(() => loadCart().boxType      ?? 'aluminio')
   const [mechanism,    setMechanism]    = useState(() => loadCart().mechanism    ?? 'muelle')
   const [orientation,  setOrientation]  = useState(() => loadCart().orientation  ?? 'izquierda')
   const [motorType,    setMotorType]    = useState(() => loadCart().motorType    ?? 'mecanico')
-  const [guideType,    setGuideType]    = useState(() => loadCart().guideType    ?? 'v25')
+  const [guideType,    setGuideType]    = useState(() => loadCart().guideType    ?? 'none')
   const [installacion, setInstallacion] = useState(() => loadCart().installacion ?? true)
   const [width,        setWidth]        = useState(() => loadCart().width        ?? 1000)
   const [height,       setHeight]       = useState(() => loadCart().height       ?? 1200)
   const [boxColor,     setBoxColor]     = useState(() => loadCart().boxColor     ?? '#F2ECCA')
-  const [slatColor,    setSlatColor]    = useState(() => loadCart().slatColor    ?? '#C49A6C')
+  const [slatColor,    setSlatColor]    = useState(() => loadCart().slatColor    ?? '#F2ECCA')
   const [customerData, setCustomerData] = useState({ name: '', phone: '', email: '', address: '' })
 
-  // Guardar configuración en localStorage cuando cambie
   useEffect(() => {
     localStorage.setItem(CART_KEY, JSON.stringify({
-      productType, boxType, mechanism, orientation, motorType,
+      productType, mechanism, orientation, motorType,
       guideType, installacion, width, height, boxColor, slatColor,
     }))
-  }, [productType, boxType, mechanism, orientation, motorType, guideType, installacion, width, height, boxColor, slatColor])
+  }, [productType, mechanism, orientation, motorType, guideType, installacion, width, height, boxColor, slatColor])
+
   const [showCustomerForm, setShowCustomerForm] = useState(false)
 
-  // Forzar motor si el tipo lo requiere
+  // Al cambiar tipo: ajustar motor y guías por defecto
   useEffect(() => {
-    if (productType === 'autoblocante' || productType === 'sistema_mini') {
+    if (isSistema(productType)) {
+      setMechanism('motor')
+      if (guideType === 'none') setGuideType('v25')
+    }
+    if (productType === 'solo_motor') {
       setMechanism('motor')
     }
-  }, [productType])
+    if (productType === 'solo_guias') {
+      if (guideType === 'none') setGuideType('v25')
+    }
+  }, [productType]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Para paños y solo_guias: el color de caja sigue al color de lamas
+  useEffect(() => {
+    if (!isSistema(productType) && productType !== 'solo_motor') {
+      setBoxColor(slatColor)
+    }
+  }, [slatColor, productType])
 
   // Colores disponibles
   const winchesterColors = [
+    { name: 'Blanco',        hex: '#FFFFFF', gama: 'Grupo Base' },
     { name: 'Marfil',        hex: '#F2ECCA', gama: 'Grupo Base' },
     { name: '3005',          hex: '#5E2028', gama: 'Grupo 1' },
     { name: '6005',          hex: '#0F4336', gama: 'Grupo 1' },
@@ -143,84 +158,102 @@ function Configurator() {
 
   // ─── Cálculo de precios ──────────────────────────────────────────────────
   const calculatePriceBreakdown = () => {
+    const productLabelMap = {
+      laminada:                  'Paño laminado',
+      autoblocante:              'Paño autoblocante',
+      sistema_mini_pvc:          'Sistema Mini PVC',
+      sistema_mini_aluminio:     'Sistema Mini Aluminio',
+      sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
+      solo_guias:                guideType === 'h25' ? 'Guías H25 (7 €/ml)' : 'Guías V25 (5 €/ml)',
+      solo_motor:                motorType === 'mando_distancia' ? 'Motor mando a distancia' : 'Motor mecánico',
+    }
+
+    // ── Solo Motor ──────────────────────────────────────────────────────────
+    if (productType === 'solo_motor') {
+      const motorCost = MOTOR_PRICES[motorType] ?? 0
+      const iva = motorCost * 0.21
+      const totalConIva = motorCost * 1.21
+      const discount = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
+      return {
+        productLabel: productLabelMap.solo_motor,
+        productPricePerSqm: 0,
+        boxLabel: '', boxPricePerSqm: 0,
+        guidesCost: 0, motorCost, installacionCost: 0,
+        billableSqm: 0,
+        subtotalSinIva: motorCost,
+        iva, totalConIva, discount,
+        finalPrice: totalConIva - discount,
+        isSoloMotor: true,
+      }
+    }
+
+    // ── Solo Guías ──────────────────────────────────────────────────────────
+    if (productType === 'solo_guias') {
+      const pricePerMl = GUIDE_PRICE_PER_ML[guideType] ?? GUIDE_PRICE_PER_ML.v25
+      const guidesCost = 2 * (height / 1000) * pricePerMl
+      const iva = guidesCost * 0.21
+      const totalConIva = guidesCost * 1.21
+      const discount = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
+      return {
+        productLabel: productLabelMap.solo_guias,
+        productPricePerSqm: 0,
+        boxLabel: '', boxPricePerSqm: 0,
+        guidesCost, motorCost: 0, installacionCost: 0,
+        billableSqm: 0,
+        subtotalSinIva: guidesCost,
+        iva, totalConIva, discount,
+        finalPrice: totalConIva - discount,
+        isSoloGuias: true,
+      }
+    }
+
+    // ── Paños y Sistemas ────────────────────────────────────────────────────
     const areaSqm = (width / 1000) * (height / 1000)
     const billableSqm = Math.max(areaSqm, MIN_SQM)
-
     const slatGama = getGamaFromColor(winchesterColors, slatColor)
-    const boxGama  = getGamaFromColor(winchesterColors, boxColor)
 
-    // Precio del paño según tipo y color de lama
     const productTable = PRICES[productType]
     const productPricePerSqm = getPricePerSqm(productTable, slatGama)
 
-    // Precio cajón (solo para laminada, y solo si tiene cajón)
-    let boxPricePerSqm = 0
-    let boxLabel = ''
-    if (productType === 'laminada' && boxType !== 'sin_cajon') {
-      const cajonTable = boxType === 'aluminio' ? PRICES.cajon_aluminio : PRICES.cajon_pvc
-      boxPricePerSqm = getPricePerSqm(cajonTable, boxGama)
-      boxLabel = boxType === 'aluminio' ? 'Cajón mini aluminio' : 'Cajón mini PVC'
-    }
-
-    // Guías: precio por metro lineal × 2 guías × altura (metros)
+    // Guías: paños pagan por ml, sistemas las incluyen sin coste extra
     let guidesCost = 0
-    if (guideType !== 'none') {
-      const pricePerMl = GUIDE_PRICE_PER_ML[guideType]
-      guidesCost = 2 * (height / 1000) * pricePerMl
+    if (!isSistema(productType) && guideType !== 'none') {
+      guidesCost = 2 * (height / 1000) * (GUIDE_PRICE_PER_ML[guideType] ?? 0)
     }
 
-    // Motor
     const motorCost = mechanism === 'motor' ? (MOTOR_PRICES[motorType] ?? 0) : 0
-
-    // Instalación: 100 €/m²
     const installacionCost = installacion ? INSTALACION_PRICE * billableSqm : 0
 
-    // Totales sin IVA
-    const subtotalSinIva =
-      productPricePerSqm * billableSqm +
-      boxPricePerSqm * billableSqm +
-      guidesCost +
-      motorCost +
-      installacionCost
-
+    const subtotalSinIva = productPricePerSqm * billableSqm + guidesCost + motorCost + installacionCost
     const iva = subtotalSinIva * 0.21
     const totalConIva = subtotalSinIva * 1.21
     const discount = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
-    const finalPrice = totalConIva - discount
-
-    const productLabelMap = {
-      laminada: 'Paño laminada',
-      autoblocante: 'Paño autoblocante',
-      sistema_mini: 'Sistema mini autoblocante',
-    }
 
     return {
       productLabel: productLabelMap[productType] ?? productType,
       productPricePerSqm,
-      boxLabel,
-      boxPricePerSqm,
-      guidesCost,
-      motorCost,
-      installacionCost,
+      boxLabel: '', boxPricePerSqm: 0,
+      guidesCost, motorCost, installacionCost,
       billableSqm,
-      subtotalSinIva,
-      iva,
-      totalConIva,
-      discount,
-      finalPrice,
+      subtotalSinIva, iva, totalConIva, discount,
+      finalPrice: totalConIva - discount,
     }
   }
 
   const priceBreakdown = calculatePriceBreakdown()
 
+  // Color de caja efectivo (para sistemas: propio; para el resto: igual que lamas)
+  const effectiveBoxColor = isSistema(productType) ? boxColor : slatColor
+
   const configuration = {
     productType,
-    blindType: productType, // alias para compatibilidad con BD y PDF
-    boxType, mechanism, orientation, motorType, guideType, installacion,
+    blindType: productType,
+    mechanism, orientation, motorType, guideType, installacion,
     width, height,
-    boxColor, slatColor,
-    boxColorName:  winchesterColors.find(c => c.hex === boxColor)?.name,
-    boxColorGama:  winchesterColors.find(c => c.hex === boxColor)?.gama,
+    boxColor:     effectiveBoxColor,
+    slatColor,
+    boxColorName:  winchesterColors.find(c => c.hex === effectiveBoxColor)?.name,
+    boxColorGama:  winchesterColors.find(c => c.hex === effectiveBoxColor)?.gama,
     slatColorName: winchesterColors.find(c => c.hex === slatColor)?.name,
     slatColorGama: winchesterColors.find(c => c.hex === slatColor)?.gama,
     estimatedPrice: priceBreakdown.finalPrice,
@@ -228,9 +261,20 @@ function Configurator() {
     customerData,
   }
 
-  const handleSaveSuccess = () => {
-    setShowCustomerForm(false)
-  }
+  // Flags de visibilidad
+  const showPreview      = productType !== 'solo_motor'
+  const showMechanism    = !isSistema(productType) && productType !== 'solo_motor' && productType !== 'solo_guias'
+  const showMotorType    = mechanism === 'motor' || isSistema(productType) || productType === 'solo_motor'
+  const showMeasurements = productType !== 'solo_motor'
+  const showGuides       = productType !== 'solo_motor'
+  const showInstallation = !['solo_motor', 'solo_guias'].includes(productType)
+  const showBoxColor     = isSistema(productType)
+  const showSlatColor    = productType !== 'solo_motor'
+
+  // Modo del selector de guías
+  const guideMode = productType === 'solo_guias' ? 'product'
+    : isSistema(productType) ? 'included'
+    : 'optional'
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
@@ -260,9 +304,11 @@ function Configurator() {
 
             {/* Columna izquierda */}
             <div className="space-y-6">
-              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <BlindPreview boxColor={boxColor} slatColor={slatColor} width={width} blindType={productType} />
-              </div>
+              {showPreview && (
+                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                  <BlindPreview boxColor={effectiveBoxColor} slatColor={slatColor} width={width} blindType={productType} />
+                </div>
+              )}
 
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <PriceDisplay
@@ -275,7 +321,6 @@ function Configurator() {
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <ConfigurationSummary
                   productType={productType}
-                  boxType={boxType}
                   guideType={guideType}
                   installacion={installacion}
                   mechanism={mechanism}
@@ -283,7 +328,7 @@ function Configurator() {
                   motorType={motorType}
                   width={width}
                   height={height}
-                  boxColor={boxColor}
+                  boxColor={effectiveBoxColor}
                   slatColor={slatColor}
                   winchesterColors={winchesterColors}
                 />
@@ -292,7 +337,7 @@ function Configurator() {
               <div className="space-y-3">
                 <SaveConfigurationButton
                   configuration={configuration}
-                  onSuccess={handleSaveSuccess}
+                  onSuccess={() => setShowCustomerForm(false)}
                   proDiscount={proDiscount}
                 />
                 <button
@@ -308,43 +353,60 @@ function Configurator() {
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 space-y-6">
               <BlindTypeSelector blindType={productType} onTypeChange={setProductType} />
 
-              {/* Selector de cajón solo para laminada */}
-              {productType === 'laminada' && (
-                <BoxTypeSelector boxType={boxType} onBoxTypeChange={setBoxType} />
+              {showMechanism && (
+                <MechanismSelector
+                  productType={productType}
+                  mechanism={mechanism}
+                  onMechanismChange={setMechanism}
+                  orientation={orientation}
+                  onOrientationChange={setOrientation}
+                />
               )}
 
-              <MechanismSelector
-                productType={productType}
-                mechanism={mechanism}
-                onMechanismChange={setMechanism}
-                orientation={orientation}
-                onOrientationChange={setOrientation}
-              />
-
-              {mechanism === 'motor' && (
+              {showMotorType && (
                 <MotorTypeSelector motorType={motorType} onMotorTypeChange={setMotorType} />
               )}
 
-              <MeasurementsForm
-                productType={productType}
-                width={width}
-                height={height}
-                onWidthChange={v  => setWidth(parseFloat(v)  || 0)}
-                onHeightChange={v => setHeight(parseFloat(v) || 0)}
-              />
+              {showMeasurements && (
+                <MeasurementsForm
+                  productType={productType}
+                  width={width}
+                  height={height}
+                  onWidthChange={v  => setWidth(parseFloat(v)  || 0)}
+                  onHeightChange={v => setHeight(parseFloat(v) || 0)}
+                  heightOnly={productType === 'solo_guias'}
+                />
+              )}
 
-              <GuideSelector
-                guideType={guideType}
-                onGuideTypeChange={setGuideType}
-                installacion={installacion}
-                onInstallacionChange={setInstallacion}
-                height={height}
-              />
+              {showGuides && (
+                <GuideSelector
+                  mode={guideMode}
+                  guideType={guideType}
+                  onGuideTypeChange={setGuideType}
+                  installacion={installacion}
+                  onInstallacionChange={setInstallacion}
+                  height={height}
+                  showInstallation={showInstallation}
+                />
+              )}
 
-              <ColorPicker label="Color de la Caja" selectedColor={boxColor}
-                onColorChange={setBoxColor} colors={winchesterColors} />
-              <ColorPicker label="Color de las Lamas" selectedColor={slatColor}
-                onColorChange={setSlatColor} colors={winchesterColors} />
+              {showBoxColor && (
+                <ColorPicker
+                  label="Color del Cajón"
+                  selectedColor={boxColor}
+                  onColorChange={setBoxColor}
+                  colors={winchesterColors}
+                />
+              )}
+
+              {showSlatColor && (
+                <ColorPicker
+                  label={isSistema(productType) ? 'Color de las Lamas' : 'Color'}
+                  selectedColor={slatColor}
+                  onColorChange={setSlatColor}
+                  colors={winchesterColors}
+                />
+              )}
             </div>
           </div>
         </div>

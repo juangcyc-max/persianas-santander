@@ -1,6 +1,8 @@
-function MeasurementsForm({ productType, width, height, onWidthChange, onHeightChange }) {
+const SISTEMAS_MINI = ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante']
+
+function MeasurementsForm({ productType, width, height, onWidthChange, onHeightChange, heightOnly = false }) {
   // Límites según tipo de persiana
-  const isMini = productType === 'sistema_mini'
+  const isMini = SISTEMAS_MINI.includes(productType)
   const minSize = isMini ? 700 : 300
   const maxSize = isMini ? 5000 : 3000
 
@@ -11,6 +13,7 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
       value: width,
       onChange: onWidthChange,
       hint: 'Medida horizontal del hueco',
+      hidden: heightOnly,
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12M8 12h4m0 0h4m-4 0v5m0-5V7" />
@@ -62,7 +65,7 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
       </div>
 
       <div className="space-y-4">
-        {measures.map(({ label, unit, value, onChange, hint, icon }) => {
+        {measures.filter(m => !m.hidden).map(({ label, unit, value, onChange, hint, icon }) => {
           const pct = ((value - minSize) / (maxSize - minSize)) * 100
           return (
             <div key={label}>
@@ -116,32 +119,34 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
         })}
       </div>
 
-      {/* Resumen de área */}
-      <div className="mt-4 space-y-2">
-        <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-            </svg>
-            Superficie introducida
-          </div>
-          <span className="font-bold text-gray-900 text-sm">{areaSqmDisplay} m²</span>
-        </div>
-
-        {belowMin && (
-          <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-            <div className="flex items-center gap-2 text-sm text-amber-700">
-              <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      {/* Resumen de área — solo cuando hay ancho y alto */}
+      {!heightOnly && (
+        <div className="mt-4 space-y-2">
+          <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm0 8a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zm12 0a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
               </svg>
-              Pedido mínimo 1,5 m² — se facturará
+              Superficie introducida
             </div>
-            <span className="font-bold text-amber-800 text-sm">{billableSqm} m²</span>
+            <span className="font-bold text-gray-900 text-sm">{areaSqmDisplay} m²</span>
           </div>
-        )}
-      </div>
+
+          {belowMin && (
+            <div className="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-2 text-sm text-amber-700">
+                <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Pedido mínimo 1,5 m² — se facturará
+              </div>
+              <span className="font-bold text-amber-800 text-sm">{billableSqm} m²</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
