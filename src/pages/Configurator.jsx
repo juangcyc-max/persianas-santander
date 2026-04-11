@@ -70,7 +70,10 @@ function getGamaFromColor(colors, hex) {
   return colors.find(c => c.hex === hex)?.gama ?? 'Grupo Base'
 }
 
+const VALID_TYPES = ['laminada', 'autoblocante', 'sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante', 'solo_guias', 'solo_motor']
+
 function getPricePerSqm(table, gama) {
+  if (!table) return 0
   return table[gama] ?? table['Grupo Base']
 }
 
@@ -91,7 +94,7 @@ function Configurator() {
     })
   }, [])
 
-  const [productType,  setProductType]  = useState(() => loadCart().productType  ?? 'laminada')
+  const [productType,  setProductType]  = useState(() => { const t = loadCart().productType; return VALID_TYPES.includes(t) ? t : 'laminada' })
   const [mechanism,    setMechanism]    = useState(() => loadCart().mechanism    ?? 'muelle')
   const [orientation,  setOrientation]  = useState(() => loadCart().orientation  ?? 'izquierda')
   const [motorType,    setMotorType]    = useState(() => loadCart().motorType    ?? 'mecanico')
