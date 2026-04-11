@@ -115,6 +115,23 @@ function Configurator() {
 
   const [showCustomerForm, setShowCustomerForm] = useState(false)
 
+  // En desktop, el configurador ocupa toda la pantalla — bloquear scroll del body
+  useEffect(() => {
+    const apply = () => {
+      if (window.innerWidth >= 1024) {
+        document.body.style.overflow = 'hidden'
+      } else {
+        document.body.style.overflow = ''
+      }
+    }
+    apply()
+    window.addEventListener('resize', apply)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('resize', apply)
+    }
+  }, [])
+
   // Al cambiar tipo: ajustar motor y guías por defecto
   useEffect(() => {
     if (isSistema(productType)) {
