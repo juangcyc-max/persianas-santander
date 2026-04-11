@@ -1,22 +1,45 @@
+import { useState, useEffect } from 'react'
+
 const SISTEMAS_MINI = ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante']
 
 function MeasurementsForm({ productType, width, height, onWidthChange, onHeightChange, heightOnly = false }) {
-  // Límites según tipo de persiana (nunca acaban en 0)
   const isMini = SISTEMAS_MINI.includes(productType)
   const minSize = isMini ? 701 : 301
   const maxSize = isMini ? 5001 : 3001
 
-  // El último dígito nunca puede ser 0 → si acaba en 0, sumar 1
   const snapNoZero = (n) => (n % 10 === 0 ? n + 1 : n)
+  const clamp = (n) => snapNoZero(Math.min(maxSize, Math.max(minSize, n)))
+
+  // Estado local de texto para permitir escritura libre
+  const [widthText,  setWidthText]  = useState(String(width))
+  const [heightText, setHeightText] = useState(String(height))
+
+  // Sincronizar texto cuando el valor externo cambia (ej. slider)
+  useEffect(() => { setWidthText(String(width))  }, [width])
+  useEffect(() => { setHeightText(String(height)) }, [height])
+
+  const handleBlur = (text, onChange) => {
+    const n = Number(text)
+    const final = isNaN(n) ? minSize : clamp(n)
+    onChange(final)
+  }
+
+  const areaSqm        = (width / 1000) * (height / 1000)
+  const areaSqmDisplay = areaSqm.toFixed(2)
+  const MIN_SQM        = 1.5
+  const billableSqm    = Math.max(areaSqm, MIN_SQM).toFixed(2)
+  const belowMin       = areaSqm < MIN_SQM
 
   const measures = [
     {
-      label: 'Ancho',
-      unit: 'mm',
-      value: width,
+      label:    'Ancho',
+      unit:     'mm',
+      value:    width,
+      text:     widthText,
+      setText:  setWidthText,
       onChange: onWidthChange,
-      hint: 'Medida horizontal del hueco',
-      hidden: heightOnly,
+      hint:     'Medida horizontal del hueco',
+      hidden:   heightOnly,
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12M8 12h4m0 0h4m-4 0v5m0-5V7" />
@@ -24,11 +47,14 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
       ),
     },
     {
-      label: 'Alto',
-      unit: 'mm',
-      value: height,
+      label:    'Alto',
+      unit:     'mm',
+      value:    height,
+      text:     heightText,
+      setText:  setHeightText,
       onChange: onHeightChange,
-      hint: 'Medida vertical del hueco',
+      hint:     'Medida vertical del hueco',
+      hidden:   false,
       icon: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4v16m-4-4l4 4 4-4M8 8l4-4 4 4" />
@@ -36,17 +62,6 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
       ),
     },
   ]
-
-  const handleInput = (val, onChange) => {
-    const n = Number(val)
-    if (!isNaN(n)) onChange(snapNoZero(Math.min(maxSize, Math.max(minSize, n))))
-  }
-
-  const areaSqm = ((width / 1000) * (height / 1000))
-  const areaSqmDisplay = areaSqm.toFixed(2)
-  const MIN_SQM = 1.5
-  const billableSqm = Math.max(areaSqm, MIN_SQM).toFixed(2)
-  const belowMin = areaSqm < MIN_SQM
 
   return (
     <div>
@@ -68,8 +83,8 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
       </div>
 
       <div className="space-y-4">
-        {measures.filter(m => !m.hidden).map(({ label, unit, value, onChange, hint, icon }) => {
-          const pct = ((value - minSize) / (maxSize - minSize)) * 100
+        {measures.filter(m => !m.hidden).map(({ label, unit, value, text, setText, onChange, hint, icon }) => {
+          const pct = Math.min(100, Math.max(0, ((value - minSize) / (maxSize - minSize)) * 100))
           return (
             <div key={label}>
               <div className="flex items-center justify-between mb-1.5">
@@ -82,11 +97,12 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
                 <div className="flex items-center gap-1">
                   <input
                     type="number"
-                    value={value}
-                    onChange={e => handleInput(e.target.value, onChange)}
+                    value={text}
                     min={minSize}
                     max={maxSize}
                     step={1}
+                    onChange={e => setText(e.target.value)}
+                    onBlur={e => handleBlur(e.target.value, onChange)}
                     className="w-20 text-right px-2 py-1 rounded-lg border border-gray-300 text-sm font-bold text-gray-900
                                focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white"
                   />
@@ -122,7 +138,6 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
         })}
       </div>
 
-      {/* Resumen de área — solo cuando hay ancho y alto */}
       {!heightOnly && (
         <div className="mt-4 space-y-2">
           <div className="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
@@ -143,7 +158,7 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Pedido mínimo 1,5 m² — se facturará
+                Pedido mínimo 1,5 m²
               </div>
               <span className="font-bold text-amber-800 text-sm">{billableSqm} m²</span>
             </div>
