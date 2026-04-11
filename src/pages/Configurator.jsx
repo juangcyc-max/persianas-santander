@@ -281,8 +281,9 @@ function Configurator() {
     : 'optional'
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans">
+    <div className="bg-white text-gray-900 font-sans">
 
+      {/* Banner profesional */}
       {isProfessional && (
         <div className="bg-white border-b border-gray-100 px-4 sm:px-6 lg:px-8 py-2">
           <Link to="/panel-profesional"
@@ -295,126 +296,135 @@ function Configurator() {
         </div>
       )}
 
-      <section className="bg-red-700 text-white py-8 md:py-12">
-        <div className="w-full px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-xl md:text-3xl font-bold mb-2">Configura tu Persiana</h1>
+      {/* Hero — solo en móvil/tablet */}
+      <section className="bg-red-700 text-white py-8 lg:hidden">
+        <div className="w-full px-4 sm:px-6 text-center">
+          <h1 className="text-xl font-bold mb-2">Configura tu Persiana</h1>
           <p className="text-red-100 text-sm">Personaliza cada detalle y obtén tu presupuesto al instante</p>
         </div>
       </section>
 
-      <section className="py-6 md:py-12 bg-white">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto items-start">
+      {/* Dos paneles con scroll independiente en desktop */}
+      <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-96px)]">
 
-            {/* Columna izquierda — resumen sticky en desktop, abajo en móvil */}
-            <div className="space-y-6 order-2 lg:order-1 lg:sticky lg:top-6">
-              {showPreview && (
-                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                  <BlindPreview boxColor={effectiveBoxColor} slatColor={slatColor} width={width} blindType={productType} />
-                </div>
-              )}
+        {/* Panel izquierdo — resumen (en móvil va abajo) */}
+        <div className="order-2 lg:order-1 lg:w-1/2 lg:h-full lg:overflow-y-auto lg:border-r lg:border-gray-100 bg-white">
+          <div className="p-6 space-y-6">
 
-              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <PriceDisplay
-                  priceBreakdown={priceBreakdown}
-                  userType={userType}
-                  proDiscount={proDiscount}
-                />
-              </div>
-
-              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                <ConfigurationSummary
-                  productType={productType}
-                  guideType={guideType}
-                  installacion={installacion}
-                  mechanism={mechanism}
-                  orientation={orientation}
-                  motorType={motorType}
-                  width={width}
-                  height={height}
-                  boxColor={effectiveBoxColor}
-                  slatColor={slatColor}
-                  winchesterColors={winchesterColors}
-                />
-              </div>
-
-              <div className="space-y-3">
-                <SaveConfigurationButton
-                  configuration={configuration}
-                  onSuccess={() => setShowCustomerForm(false)}
-                  proDiscount={proDiscount}
-                />
-                <button
-                  onClick={() => setShowCustomerForm(true)}
-                  className="w-full py-3 px-6 rounded-xl font-semibold bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors text-sm"
-                >
-                  Solicitar presupuesto por email
-                </button>
-              </div>
+            {/* Cabecera roja — solo en desktop */}
+            <div className="hidden lg:block bg-red-700 text-white rounded-xl px-6 py-5">
+              <h1 className="text-xl font-bold mb-0.5">Configura tu Persiana</h1>
+              <p className="text-red-200 text-sm">Personaliza cada detalle y obtén tu presupuesto al instante</p>
             </div>
 
-            {/* Columna derecha — controles (en móvil va primero) */}
-            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 space-y-6 order-1 lg:order-2">
-              <BlindTypeSelector blindType={productType} onTypeChange={setProductType} />
+            {showPreview && (
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <BlindPreview boxColor={effectiveBoxColor} slatColor={slatColor} width={width} blindType={productType} />
+              </div>
+            )}
 
-              {showMechanism && (
-                <MechanismSelector
-                  productType={productType}
-                  mechanism={mechanism}
-                  onMechanismChange={setMechanism}
-                  orientation={orientation}
-                  onOrientationChange={setOrientation}
-                />
-              )}
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+              <PriceDisplay
+                priceBreakdown={priceBreakdown}
+                userType={userType}
+                proDiscount={proDiscount}
+              />
+            </div>
 
-              {showMotorType && (
-                <MotorTypeSelector motorType={motorType} onMotorTypeChange={setMotorType} />
-              )}
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+              <ConfigurationSummary
+                productType={productType}
+                guideType={guideType}
+                installacion={installacion}
+                mechanism={mechanism}
+                orientation={orientation}
+                motorType={motorType}
+                width={width}
+                height={height}
+                boxColor={effectiveBoxColor}
+                slatColor={slatColor}
+                winchesterColors={winchesterColors}
+              />
+            </div>
 
-              {showMeasurements && (
-                <MeasurementsForm
-                  productType={productType}
-                  width={width}
-                  height={height}
-                  onWidthChange={v  => setWidth(parseFloat(v)  || 0)}
-                  onHeightChange={v => setHeight(parseFloat(v) || 0)}
-                  heightOnly={productType === 'solo_guias'}
-                />
-              )}
-
-              {showGuides && (
-                <GuideSelector
-                  mode={guideMode}
-                  guideType={guideType}
-                  onGuideTypeChange={setGuideType}
-                  installacion={installacion}
-                  onInstallacionChange={setInstallacion}
-                  height={height}
-                  showInstallation={showInstallation}
-                />
-              )}
-
-              {showBoxColor && (
-                <ColorPicker
-                  label="Color del Cajón"
-                  selectedColor={boxColor}
-                  onColorChange={setBoxColor}
-                  colors={winchesterColors}
-                />
-              )}
-
-              {showSlatColor && (
-                <ColorPicker
-                  label={isSistema(productType) ? 'Color de las Lamas' : 'Color'}
-                  selectedColor={slatColor}
-                  onColorChange={setSlatColor}
-                  colors={winchesterColors}
-                />
-              )}
+            <div className="space-y-3">
+              <SaveConfigurationButton
+                configuration={configuration}
+                onSuccess={() => setShowCustomerForm(false)}
+                proDiscount={proDiscount}
+              />
+              <button
+                onClick={() => setShowCustomerForm(true)}
+                className="w-full py-3 px-6 rounded-xl font-semibold bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors text-sm"
+              >
+                Solicitar presupuesto por email
+              </button>
             </div>
           </div>
         </div>
-      </section>
+
+        {/* Panel derecho — controles (en móvil va primero) */}
+        <div className="order-1 lg:order-2 lg:w-1/2 lg:h-full lg:overflow-y-auto bg-gray-50">
+          <div className="p-6 space-y-6">
+            <BlindTypeSelector blindType={productType} onTypeChange={setProductType} />
+
+            {showMechanism && (
+              <MechanismSelector
+                productType={productType}
+                mechanism={mechanism}
+                onMechanismChange={setMechanism}
+                orientation={orientation}
+                onOrientationChange={setOrientation}
+              />
+            )}
+
+            {showMotorType && (
+              <MotorTypeSelector motorType={motorType} onMotorTypeChange={setMotorType} />
+            )}
+
+            {showMeasurements && (
+              <MeasurementsForm
+                productType={productType}
+                width={width}
+                height={height}
+                onWidthChange={v  => setWidth(parseFloat(v)  || 0)}
+                onHeightChange={v => setHeight(parseFloat(v) || 0)}
+                heightOnly={productType === 'solo_guias'}
+              />
+            )}
+
+            {showGuides && (
+              <GuideSelector
+                mode={guideMode}
+                guideType={guideType}
+                onGuideTypeChange={setGuideType}
+                installacion={installacion}
+                onInstallacionChange={setInstallacion}
+                height={height}
+                showInstallation={showInstallation}
+              />
+            )}
+
+            {showBoxColor && (
+              <ColorPicker
+                label="Color del Cajón"
+                selectedColor={boxColor}
+                onColorChange={setBoxColor}
+                colors={winchesterColors}
+              />
+            )}
+
+            {showSlatColor && (
+              <ColorPicker
+                label={isSistema(productType) ? 'Color de las Lamas' : 'Color'}
+                selectedColor={slatColor}
+                onColorChange={setSlatColor}
+                colors={winchesterColors}
+              />
+            )}
+          </div>
+        </div>
+      </div>
 
       {showCustomerForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
