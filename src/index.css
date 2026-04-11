@@ -33,7 +33,8 @@ button {
 }
 
 /* Sin restricciones de ancho */
-html, body {
+/* overflow-x: hidden solo en body, nunca en html — ponerlo en html rompe position:sticky */
+body {
   overflow-x: hidden;
   width: 100%;
 }
