@@ -304,10 +304,10 @@ function Configurator() {
 
       <section className="py-6 md:py-12 bg-white">
         <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto items-start">
 
-            {/* Columna izquierda */}
-            <div className="space-y-6">
+            {/* Columna izquierda — resumen sticky en desktop, abajo en móvil */}
+            <div className="space-y-6 order-2 lg:order-1 lg:sticky lg:top-6">
               {showPreview && (
                 <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
                   <BlindPreview boxColor={effectiveBoxColor} slatColor={slatColor} width={width} blindType={productType} />
@@ -353,8 +353,8 @@ function Configurator() {
               </div>
             </div>
 
-            {/* Columna derecha — controles */}
-            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 space-y-6">
+            {/* Columna derecha — controles (en móvil va primero) */}
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 space-y-6 order-1 lg:order-2">
               <BlindTypeSelector blindType={productType} onTypeChange={setProductType} />
 
               {showMechanism && (
