@@ -244,7 +244,7 @@ export function TerminosCondiciones() {
       </Section>
 
       <Section title="7. Garantía">
-        <p>Todos nuestros productos tienen una garantía de <strong>10 años</strong> contra defectos de fabricación, conforme a la normativa europea. La garantía no cubre:</p>
+        <p>Todos nuestros productos tienen una garantía de <strong>3 años</strong> contra defectos de fabricación, conforme a la normativa europea. La garantía no cubre:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>Daños por uso incorrecto o falta de mantenimiento</li>
           <li>Daños causados por agentes externos (vandalismo, accidentes, fenómenos meteorológicos)</li>

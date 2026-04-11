@@ -5,7 +5,7 @@ import SEO from '../shared/SEO'
 const FEATURES = [
   {
     icon: <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />,
-    title: 'Garantía 10 años',
+    title: 'Garantía 3 años',
     desc: 'Resistencia UV certificada y acabados anti-arañazos en todos nuestros productos.',
   },
   {
@@ -144,7 +144,7 @@ export default function Home() {
           </div>
           <div className="grid md:grid-cols-2 gap-6">
             {[
-              { badge: 'Más popular', title: 'Persiana estándar', price: 'Desde 43 €/m²', desc: 'Ideal para viviendas, locales y oficinas. Disponible con muelle, cinta o motor.', features: ['Muelle, cinta o motor', 'Lamas normales o de seguridad', 'Garantía 10 años', 'Ancho hasta 3.000 mm'], accent: true },
+              { badge: 'Más popular', title: 'Persiana estándar', price: 'Desde 43 €/m²', desc: 'Ideal para viviendas, locales y oficinas. Disponible con muelle, cinta o motor.', features: ['Muelle, cinta o motor', 'Lamas normales o de seguridad', 'Garantía 3 años', 'Ancho hasta 3.000 mm'], accent: true },
               { badge: 'Alta seguridad', title: 'Persiana bloqueante', price: 'Desde 134 €/m²', desc: 'Sistema anti-levantamiento certificado EN 1627. Exclusivo con motor.', features: ['Solo motorizada', 'Lamas de seguridad reforzadas', 'Certificado EN 1627', 'Acero + aluminio compuesto'], accent: false },
             ].map(({ badge, title, price, desc, features, accent }) => (
               <div key={title} className={`rounded-xl p-8 border-2 ${accent ? 'border-red-200 bg-red-50' : 'border-gray-200 bg-white'}`}>

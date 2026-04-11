@@ -11,7 +11,7 @@ export default function SEO({
     : 'Persianas Santander — Fabricación propia en Santander'
 
   const fullDescription = description ?? 
-    'Persianas de aluminio a medida fabricadas en Santander. Configura tu persiana online, elige color y mecanismo y recibe tu presupuesto al instante. Garantía 10 años.'
+    'Persianas de aluminio a medida fabricadas en Santander. Configura tu persiana online, elige color y mecanismo y recibe tu presupuesto al instante. Garantía 3 años.'
 
   const url = canonical 
     ? `https://persianas-santander.vercel.app${canonical}`

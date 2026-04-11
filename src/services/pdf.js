@@ -277,7 +277,7 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
       "Presupuesto válido 30 días desde la fecha de emisión.",
       "Precio orientativo sujeto a verificación de medidas en visita técnica.",
       "Plazo de entrega estimado: 7-15 días laborables desde confirmación.",
-      "Garantía: 2 años en mecanismos · 5 años en lamas de aluminio.",
+      "Garantía: 3 años en todos los componentes y acabados.",
       configuration.installacion === false
         ? "Sin instalación incluida. No nos hacemos responsables de medidas incorrectas tomadas por el cliente."
         : "Instalación incluida en el precio.",
@@ -507,6 +507,7 @@ export async function generateClientBudgetPDF({
       "Presupuesto válido 30 días desde la fecha de emisión.",
       "Precio orientativo sujeto a verificación de medidas in situ.",
       "Plazo de entrega estimado: 7-15 días laborables desde confirmación.",
+      "Garantía: 3 años en todos los componentes y acabados.",
       configuration.installacion === false
         ? "Sin instalación incluida. El cliente es responsable de la correcta toma de medidas."
         : "Instalación incluida en el precio.",
