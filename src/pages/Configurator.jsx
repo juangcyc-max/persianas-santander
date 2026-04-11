@@ -305,7 +305,7 @@ function Configurator() {
       </section>
 
       {/* Dos paneles con scroll independiente en desktop */}
-      <div className="flex flex-col lg:flex-row lg:h-[calc(100vh-96px)]">
+      <div className="flex flex-col lg:flex-row lg:h-[calc(100vh_-_96px)] lg:overflow-hidden">
 
         {/* Panel izquierdo — resumen (en móvil va abajo) */}
         <div className="order-2 lg:order-1 lg:w-1/2 lg:h-full lg:overflow-y-auto lg:border-r lg:border-gray-100 bg-white">
