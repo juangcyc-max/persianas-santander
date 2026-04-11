@@ -1,10 +1,13 @@
 const SISTEMAS_MINI = ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante']
 
 function MeasurementsForm({ productType, width, height, onWidthChange, onHeightChange, heightOnly = false }) {
-  // Límites según tipo de persiana
+  // Límites según tipo de persiana (nunca acaban en 0)
   const isMini = SISTEMAS_MINI.includes(productType)
-  const minSize = isMini ? 700 : 300
-  const maxSize = isMini ? 5000 : 3000
+  const minSize = isMini ? 701 : 301
+  const maxSize = isMini ? 5001 : 3001
+
+  // El último dígito nunca puede ser 0 → si acaba en 0, sumar 1
+  const snapNoZero = (n) => (n % 10 === 0 ? n + 1 : n)
 
   const measures = [
     {
@@ -36,7 +39,7 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
 
   const handleInput = (val, onChange) => {
     const n = Number(val)
-    if (!isNaN(n)) onChange(Math.min(maxSize, Math.max(minSize, n)))
+    if (!isNaN(n)) onChange(snapNoZero(Math.min(maxSize, Math.max(minSize, n))))
   }
 
   const areaSqm = ((width / 1000) * (height / 1000))
@@ -83,7 +86,7 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
                     onChange={e => handleInput(e.target.value, onChange)}
                     min={minSize}
                     max={maxSize}
-                    step={10}
+                    step={1}
                     className="w-20 text-right px-2 py-1 rounded-lg border border-gray-300 text-sm font-bold text-gray-900
                                focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white"
                   />
@@ -96,9 +99,9 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
                   type="range"
                   min={minSize}
                   max={maxSize}
-                  step={10}
+                  step={1}
                   value={value}
-                  onChange={e => onChange(Number(e.target.value))}
+                  onChange={e => onChange(snapNoZero(Number(e.target.value)))}
                   className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-gray-200
                              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
                              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600
