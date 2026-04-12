@@ -396,15 +396,27 @@ export default function Home() {
               <Link to="/cookies"    className="hover:text-gray-600 transition-colors">Cookies</Link>
             </div>
           </div>
-          <div className="border-t border-gray-100 pt-4 mt-2 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-300">
-            <a href="https://persianassantander.com/" target="_blank" rel="noopener noreferrer"
-              className="hover:text-gray-500 transition-colors">
-              Sitio web anterior: persianassantander.com
-            </a>
-            <a href="https://mindbride.net" target="_blank" rel="noopener noreferrer"
-              className="hover:text-gray-500 transition-colors">
-              Diseño y desarrollo: mindbride.net
-            </a>
+          {/* Enlace sitio anterior */}
+          <div className="border-t border-gray-100 pt-5 mt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <a
+                href="https://persianassantander.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2.5 bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-xl px-4 py-2.5 transition-colors group"
+              >
+                <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                <span className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
+                  Sitio web anterior: <span className="font-semibold text-gray-700">persianassantander.com</span>
+                </span>
+              </a>
+              <a href="https://mindbride.net" target="_blank" rel="noopener noreferrer"
+                className="text-xs text-gray-300 hover:text-gray-500 transition-colors">
+                Diseño y desarrollo: mindbride.net
+              </a>
+            </div>
           </div>
         </div>
       </footer>
