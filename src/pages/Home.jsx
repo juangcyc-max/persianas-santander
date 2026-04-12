@@ -60,15 +60,6 @@ function StarRating({ count }) {
   )
 }
 
-function SocialLink({ href, label }) {
-  return (
-    <a href={href} aria-label={label}
-      className="w-8 h-8 rounded-full border border-gray-700 flex items-center justify-center text-gray-400 hover:text-white hover:border-gray-500 transition-colors text-xs font-bold">
-      {label[0]}
-    </a>
-  )
-}
-
 export default function Home() {
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans">
@@ -441,13 +432,25 @@ export default function Home() {
               <Link to="/cookies"    className="hover:text-gray-600 transition-colors">Cookies</Link>
             </div>
           </div>
-          <div className="border-t border-gray-100 pt-4 mt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
-            <a href="https://persianassantander.com/" target="_blank" rel="noopener noreferrer"
-               className="hover:text-gray-600 transition-colors">
-              Sitio web anterior: persianassantander.com
+          <div className="border-t border-gray-100 pt-5 mt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <a
+              href="https://persianassantander.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 bg-gray-50 border border-gray-200 hover:border-red-200 hover:bg-red-50 rounded-xl px-4 py-3 transition-colors group"
+            >
+              <div className="w-8 h-8 bg-white rounded-lg border border-gray-200 flex items-center justify-center flex-shrink-0 group-hover:border-red-200">
+                <svg className="w-4 h-4 text-gray-400 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 group-hover:text-red-500 font-medium">Sitio web anterior</p>
+                <p className="text-sm font-bold text-gray-700 group-hover:text-red-700">persianassantander.com</p>
+              </div>
             </a>
             <a href="https://mindbride.net" target="_blank" rel="noopener noreferrer"
-               className="hover:text-gray-600 transition-colors">
+               className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
               Diseño y desarrollo: mindbride.net
             </a>
           </div>

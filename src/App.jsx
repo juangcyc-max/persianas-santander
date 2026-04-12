@@ -18,6 +18,7 @@ import NotFound from './pages/NotFound'
 import { ProtectedRoute, AdminRoute, ProfessionalRoute } from './shared/ProtectedRoute'
 import { PoliticaPrivacidad, PoliticaCookies, TerminosCondiciones } from './pages/LegalPages'
 import { ForgotPassword, ResetPassword } from './pages/PasswordPages'
+import CookieBanner from './shared/CookieBanner'
 
 // ── Ruta protegida que redirige según tipo de usuario ─────────────────────
 function SmartRedirect() {
@@ -70,6 +71,7 @@ function App() {
       <Router>
         <ToastProvider>
           <CartProvider>
+          <CookieBanner />
           <Routes>
             <Route path="/panel-profesional" element={<ProfessionalRoute><ProfessionalDashboard /></ProfessionalRoute>} />
             <Route path="/admin"             element={<AdminRoute><AdminDashboard /></AdminRoute>} />
