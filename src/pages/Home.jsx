@@ -246,6 +246,28 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── DÓNDE ESTAMOS ── */}
+      <section className="bg-gray-50 border-t border-gray-200 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">¿Dónde estamos?</h2>
+            <p className="text-gray-500 text-sm">Visítanos en nuestra fábrica en Santander</p>
+          </div>
+          <div className="rounded-2xl overflow-hidden shadow-md border border-gray-200">
+            <iframe
+              title="Ubicación Persianas Santander"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d602.4!2d-3.8463897!3d43.4433918!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xd4949fc650bf5e3%3A0x9ea03c6233c31ddd!2spersianas%20Santander!5e1!3m2!1ses!2ses!4v1"
+              width="100%"
+              height="420"
+              style={{ border: 0, display: 'block' }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        </div>
+      </section>
+
       {/* ── FOOTER ── */}
       <footer className="bg-white border-t border-gray-200 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
