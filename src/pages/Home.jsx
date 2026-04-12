@@ -256,11 +256,12 @@ export default function Home() {
           <div className="rounded-2xl overflow-hidden shadow-md border border-gray-200">
             <iframe
               title="Ubicación Persianas Santander"
-              src="https://www.openstreetmap.org/export/embed.html?bbox=-3.8500%2C43.4400%2C-3.8430%2C43.4470&layer=mapnik&marker=43.4433918%2C-3.8463897"
+              src="https://maps.google.com/maps?q=43.4433918,-3.8463897&t=&z=17&ie=UTF8&iwloc=&output=embed"
               width="100%"
               height="420"
               style={{ border: 0, display: 'block' }}
               loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
             />
           </div>
           <div className="text-center mt-4">
