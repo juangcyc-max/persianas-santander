@@ -28,7 +28,7 @@ function Header() {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 768) setMobileMenuOpen(false)
+      if (window.innerWidth >= 1024) setMobileMenuOpen(false)
     }
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
@@ -83,7 +83,7 @@ function Header() {
           </Link>
 
           {/* ── Navegación Desktop ── */}
-          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
+          <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
             {navLinks.map(({ to, label }) => (
               <Link
                 key={to}
@@ -111,7 +111,7 @@ function Header() {
           </nav>
 
           {/* ── Acciones Desktop ── */}
-          <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+          <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
 
             {/* Botón cesta */}
             {user && (
@@ -157,7 +157,7 @@ function Header() {
           {/* ── Botón menú móvil ── */}
           <button
             onClick={() => setMobileMenuOpen(o => !o)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label={mobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
           >
             <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -171,7 +171,7 @@ function Header() {
 
         {/* ── Menú móvil ── */}
         {mobileMenuOpen && (
-          <div className="md:hidden pb-5 border-t border-gray-100 pt-3">
+          <div className="lg:hidden pb-5 border-t border-gray-100 pt-3">
             <nav className="flex flex-col gap-1">
               {navLinks.map(({ to, label }) => (
                 <Link key={to} to={to}
