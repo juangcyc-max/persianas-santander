@@ -33,7 +33,10 @@ button {
 }
 
 /* Sin restricciones de ancho */
-/* overflow-x: hidden solo en body, nunca en html — ponerlo en html rompe position:sticky */
+/* overflow-x: clip en html recorta sin crear scroll container — no rompe position:sticky */
+html {
+  overflow-x: clip;
+}
 body {
   overflow-x: hidden;
   width: 100%;
