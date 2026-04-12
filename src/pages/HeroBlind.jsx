@@ -152,7 +152,7 @@ export default function HeroBlind() {
         <div className="grid grid-cols-3 gap-3">
           {[
             { n: '18',      l: 'acabados' },
-            { n: '10 años', l: 'garantía'  },
+            { n: '3 años',  l: 'garantía'  },
             { n: '7–15d',   l: 'entrega'   },
           ].map(({ n, l }) => (
             <div key={n} className="bg-gray-50 rounded-xl p-3 text-center border border-gray-200">
