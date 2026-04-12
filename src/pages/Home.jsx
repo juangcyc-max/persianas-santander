@@ -256,14 +256,27 @@ export default function Home() {
           <div className="rounded-2xl overflow-hidden shadow-md border border-gray-200">
             <iframe
               title="Ubicación Persianas Santander"
-              src="https://maps.google.com/maps?q=43.4433918,-3.8463897&z=17&output=embed"
+              src="https://www.openstreetmap.org/export/embed.html?bbox=-3.8500%2C43.4400%2C-3.8430%2C43.4470&layer=mapnik&marker=43.4433918%2C-3.8463897"
               width="100%"
               height="420"
               style={{ border: 0, display: 'block' }}
-              allowFullScreen
               loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
             />
+          </div>
+          <div className="text-center mt-4">
+            <a
+              href="https://www.google.com/maps/place/persianas+Santander/@43.4433918,-3.8463897,17z"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-red-700 hover:text-red-800 hover:underline"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Abrir en Google Maps
+            </a>
           </div>
         </div>
       </section>
