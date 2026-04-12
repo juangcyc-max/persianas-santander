@@ -361,22 +361,19 @@ export default function Home() {
               <p className="text-gray-900 font-semibold text-xs uppercase tracking-widest mb-5">Productos</p>
               <ul className="space-y-3">
                 {[
-                  { label: 'Configurador', to: '/configurador', link: true },
-                  { label: 'Persianas estándar' },
-                  { label: 'Persianas bloqueantes' },
-                  { label: 'Motorización' },
-                  { label: '📄 Guía de medidas (PDF)', download: true },
-                ].map(({ label, to, link, download }) => (
+                  { label: 'Configurador',          to: '/configurador' },
+                  { label: 'Persianas estándar',    to: '/configurador' },
+                  { label: 'Persianas bloqueantes', to: '/configurador' },
+                  { label: 'Motorización',          to: '/configurador' },
+                ].map(({ label, to }) => (
                   <li key={label} className="text-sm">
-                    {link
-                      ? <Link to={to} className="text-gray-500 hover:text-red-700 transition-colors">{label}</Link>
-                      : download
-                      ? <a href="/tutorial-medidas.pdf" download="guia-medidas-persianas-santander.pdf"
-                           className="text-gray-500 hover:text-red-700 transition-colors">{label}</a>
-                      : <span className="text-gray-500 hover:text-red-700 cursor-pointer transition-colors">{label}</span>
-                    }
+                    <Link to={to} className="text-gray-500 hover:text-red-700 transition-colors">{label}</Link>
                   </li>
                 ))}
+                <li className="text-sm">
+                  <a href="/tutorial-medidas.pdf" download="guia-medidas-persianas-santander.pdf"
+                     className="text-gray-500 hover:text-red-700 transition-colors">📄 Guía de medidas (PDF)</a>
+                </li>
               </ul>
             </div>
 
@@ -384,11 +381,15 @@ export default function Home() {
             <div>
               <p className="text-gray-900 font-semibold text-xs uppercase tracking-widest mb-5">Empresa</p>
               <ul className="space-y-3">
-                {['Sobre nosotros', 'Trabaja con nosotros', 'Aviso legal', 'Privacidad'].map(l => (
-                  <li key={l} className="text-sm">
-                    <span className="text-gray-500 hover:text-red-700 cursor-pointer transition-colors">{l}</span>
+                  <li className="text-sm">
+                    <Link to="/terminos"   className="text-gray-500 hover:text-red-700 transition-colors">Aviso legal</Link>
                   </li>
-                ))}
+                  <li className="text-sm">
+                    <Link to="/privacidad" className="text-gray-500 hover:text-red-700 transition-colors">Privacidad</Link>
+                  </li>
+                  <li className="text-sm">
+                    <Link to="/cookies"    className="text-gray-500 hover:text-red-700 transition-colors">Cookies</Link>
+                  </li>
               </ul>
             </div>
 
@@ -440,36 +441,15 @@ export default function Home() {
               <Link to="/cookies"    className="hover:text-gray-600 transition-colors">Cookies</Link>
             </div>
           </div>
-          {/* Enlace sitio anterior */}
-          <div className="border-t border-gray-100 pt-5 mt-2">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <a
-                href="https://persianassantander.com/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2.5 bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-xl px-4 py-2.5 transition-colors group"
-              >
-                <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                <span className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
-                  Sitio web anterior: <span className="font-semibold text-gray-700">persianassantander.com</span>
-                </span>
-              </a>
-              <a
-                href="https://mindbride.net"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2.5 bg-gray-50 border border-gray-200 hover:border-gray-300 rounded-xl px-4 py-2.5 transition-colors group"
-              >
-                <svg className="w-4 h-4 text-gray-400 group-hover:text-gray-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                <span className="text-sm text-gray-500 group-hover:text-gray-700 transition-colors">
-                  Diseño y desarrollo: <span className="font-semibold text-gray-700">mindbride.net</span>
-                </span>
-              </a>
-            </div>
+          <div className="border-t border-gray-100 pt-4 mt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-400">
+            <a href="https://persianassantander.com/" target="_blank" rel="noopener noreferrer"
+               className="hover:text-gray-600 transition-colors">
+              Sitio web anterior: persianassantander.com
+            </a>
+            <a href="https://mindbride.net" target="_blank" rel="noopener noreferrer"
+               className="hover:text-gray-600 transition-colors">
+              Diseño y desarrollo: mindbride.net
+            </a>
           </div>
         </div>
       </footer>
