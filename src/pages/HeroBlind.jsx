@@ -108,7 +108,7 @@ export default function HeroBlind() {
   })
 
   return (
-    <section className="w-full min-h-screen flex flex-col lg:flex-row">
+    <section className="w-full min-h-[500px] lg:min-h-screen flex flex-col lg:flex-row">
 
       {/* ── Panel izquierdo: persiana ── */}
       <div
