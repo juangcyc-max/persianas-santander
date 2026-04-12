@@ -344,11 +344,11 @@ export default function Home() {
               </p>
               <div className="flex gap-3">
                 {[
-                  { label: 'Facebook',  letter: 'F' },
-                  { label: 'Instagram', letter: 'I' },
-                  { label: 'LinkedIn',  letter: 'L' },
-                ].map(({ label, letter }) => (
-                  <a key={label} href="#" aria-label={label}
+                  { label: 'Facebook',  letter: 'F', href: '#' },
+                  { label: 'Instagram', letter: 'I', href: 'https://www.instagram.com/persianassantander' },
+                  { label: 'LinkedIn',  letter: 'L', href: '#' },
+                ].map(({ label, letter, href }) => (
+                  <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
                     className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-700 hover:border-red-200 transition-colors text-xs font-bold">
                     {letter}
                   </a>
