@@ -128,11 +128,20 @@ export function ResetPassword() {
   const [expired,  setExpired]  = useState(false)
 
   useEffect(() => {
-    // Supabase dispara PASSWORD_RECOVERY cuando procesa el token del enlace
+    // FIX race condition: Supabase procesa el hash ANTES de que React monte el componente,
+    // por lo que el evento PASSWORD_RECOVERY puede haberse disparado ya.
+    // Solución: leer el hash de la URL directamente (siempre contiene type=recovery).
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    if (hashParams.get('type') === 'recovery') {
+      setReady(true)
+      return // no hace falta el listener ni el timer
+    }
+
+    // Fallback: escuchar el evento (si el hash aún no fue procesado)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setReady(true)
     })
-    // Si en 8 s no llega el evento, el enlace es inválido/expirado
+    // Si en 8 s no llega nada, el enlace es inválido/expirado
     const timer = setTimeout(() => setExpired(true), 8000)
     return () => { subscription.unsubscribe(); clearTimeout(timer) }
   }, [])
