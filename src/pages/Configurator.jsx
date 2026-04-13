@@ -415,7 +415,7 @@ function Configurator() {
             <div className="space-y-3">
               <SaveConfigurationButton
                 configuration={configuration}
-                onSuccess={() => navigate(userType === 'professional' ? '/panel-profesional' : '/mis-configuraciones')}
+                onSuccess={() => navigate(userType === 'professional' ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones')}
                 proDiscount={proDiscount}
               />
               <button
