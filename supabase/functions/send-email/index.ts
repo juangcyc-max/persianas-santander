@@ -329,14 +329,18 @@ serve(async (req) => {
         break
       }
 
-      case 'budget_request':
+      case 'budget_request': {
+        const budgetAttachments = data.pdf_base64
+          ? [{ filename: `Presupuesto_${data.customer_name || 'Cliente'}.pdf`, content: data.pdf_base64, content_type: 'application/pdf' }]
+          : undefined
         await Promise.all([
-          send(ADMIN_EMAIL, `Nueva solicitud de presupuesto — ${data.customer_name}`, tplPresupuestoAdmin(data)),
+          send(ADMIN_EMAIL, `Nueva solicitud de presupuesto — ${data.customer_name}`, tplPresupuestoAdmin(data), budgetAttachments),
           data.customer_email
-            ? send(data.customer_email, 'Tu presupuesto de Persianas Santander', tplPresupuestoCliente(data))
+            ? send(data.customer_email, 'Tu presupuesto de Persianas Santander', tplPresupuestoCliente(data), budgetAttachments)
             : Promise.resolve(),
         ])
         break
+      }
 
       default:
         throw new Error(`Tipo desconocido: ${type}`)

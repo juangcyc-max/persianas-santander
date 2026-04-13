@@ -64,7 +64,7 @@ export function sendInvoiceEmail({ userEmail, invoice, orderId, items, pdfBase64
 }
 
 /** Envía presupuesto a admin y cliente */
-export function sendBudgetResend(customerData, configuration) {
+export function sendBudgetResend(customerData, configuration, pdfBase64 = null) {
   const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
   return callSendEmail('budget_request', {
     customer_name:    customerData?.name    || '',
@@ -79,5 +79,6 @@ export function sendBudgetResend(customerData, configuration) {
     slat_color:       configuration?.slatColorName || '',
     estimated_price:  fmt(configuration?.estimatedPrice ?? 0),
     client_notes:     configuration?.clientNotes   || '',
+    pdf_base64:       pdfBase64 ?? null,
   })
 }

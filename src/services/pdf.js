@@ -183,7 +183,7 @@ function addPriceBlock(doc, y, breakdown, isPro, proDiscount, brandColor = COLOR
 }
 
 // ── PRESUPUESTO PERSIANAS SANTANDER (nuestro configurador) ────────────────
-export async function generateBudgetPDF(customerData = {}, configuration = {}, { skipSave = false, budgetNumberOverride = null } = {}) {
+export async function generateBudgetPDF(customerData = {}, configuration = {}, { skipSave = false, budgetNumberOverride = null, returnBase64 = false } = {}) {
   try {
     const doc = new jsPDF()
     const W = doc.internal.pageSize.width
@@ -351,6 +351,11 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
     }
 
     const safeCustomerName = (customerData.name || "Cliente").trim().replace(/[^a-z0-9]/gi, "_")
+
+    if (returnBase64) {
+      return doc.output('datauristring').split(',')[1]
+    }
+
     doc.save(`Presupuesto_${safeCustomerName}_${budgetNumber}.pdf`)
 
   } catch (error) {

@@ -993,7 +993,12 @@ function BudgetModal({ budget, onClose, onSaved }) {
       setStatus('accepted')
 
       const { customerData, configuration } = getBudgetParams()
-      await sendBudgetResend(customerData, configuration)
+      const pdfBase64 = await generateBudgetPDF(customerData, configuration, {
+        skipSave: true,
+        budgetNumberOverride: budget.budget_number ?? null,
+        returnBase64: true,
+      })
+      await sendBudgetResend(customerData, configuration, pdfBase64 ?? null)
       setSendFeedback('ok')
       setTimeout(() => { setSendFeedback(''); onSaved() }, 2000)
     } catch {
