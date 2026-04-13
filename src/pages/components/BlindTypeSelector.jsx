@@ -104,6 +104,19 @@ const GROUPS = [
           </svg>
         ),
       },
+      {
+        id: 'motor_mas_guias',
+        title: 'Motor + Guías',
+        subtitle: 'Motor y guías sin persiana',
+        desc: 'Motor mecánico o a distancia más guías laterales. Sin caja ni paño.',
+        sizes: null,
+        icon: (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+              d="M13 10V3L4 14h7v7l9-11h-7z M3 17h2m14 0h2" />
+          </svg>
+        ),
+      },
     ],
   },
 ]

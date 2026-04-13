@@ -70,7 +70,7 @@ function getGamaFromColor(colors, hex) {
   return colors.find(c => c.hex === hex)?.gama ?? 'Grupo Base'
 }
 
-const VALID_TYPES = ['laminada', 'autoblocante', 'sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante', 'solo_guias', 'solo_motor']
+const VALID_TYPES = ['laminada', 'autoblocante', 'sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante', 'solo_guias', 'solo_motor', 'motor_mas_guias']
 
 function getPricePerSqm(table, gama) {
   if (!table) return 0
@@ -144,6 +144,10 @@ function Configurator() {
     if (productType === 'solo_guias') {
       if (guideType === 'none') setGuideType('v25')
     }
+    if (productType === 'motor_mas_guias') {
+      setMechanism('motor')
+      if (guideType === 'none') setGuideType('v25')
+    }
   }, [productType]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Para paños y solo_guias: el color de caja sigue al color de lamas
@@ -184,8 +188,9 @@ function Configurator() {
       sistema_mini_pvc:          'Sistema Mini PVC',
       sistema_mini_aluminio:     'Sistema Mini Aluminio',
       sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
-      solo_guias:                guideType === 'h25' ? 'Guías H25 (7 €/ml)' : 'Guías V25 (5 €/ml)',
-      solo_motor:                motorType === 'mando_distancia' ? 'Motor mando a distancia' : 'Motor mecánico',
+      solo_guias:      guideType === 'h25' ? 'Guías H25 (7 €/ml)' : 'Guías V25 (5 €/ml)',
+      solo_motor:      motorType === 'mando_distancia' ? 'Motor mando a distancia' : 'Motor mecánico',
+      motor_mas_guias: `Motor + Guías ${guideType === 'h25' ? 'H25' : 'V25'}`,
     }
 
     // ── Solo Motor ──────────────────────────────────────────────────────────
@@ -224,6 +229,27 @@ function Configurator() {
         iva, totalConIva, discount,
         finalPrice: totalConIva - discount,
         isSoloGuias: true,
+      }
+    }
+
+    // ── Motor + Guías ───────────────────────────────────────────────────────
+    if (productType === 'motor_mas_guias') {
+      const motorCost  = MOTOR_PRICES[motorType] ?? 0
+      const pricePerMl = GUIDE_PRICE_PER_ML[guideType] ?? GUIDE_PRICE_PER_ML.v25
+      const guidesCost = 2 * (height / 1000) * pricePerMl
+      const subtotalSinIva = motorCost + guidesCost
+      const iva = subtotalSinIva * 0.21
+      const totalConIva = subtotalSinIva * 1.21
+      const discount = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
+      return {
+        productLabel: productLabelMap.motor_mas_guias,
+        productPricePerSqm: 0,
+        boxLabel: '', boxPricePerSqm: 0,
+        guidesCost, motorCost, installacionCost: 0,
+        billableSqm: 0,
+        subtotalSinIva, iva, totalConIva, discount,
+        finalPrice: totalConIva - discount,
+        isMotorMasGuias: true,
       }
     }
 
@@ -269,7 +295,7 @@ function Configurator() {
     productType,
     blindType: productType,
     mechanism, orientation, motorType, guideType,
-    installacion: ['solo_motor', 'solo_guias'].includes(productType) ? false : installacion,
+    installacion: ['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(productType) ? false : installacion,
     width, height,
     boxColor:     effectiveBoxColor,
     slatColor,
@@ -283,17 +309,17 @@ function Configurator() {
   }
 
   // Flags de visibilidad
-  const showPreview      = productType !== 'solo_motor'
-  const showMechanism    = !isSistema(productType) && productType !== 'solo_motor' && productType !== 'solo_guias'
-  const showMotorType    = mechanism === 'motor' || isSistema(productType) || productType === 'solo_motor'
-  const showMeasurements = productType !== 'solo_motor'
-  const showGuides       = productType !== 'solo_motor'
-  const showInstallation = !['solo_motor', 'solo_guias'].includes(productType)
+  const showPreview      = !['solo_motor', 'motor_mas_guias'].includes(productType)
+  const showMechanism    = !isSistema(productType) && !['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(productType)
+  const showMotorType    = mechanism === 'motor' || isSistema(productType) || ['solo_motor', 'motor_mas_guias'].includes(productType)
+  const showMeasurements = !['solo_motor'].includes(productType)
+  const showGuides       = !['solo_motor'].includes(productType)
+  const showInstallation = !['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(productType)
   const showBoxColor     = isSistema(productType)
-  const showSlatColor    = productType !== 'solo_motor'
+  const showSlatColor    = !['solo_motor', 'motor_mas_guias'].includes(productType)
 
   // Modo del selector de guías
-  const guideMode = productType === 'solo_guias' ? 'product'
+  const guideMode = ['solo_guias', 'motor_mas_guias'].includes(productType) ? 'product'
     : isSistema(productType) ? 'included'
     : 'optional'
 

@@ -65,6 +65,22 @@ function BlindSVGPreview({ boxColor = '#dc2626', slatColor = '#ffffff' }) {
   )
 }
 
+// ─── Etiquetas de tipo ────────────────────────────────────────────────────────
+const BLIND_LABELS = {
+  laminada:                  'Paño laminado',
+  autoblocante:              'Paño autoblocante',
+  blocking:                  'Bloqueante',
+  sistema_mini_pvc:          'Sistema Mini PVC',
+  sistema_mini_aluminio:     'Sistema Mini Aluminio',
+  sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
+  solo_guias:                'Solo guías',
+  solo_motor:                'Solo motor',
+  motor_mas_guias:           'Motor + Guías',
+}
+const blindLabel = (t) => BLIND_LABELS[t] ?? t ?? '—'
+const isProductoIndividual = (t) => ['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(t)
+const isSistema = (t) => ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante'].includes(t)
+
 // ─── Custom hook ─────────────────────────────────────────────────────────────
 const useConfigurations = () => {
   const [data,    setData]    = useState([])
@@ -139,25 +155,49 @@ const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => 
     year: 'numeric', month: 'short', day: 'numeric',
   }).format(new Date(config.created_at))
 
-  const isBlocking   = config.blind_type === 'blocking'
-  const mechLabel    = { muelle: 'Muelle', cinta: 'Cinta', motor: 'Motor' }[config.mechanism] ?? config.mechanism ?? '—'
+  const tipo       = config.blind_type
+  const label      = blindLabel(tipo)
+  const esIndiv    = isProductoIndividual(tipo)
+  const esSistema  = isSistema(tipo)
+  const mechLabel  = { muelle: 'Muelle', cinta: 'Cinta', motor: 'Motor' }[config.mechanism] ?? config.mechanism ?? '—'
 
   return (
     <article className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-red-200 hover:shadow-md transition-all group">
 
-      {/* Preview SVG (sin imágenes rotas) */}
-      <div className="relative h-36 bg-gray-50 overflow-hidden">
-        <BlindSVGPreview
-          boxColor={config.box_color || '#dc2626'}
-          slatColor={config.slat_color || '#ffffff'}
-        />
+      {/* Preview */}
+      <div className="relative h-36 bg-gray-50 overflow-hidden flex items-center justify-center">
+        {esIndiv ? (
+          /* Icono para productos sin persiana */
+          <div className="flex flex-col items-center gap-2 text-gray-300">
+            {tipo === 'solo_guias' ? (
+              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2}
+                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </svg>
+            ) : (
+              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            )}
+          </div>
+        ) : (
+          <BlindSVGPreview
+            boxColor={config.box_color || '#dc2626'}
+            slatColor={config.slat_color || '#ffffff'}
+          />
+        )}
         {/* Badge tipo */}
         <div className={`absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded-full ${
-          isBlocking
+          tipo === 'blocking'
             ? 'bg-gray-900 text-white'
+            : esIndiv
+            ? 'bg-blue-100 text-blue-700 border border-blue-200'
+            : esSistema
+            ? 'bg-red-100 text-red-700 border border-red-200'
             : 'bg-white text-gray-700 border border-gray-200'
         }`}>
-          {isBlocking ? '🔒 Bloqueante' : 'Estándar'}
+          {label}
         </div>
         {/* Badge fecha */}
         <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white/90 px-2 py-0.5 rounded-full border border-gray-100">
@@ -168,37 +208,48 @@ const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => 
       {/* Contenido */}
       <div className="p-4">
         <div className="mb-3">
-          <h3 className="font-bold text-gray-900 text-sm">
-            Persiana {isBlocking ? 'bloqueante' : 'estándar'}
-          </h3>
+          <h3 className="font-bold text-gray-900 text-sm">{label}</h3>
           <p className="text-xs text-gray-400 mt-0.5">{mechLabel}</p>
         </div>
 
         <dl className="grid grid-cols-2 gap-2 text-xs mb-4">
-          <div>
-            <dt className="text-gray-400 uppercase tracking-wide mb-0.5">Medidas</dt>
-            <dd className="text-gray-700 font-semibold">{config.width} × {config.height} mm</dd>
-          </div>
-          <div>
-            <dt className="text-gray-400 uppercase tracking-wide mb-0.5">Colores</dt>
-            <dd className="text-gray-700 font-semibold truncate">
-              <span className="inline-flex items-center gap-1">
-                <span
-                  className="inline-block w-3 h-3 rounded-full border border-gray-200 flex-shrink-0"
-                  style={{ backgroundColor: config.box_color || '#ccc' }}
-                />
-                {config.box_color_name || '—'}
-              </span>
-              {' / '}
-              <span className="inline-flex items-center gap-1">
-                <span
-                  className="inline-block w-3 h-3 rounded-full border border-gray-200 flex-shrink-0"
-                  style={{ backgroundColor: config.slat_color || '#ccc' }}
-                />
-                {config.slat_color_name || '—'}
-              </span>
-            </dd>
-          </div>
+          {!esIndiv || tipo === 'solo_guias' || tipo === 'motor_mas_guias' ? (
+            <div>
+              <dt className="text-gray-400 uppercase tracking-wide mb-0.5">
+                {tipo === 'solo_guias' || tipo === 'motor_mas_guias' ? 'Altura guías' : 'Medidas'}
+              </dt>
+              <dd className="text-gray-700 font-semibold">
+                {tipo === 'solo_guias' || tipo === 'motor_mas_guias'
+                  ? `${config.height} mm`
+                  : `${config.width} × ${config.height} mm`}
+              </dd>
+            </div>
+          ) : <div />}
+          {!esIndiv ? (
+            <div>
+              <dt className="text-gray-400 uppercase tracking-wide mb-0.5">Colores</dt>
+              <dd className="text-gray-700 font-semibold truncate">
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-block w-3 h-3 rounded-full border border-gray-200 flex-shrink-0"
+                    style={{ backgroundColor: config.box_color || '#ccc' }} />
+                  {config.box_color_name || '—'}
+                </span>
+                {' / '}
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-block w-3 h-3 rounded-full border border-gray-200 flex-shrink-0"
+                    style={{ backgroundColor: config.slat_color || '#ccc' }} />
+                  {config.slat_color_name || '—'}
+                </span>
+              </dd>
+            </div>
+          ) : (
+            <div>
+              <dt className="text-gray-400 uppercase tracking-wide mb-0.5">Tipo motor</dt>
+              <dd className="text-gray-700 font-semibold capitalize">
+                {config.motor_type === 'mando_distancia' ? 'Mando a distancia' : config.motor_type === 'mecanico' ? 'Mecánico' : '—'}
+              </dd>
+            </div>
+          )}
         </dl>
 
         <footer className="pt-3 border-t border-gray-100 space-y-2">
@@ -265,7 +316,9 @@ export default function MisConfiguraciones() {
                         c.box_color_name?.toLowerCase().includes(q) ||
                         c.slat_color_name?.toLowerCase().includes(q)
     const matchFilter = activeFilter === 'all' ||
-                        (activeFilter === 'blocking' ? c.blind_type === 'blocking' : c.blind_type !== 'blocking')
+      (activeFilter === 'panos'      && ['laminada', 'autoblocante', 'blocking'].includes(c.blind_type)) ||
+      (activeFilter === 'sistemas'   && ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante'].includes(c.blind_type)) ||
+      (activeFilter === 'individual' && ['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(c.blind_type))
     return matchSearch && matchFilter
   }), [configs, search, activeFilter])
 
@@ -365,9 +418,10 @@ export default function MisConfiguraciones() {
           </div>
           <div className="flex gap-2 flex-shrink-0">
             {[
-              { key: 'all',      label: 'Todos' },
-              { key: 'blocking', label: 'Bloqueantes' },
-              { key: 'standard', label: 'Estándar' },
+              { key: 'all',       label: 'Todos' },
+              { key: 'panos',     label: 'Paños' },
+              { key: 'sistemas',  label: 'Sistemas' },
+              { key: 'individual',label: 'Individuales' },
             ].map(({ key, label }) => (
               <button
                 key={key}

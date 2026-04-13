@@ -9,6 +9,19 @@ import { getProfessionalDiscountForUser } from '../services/settings'
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
 const fmtDate = (d) => d ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)) : '—'
 
+const BLIND_LABELS = {
+  laminada:                  'Paño laminado',
+  autoblocante:              'Paño autoblocante',
+  blocking:                  'Bloqueante',
+  sistema_mini_pvc:          'Sistema Mini PVC',
+  sistema_mini_aluminio:     'Sistema Mini Aluminio',
+  sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
+  solo_guias:                'Solo guías',
+  solo_motor:                'Solo motor',
+  motor_mas_guias:           'Motor + Guías',
+}
+const blindLabel = (t) => BLIND_LABELS[t] ?? t ?? '—'
+
 function StatCard({ icon, label, value, sub, accent }) {
   return (
     <div className={`rounded-xl p-5 border ${accent ? 'bg-red-700 border-red-600 text-white' : 'bg-white border-gray-200'}`}>
@@ -629,7 +642,7 @@ export default function ProfessionalDashboard() {
                       {configuraciones.slice(0, 4).map(c => (
                         <div key={c.id} className="px-5 py-3 flex items-center justify-between gap-4">
                           <div>
-                            <p className="text-sm font-semibold text-gray-900">{c.blind_type === 'blocking' ? 'Bloqueante' : 'Estándar'} — {c.mechanism}</p>
+                            <p className="text-sm font-semibold text-gray-900">{blindLabel(c.blind_type)} — {c.mechanism}</p>
                             <p className="text-xs text-gray-400">{c.width} × {c.height} mm · {fmtDate(c.created_at)}</p>
                           </div>
                           <span className="text-sm font-bold text-red-700 flex-shrink-0">{fmt(c.estimated_price)}</span>
@@ -657,7 +670,7 @@ export default function ProfessionalDashboard() {
                         <div key={c.id} className="p-4 space-y-3">
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <p className="font-semibold text-gray-900 text-sm">{c.blind_type === 'blocking' ? 'Bloqueante' : 'Estándar'}</p>
+                              <p className="font-semibold text-gray-900 text-sm">{blindLabel(c.blind_type)}</p>
                               <p className="text-xs text-gray-400">{c.mechanism}</p>
                               <p className="text-xs text-gray-400 mt-0.5">{c.width} × {c.height} mm · {fmtDate(c.created_at)}</p>
                             </div>
@@ -705,7 +718,7 @@ export default function ProfessionalDashboard() {
                         {configuraciones.map(c => (
                           <tr key={c.id} className="hover:bg-gray-50 transition-colors">
                             <td className="px-5 py-3">
-                              <p className="font-semibold text-gray-900">{c.blind_type === 'blocking' ? 'Bloqueante' : 'Estándar'}</p>
+                              <p className="font-semibold text-gray-900">{blindLabel(c.blind_type)}</p>
                               <p className="text-xs text-gray-400">{c.mechanism}</p>
                             </td>
                             <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{c.width} × {c.height} mm</td>
