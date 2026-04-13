@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { sanitizeText } from '../services/sanitize'
 import { useRateLimit } from '../services/useRateLimit'
+import { getProfessionalDiscount } from '../services/settings'
 
 // ── Indicador de pasos ────────────────────────────────────────────────────
 function StepBar({ current, steps }) {
@@ -65,12 +66,17 @@ export default function Register() {
   const navigate = useNavigate()
 
   // Pasos: 0 = tipo cuenta, 1 = email/password, 2 = datos empresa (solo profesional)
-  const [step,     setStep]     = useState(0)
-  const [accType,  setAccType]  = useState(null) // 'particular' | 'professional'
-  const [loading,  setLoading]  = useState(false)
-  const [errors,   setErrors]   = useState({})
-  const [success,  setSuccess]  = useState(false)
+  const [step,        setStep]       = useState(0)
+  const [accType,     setAccType]    = useState(null) // 'particular' | 'professional'
+  const [loading,     setLoading]    = useState(false)
+  const [errors,      setErrors]     = useState({})
+  const [success,     setSuccess]    = useState(false)
+  const [proDiscount, setProDiscount] = useState(null)
   const { secondsLeft, consume } = useRateLimit(60_000)
+
+  useEffect(() => {
+    getProfessionalDiscount().then(setProDiscount)
+  }, [])
 
   // Paso 1
   const [email,    setEmail]    = useState('')
@@ -305,9 +311,11 @@ export default function Register() {
                 className="w-full flex items-start gap-4 p-5 rounded-xl border-2 border-gray-200 hover:border-red-300 hover:bg-red-50 transition-all text-left group relative overflow-hidden"
               >
                 {/* Badge descuento */}
-                <div className="absolute top-3 right-3 bg-red-700 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                  −20%
-                </div>
+                {proDiscount != null && (
+                  <div className="absolute top-3 right-3 bg-red-700 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    −{proDiscount}%
+                  </div>
+                )}
                 <div className="w-12 h-12 rounded-xl bg-gray-100 group-hover:bg-red-100 flex items-center justify-center flex-shrink-0 transition-colors">
                   <svg className="w-6 h-6 text-gray-500 group-hover:text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -316,7 +324,7 @@ export default function Register() {
                 <div className="pr-8">
                   <p className="font-bold text-gray-900 mb-1">Cuenta profesional</p>
                   <p className="text-sm text-gray-500 leading-relaxed">
-                    Para instaladores, arquitectos y empresas. Incluye 20% de descuento y facturación automática.
+                    Para instaladores, arquitectos y empresas. Incluye{proDiscount != null ? ` ${proDiscount}%` : ''} de descuento y facturación automática.
                   </p>
                 </div>
                 <svg className="w-5 h-5 text-gray-300 group-hover:text-red-400 flex-shrink-0 mt-0.5 ml-auto transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -334,7 +342,7 @@ export default function Register() {
                   <svg className="w-4 h-4 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <p className="text-sm text-red-700 font-medium">Cuenta profesional — 20% de descuento activado</p>
+                  <p className="text-sm text-red-700 font-medium">Cuenta profesional{proDiscount != null ? ` — ${proDiscount}% de descuento activado` : ''}</p>
                 </div>
               )}
 

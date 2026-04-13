@@ -480,7 +480,7 @@ export default function ProfessionalDashboard() {
               <img src="/persianassantanderlogo.png" alt="Persianas Santander" className="h-9 w-auto" onError={e => { e.target.src = '/persianassantanderlogo.svg' }} />
               <div className="hidden sm:block h-6 w-px bg-gray-200" />
               <span className="hidden sm:block text-sm font-semibold text-gray-700">Panel profesional</span>
-              <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">−{empresa?.discount_percent ?? globalDiscount}%</span>
+              <span className="hidden sm:inline-flex bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">−{empresa?.discount_percent ?? globalDiscount}%</span>
             </div>
             <div className="flex items-center gap-2">
               <Link to="/cesta" className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -497,8 +497,16 @@ export default function ProfessionalDashboard() {
                 </div>
                 <span className="text-sm text-gray-600 max-w-[160px] truncate">{empresa?.razon_social ?? user?.email}</span>
               </div>
-              <Link to="/configurador" className="text-sm font-bold bg-red-700 text-white px-4 py-2 rounded-xl hover:bg-red-800 transition-colors">+ Nueva</Link>
-              <button onClick={handleLogout} className="text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors">Salir</button>
+              <Link to="/configurador" className="text-sm font-bold bg-red-700 text-white px-4 py-2 rounded-xl hover:bg-red-800 transition-colors">
+                <span className="hidden sm:inline">+ Nueva</span>
+                <span className="sm:hidden">+</span>
+              </Link>
+              <button onClick={handleLogout} className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                <svg className="w-5 h-5 sm:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span className="hidden sm:inline text-sm">Salir</span>
+              </button>
             </div>
           </div>
         </div>
