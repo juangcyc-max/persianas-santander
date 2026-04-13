@@ -214,7 +214,7 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null, { 
     },
     alternateRowStyles: { fillColor: C.grayBg },
     columnStyles: {
-      0: { cellWidth: 58 },
+      0: { cellWidth: 66 },
       1: { cellWidth: 26, halign: 'center' },
       2: { cellWidth: 22, halign: 'center' },
       3: { cellWidth: 40 },
