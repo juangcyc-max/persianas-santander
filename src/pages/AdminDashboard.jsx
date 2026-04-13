@@ -453,6 +453,17 @@ function OrderModal({ order, onClose, onUpdate }) {
   )
 }
 
+// ── TABS SIDEBAR ─────────────────────────────────────────────────────────
+const ADMIN_TABS = [
+  { id: 'overview',      label: 'Resumen',        icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+  { id: 'pedidos',       label: 'Pedidos',         icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+  { id: 'presupuestos',  label: 'Presupuestos',    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+  { id: 'proyectos',     label: 'Proyectos Pro',   icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
+  { id: 'facturas',      label: 'Facturas',        icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
+  { id: 'profesionales', label: 'Profesionales',   icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+  { id: 'clientes',      label: 'Clientes',        icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+]
+
 // ── PANEL ADMIN ───────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const navigate = useNavigate()
@@ -466,6 +477,8 @@ export default function AdminDashboard() {
   const [page,         setPage]         = useState(1)
   const [dateFrom,     setDateFrom]     = useState('')
   const [dateTo,       setDateTo]       = useState('')
+  const [activeTab,    setActiveTab]    = useState('pedidos')
+  const [menuOpen,     setMenuOpen]     = useState(false)
   const PAGE_SIZE = 15
 
   useEffect(() => { checkAdmin() }, [])
@@ -594,6 +607,8 @@ export default function AdminDashboard() {
     navigate('/login')
   }
 
+  const pendingCount = orders.filter(o => o.status === 'pending').length
+
   return (
     <div className="min-h-screen bg-gray-50">
 
@@ -601,266 +616,267 @@ export default function AdminDashboard() {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <img src="/persianassantanderlogo.png" alt="Persianas Santander" className="h-9 w-auto"
                 onError={e => { e.target.src = '/persianassantanderlogo.svg' }} />
               <div className="hidden sm:block h-6 w-px bg-gray-200" />
               <span className="hidden sm:flex items-center gap-2 text-sm font-bold text-gray-700">
-                <span className="w-2 h-2 bg-green-500 rounded-full" />
-                Panel de administración
+                <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                Admin
               </span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <span className="text-xs text-gray-400 hidden md:block">{user?.email}</span>
               <a href="/manual-admin.html" target="_blank" rel="noopener noreferrer"
-                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
+                className="hidden sm:flex text-xs font-semibold text-gray-500 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors">
                 Manual
               </a>
               <button onClick={handleLogout}
-                className="flex items-center gap-2 text-sm text-gray-500 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors font-medium">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-                Cerrar sesión
+                className="text-sm text-gray-500 hover:text-red-700 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors font-medium">
+                Salir
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-6">
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          {[
-            { label: 'Total pedidos',  value: stats.total,                    color: 'text-gray-900' },
-            { label: 'Pendientes',     value: stats.pending,                  color: 'text-amber-600' },
-            { label: 'Confirmados',    value: stats.confirmed,                color: 'text-blue-600'  },
-            { label: 'Completados',    value: stats.completed,                color: 'text-green-600' },
-            { label: 'Facturación est.',value: fmt(stats.revenue),            color: 'text-red-700'   },
-          ].map(({ label, value, color }) => (
-            <div key={label} className="bg-white rounded-xl border border-gray-200 p-4">
-              <p className={`text-2xl font-black ${color}`}>{value}</p>
-              <p className="text-xs text-gray-500 mt-0.5">{label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Filtros y búsqueda */}
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <input type="text" value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
-                placeholder="Buscar por email, dirección o ID..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Desde</label>
-              <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }}
-                className="px-3 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
-              <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Hasta</label>
-              <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }}
-                className="px-3 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
-              {(dateFrom || dateTo) && (
-                <button onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}
-                  className="text-xs text-gray-400 hover:text-red-600 transition-colors"
-                  title="Limpiar fechas">
+          {/* ── Sidebar ── */}
+          <aside className="lg:w-52 flex-shrink-0">
+            {/* Mobile dropdown */}
+            <div className="lg:hidden relative mb-4">
+              <button onClick={() => setMenuOpen(v => !v)}
+                className="w-full bg-white rounded-xl border border-gray-200 flex items-center justify-between px-4 py-3 text-sm font-medium shadow-sm">
+                <span className="flex items-center gap-3 text-red-700 font-semibold">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={ADMIN_TABS.find(t => t.id === activeTab)?.icon} />
                   </svg>
-                </button>
+                  {ADMIN_TABS.find(t => t.id === activeTab)?.label}
+                </span>
+                <svg className={`w-4 h-4 text-gray-400 transition-transform ${menuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {menuOpen && (
+                <nav className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-gray-200 shadow-lg z-20 overflow-hidden">
+                  {ADMIN_TABS.map(({ id, label, icon }) => (
+                    <button key={id} onClick={() => { setActiveTab(id); setMenuOpen(false) }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-left border-b border-gray-100 last:border-0 transition-colors ${activeTab === id ? 'bg-red-50 text-red-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
+                      </svg>
+                      {label}
+                      {id === 'pedidos' && pendingCount > 0 && (
+                        <span className="ml-auto text-xs font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{pendingCount}</span>
+                      )}
+                    </button>
+                  ))}
+                </nav>
               )}
             </div>
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {[
-              { key: 'all',       label: 'Todos'      },
-              { key: 'pending',   label: 'Pendientes' },
-              { key: 'confirmed', label: 'Confirmados'},
-              { key: 'completed', label: 'Completados'},
-              { key: 'cancelled', label: 'Cancelados' },
-            ].map(({ key, label }) => (
-              <button key={key} onClick={() => { setFilter(key); setPage(1) }}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                  filter === key ? 'bg-red-700 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50'
-                }`}>
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+            {/* Desktop sidebar */}
+            <nav className="hidden lg:flex lg:flex-col bg-white rounded-2xl border border-gray-200 overflow-hidden">
+              {ADMIN_TABS.map(({ id, label, icon }) => (
+                <button key={id} onClick={() => setActiveTab(id)}
+                  className={`flex items-center gap-3 px-4 py-3.5 text-sm font-medium text-left border-b border-gray-100 last:border-0 transition-colors ${
+                    activeTab === id ? 'bg-red-50 text-red-700 border-l-2 border-l-red-700 pl-3.5' : 'text-gray-600 hover:bg-gray-50'
+                  }`}>
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
+                  </svg>
+                  {label}
+                  {id === 'pedidos' && pendingCount > 0 && (
+                    <span className="ml-auto text-xs font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{pendingCount}</span>
+                  )}
+                </button>
+              ))}
+            </nav>
+          </aside>
 
-        {/* Tabla de pedidos */}
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="w-8 h-8 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-gray-500 text-sm">No hay pedidos que mostrar</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    {['ID','Cliente','Tipo','Fecha','Cita solicitada','Total','Estado',''].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {paginated.map(order => (
-                    <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">
-                        #{order.id.slice(0,8).toUpperCase()}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-gray-900 font-medium truncate max-w-[160px] block">
-                          {order.profiles?.email ?? '—'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                          order.user_type === 'professional' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {order.user_type === 'professional' ? 'Pro' : 'Particular'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(order.created_at)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {order.preferred_date
-                          ? <span className="text-gray-900">{fmtDate(order.preferred_date)} {order.preferred_time}</span>
-                          : <span className="text-gray-300">—</span>
-                        }
-                      </td>
-                      <td className="px-4 py-3 font-bold text-gray-900 whitespace-nowrap">{fmt(order.total_with_iva)}</td>
-                      <td className="px-4 py-3"><StatusBadge status={order.status} /></td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <button onClick={() => setSelectedOrder(order)}
-                            className="text-xs font-semibold text-red-700 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
-                            Gestionar →
-                          </button>
-                          {order.status === 'cancelled' && (
-                            <button onClick={() => handleDeleteOrderDirect(order)}
-                              title="Eliminar pedido cancelado"
-                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+          {/* ── Contenido ── */}
+          <main className="flex-1 min-w-0">
+
+            {/* ── RESUMEN ── */}
+            {activeTab === 'overview' && (
+              <div className="space-y-6">
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Resumen</h1>
+                  <p className="text-sm text-gray-500 mt-1">Vista general del negocio.</p>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  {[
+                    { label: 'Total pedidos',   value: stats.total,        color: 'text-gray-900',  bg: 'bg-white'     },
+                    { label: 'Pendientes',       value: stats.pending,      color: 'text-amber-600', bg: 'bg-amber-50'  },
+                    { label: 'Confirmados',      value: stats.confirmed,    color: 'text-blue-600',  bg: 'bg-blue-50'   },
+                    { label: 'Completados',      value: stats.completed,    color: 'text-green-600', bg: 'bg-green-50'  },
+                    { label: 'Cancelados',       value: orders.filter(o => o.status === 'cancelled').length, color: 'text-red-500', bg: 'bg-red-50' },
+                    { label: 'Facturación est.', value: fmt(stats.revenue), color: 'text-red-700',   bg: 'bg-white'     },
+                  ].map(({ label, value, color, bg }) => (
+                    <div key={label} className={bg + ' rounded-2xl border border-gray-200 p-5'}>
+                      <p className={'text-2xl font-black ' + color}>{value}</p>
+                      <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                </div>
+                <AdminAnalyticsSection />
+              </div>
+            )}
+
+            {/* ── PEDIDOS ── */}
+            {activeTab === 'pedidos' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h1 className="text-xl font-bold text-gray-900">Pedidos</h1>
+                  <button onClick={loadOrders} className="text-xs text-red-600 hover:underline">Actualizar</button>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <input type="text" value={search} onChange={e => { setSearch(e.target.value); setPage(1) }}
+                        placeholder="Buscar por email, dirección o ID..."
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Desde</label>
+                      <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }}
+                        className="px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+                      <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Hasta</label>
+                      <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }}
+                        className="px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+                      {(dateFrom || dateTo) && (
+                        <button onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }} className="text-gray-400 hover:text-red-600">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {[
+                      { key: 'all',       label: 'Todos'       },
+                      { key: 'pending',   label: 'Pendientes'  },
+                      { key: 'confirmed', label: 'Confirmados' },
+                      { key: 'completed', label: 'Completados' },
+                      { key: 'cancelled', label: 'Cancelados'  },
+                    ].map(({ key, label }) => (
+                      <button key={key} onClick={() => { setFilter(key); setPage(1) }}
+                        className={'px-4 py-2 rounded-xl text-sm font-semibold transition-colors ' + (filter === key ? 'bg-red-700 text-white' : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-50')}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  {loading ? (
+                    <div className="flex items-center justify-center py-16">
+                      <div className="w-8 h-8 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : filtered.length === 0 ? (
+                    <div className="text-center py-16 text-gray-500 text-sm">No hay pedidos que mostrar</div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            {['ID','Cliente','Tipo','Fecha','Cita','Total','Estado',''].map(h => (
+                              <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {paginated.map(order => (
+                            <tr key={order.id} className="hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-3 font-mono text-xs text-gray-500">#{order.id.slice(0,8).toUpperCase()}</td>
+                              <td className="px-4 py-3 font-medium text-gray-900 max-w-[160px] truncate">{order.profiles?.email ?? '—'}</td>
+                              <td className="px-4 py-3">
+                                <span className={'text-xs font-bold px-2 py-0.5 rounded-full ' + (order.user_type === 'professional' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600')}>
+                                  {order.user_type === 'professional' ? 'Pro' : 'Particular'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(order.created_at)}</td>
+                              <td className="px-4 py-3 whitespace-nowrap">
+                                {order.preferred_date
+                                  ? <span className="text-gray-900">{fmtDate(order.preferred_date)} {order.preferred_time}</span>
+                                  : <span className="text-gray-300">—</span>}
+                              </td>
+                              <td className="px-4 py-3 font-bold text-gray-900 whitespace-nowrap">{fmt(order.total_with_iva)}</td>
+                              <td className="px-4 py-3"><StatusBadge status={order.status} /></td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <button onClick={() => setSelectedOrder(order)}
+                                    className="text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
+                                    Gestionar →
+                                  </button>
+                                  {order.status === 'cancelled' && (
+                                    <button onClick={() => handleDeleteOrderDirect(order)} title="Eliminar"
+                                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between px-2">
+                    <p className="text-xs text-gray-400">Página {safePage} de {totalPages} · {filtered.length} pedidos</p>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => setPage(1)} disabled={safePage === 1} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
+                      </button>
+                      <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={safePage === 1} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                      </button>
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        const start = Math.max(1, Math.min(safePage - 2, totalPages - 4))
+                        const p = start + i
+                        return (
+                          <button key={p} onClick={() => setPage(p)}
+                            className={'w-7 h-7 rounded-lg text-xs font-semibold transition-colors ' + (p === safePage ? 'bg-red-700 text-white' : 'text-gray-500 hover:bg-gray-100')}>
+                            {p}
+                          </button>
+                        )
+                      })}
+                      <button onClick={() => setPage(p => Math.min(totalPages, p+1))} disabled={safePage === totalPages} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      </button>
+                      <button onClick={() => setPage(totalPages)} disabled={safePage === totalPages} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── PRESUPUESTOS ── */}
+            {activeTab === 'presupuestos' && <AdminBudgetsSection />}
+
+            {/* ── PROYECTOS PRO ── */}
+            {activeTab === 'proyectos' && <AdminProProjectsSection />}
+
+            {/* ── FACTURAS ── */}
+            {activeTab === 'facturas' && <AdminInvoicesSection />}
+
+            {/* ── PROFESIONALES ── */}
+            {activeTab === 'profesionales' && <AdminProfessionalsSection />}
+
+            {/* ── CLIENTES ── */}
+            {activeTab === 'clientes' && <AdminClientsSection />}
+
+          </main>
         </div>
-
-        {/* ── Paginación ── */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-2 pt-2 pb-1">
-            <p className="text-xs text-gray-400">
-              Página {safePage} de {totalPages} · {filtered.length} pedido{filtered.length !== 1 ? 's' : ''}
-            </p>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPage(1)}
-                disabled={safePage === 1}
-                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="Primera página"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={safePage === 1}
-                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="Página anterior"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </button>
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const start = Math.max(1, Math.min(safePage - 2, totalPages - 4))
-                const p = start + i
-                return (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`w-7 h-7 rounded-lg text-xs font-semibold transition-colors ${
-                      p === safePage
-                        ? 'bg-red-700 text-white'
-                        : 'text-gray-500 hover:bg-gray-100'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                )
-              })}
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={safePage === totalPages}
-                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="Página siguiente"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </button>
-              <button
-                onClick={() => setPage(totalPages)}
-                disabled={safePage === totalPages}
-                className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                title="Última página"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
-
-        <p className="text-xs text-center text-gray-400">
-          {filtered.length} pedido{filtered.length !== 1 ? 's' : ''} · Última actualización: {new Date().toLocaleTimeString('es-ES')}
-          <button onClick={loadOrders} className="ml-2 text-red-600 hover:underline">Actualizar</button>
-        </p>
-
-        {/* ── ANALYTICS ── */}
-        <AdminAnalyticsSection />
-
-        {/* ── SECCIÓN PRESUPUESTOS ADMIN ── */}
-        <AdminBudgetsSection />
-
-        {/* ── SECCIÓN PROYECTOS PROFESIONALES ADMIN ── */}
-        <AdminProProjectsSection />
-
-        {/* ── SECCIÓN FACTURAS ADMIN ── */}
-        <AdminInvoicesSection />
-
-        {/* ── SECCIÓN PROFESIONALES ADMIN ── */}
-        <AdminProfessionalsSection />
-
-        {/* ── SECCIÓN CLIENTES ADMIN ── */}
-        <AdminClientsSection />
-
       </div>
 
       {/* Modal pedido */}
@@ -874,6 +890,7 @@ export default function AdminDashboard() {
     </div>
   )
 }
+
 
 // ── SECCIÓN PRESUPUESTOS ADMIN ───────────────────────────────────────────
 const BUDGET_STATUS_MAP = {
