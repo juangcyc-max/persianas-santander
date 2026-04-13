@@ -322,6 +322,7 @@ export default function ProfessionalDashboard() {
   const navigate = useNavigate()
   const { itemCount } = useCart()
   const [activeTab,       setActiveTab]       = useState('overview')
+  const [mobileMenuOpen,  setMobileMenuOpen]  = useState(false)
   const [user,            setUser]            = useState(null)
   const [empresa,         setEmpresa]         = useState(null)
   const [configuraciones, setConfiguraciones] = useState([])
@@ -506,14 +507,44 @@ export default function ProfessionalDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-6">
           <aside className="lg:w-56 flex-shrink-0">
-            <nav className="bg-white rounded-xl border border-gray-200 overflow-hidden flex lg:flex-col overflow-x-auto">
+            {/* Mobile: dropdown hamburger */}
+            <div className="lg:hidden relative">
+              <button
+                onClick={() => setMobileMenuOpen(v => !v)}
+                className="w-full bg-white rounded-xl border border-gray-200 flex items-center justify-between px-4 py-3 text-sm font-medium shadow-sm">
+                <span className="flex items-center gap-3">
+                  <svg className="w-4 h-4 flex-shrink-0 text-red-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {TABS.find(t => t.id === activeTab)?.icon}
+                  </svg>
+                  <span className="text-red-700 font-semibold">{TABS.find(t => t.id === activeTab)?.label}</span>
+                </span>
+                <svg className={`w-4 h-4 text-gray-400 transition-transform ${mobileMenuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {mobileMenuOpen && (
+                <nav className="absolute top-full left-0 right-0 mt-1 bg-white rounded-xl border border-gray-200 overflow-hidden shadow-lg z-20">
+                  {TABS.map(({ id, label, icon }) => (
+                    <button key={id} onClick={() => { setActiveTab(id); setMobileMenuOpen(false) }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left border-b border-gray-100 last:border-0 ${
+                        activeTab === id ? 'bg-red-50 text-red-700' : 'text-gray-600 hover:bg-gray-50'
+                      }`}>
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">{icon}</svg>
+                      {label}
+                    </button>
+                  ))}
+                </nav>
+              )}
+            </div>
+            {/* Desktop: vertical sidebar */}
+            <nav className="hidden lg:flex lg:flex-col bg-white rounded-xl border border-gray-200 overflow-hidden">
               {TABS.map(({ id, label, icon }) => (
                 <button key={id} onClick={() => setActiveTab(id)}
-                  className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left border-b border-gray-100 last:border-0 whitespace-nowrap lg:whitespace-normal flex-shrink-0 lg:flex-shrink ${
+                  className={`flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors text-left border-b border-gray-100 last:border-0 ${
                     activeTab === id ? 'bg-red-50 text-red-700 border-l-2 border-l-red-700' : 'text-gray-600 hover:bg-gray-50'
                   }`}>
                   <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">{icon}</svg>
-                  <span className="hidden sm:block">{label}</span>
+                  {label}
                 </button>
               ))}
             </nav>
