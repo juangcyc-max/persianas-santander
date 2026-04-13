@@ -5,14 +5,6 @@ import { useCart } from '../../context/CartContext'
 
 // ─── Preview SVG generado dinámicamente (sin imágenes rotas) ────────────────
 function BlindSVGPreview({ boxColor = '#dc2626', slatColor = '#ffffff' }) {
-  // Asegurar contraste mínimo del texto
-  const isDark = (hex) => {
-    const r = parseInt(hex.slice(1, 3), 16)
-    const g = parseInt(hex.slice(3, 5), 16)
-    const b = parseInt(hex.slice(5, 7), 16)
-    return (r * 299 + g * 587 + b * 114) / 1000 < 128
-  }
-
   const slats = Array.from({ length: 7 })
 
   return (
@@ -76,6 +68,7 @@ const BLIND_LABELS = {
   solo_guias:                'Solo guías',
   solo_motor:                'Solo motor',
   motor_mas_guias:           'Motor + Guías',
+  pano_mas_guias:            'Paño + Guías',
 }
 const blindLabel = (t) => BLIND_LABELS[t] ?? t ?? '—'
 const isProductoIndividual = (t) => ['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(t)

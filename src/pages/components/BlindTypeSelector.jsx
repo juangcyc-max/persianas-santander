@@ -79,6 +79,19 @@ const GROUPS = [
     label: 'Productos individuales',
     types: [
       {
+        id: 'pano_mas_guias',
+        title: 'Paño + Guías',
+        subtitle: 'Paño laminado con guías incluidas',
+        desc: 'Paño laminado de aluminio con guías laterales V25 o H25. Sin cajón.',
+        sizes: '300 – 3.000 mm',
+        icon: (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+              d="M3 12h18M3 6h18M3 18h18M19 4v16M5 4v16" />
+          </svg>
+        ),
+      },
+      {
         id: 'solo_motor',
         title: 'Solo Motor',
         subtitle: 'Mecánico o mando a distancia',

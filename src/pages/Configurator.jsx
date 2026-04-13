@@ -70,7 +70,7 @@ function getGamaFromColor(colors, hex) {
   return colors.find(c => c.hex === hex)?.gama ?? 'Grupo Base'
 }
 
-const VALID_TYPES = ['laminada', 'autoblocante', 'sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante', 'solo_guias', 'solo_motor', 'motor_mas_guias']
+const VALID_TYPES = ['laminada', 'autoblocante', 'sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante', 'solo_guias', 'solo_motor', 'motor_mas_guias', 'pano_mas_guias']
 
 function getPricePerSqm(table, gama) {
   if (!table) return 0
@@ -148,6 +148,9 @@ function Configurator() {
       setMechanism('motor')
       if (guideType === 'none') setGuideType('v25')
     }
+    if (productType === 'pano_mas_guias') {
+      if (guideType === 'none') setGuideType('v25')
+    }
   }, [productType]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Para paños y solo_guias: el color de caja sigue al color de lamas
@@ -191,6 +194,7 @@ function Configurator() {
       solo_guias:      guideType === 'h25' ? 'Guías H25 (7 €/ml)' : 'Guías V25 (5 €/ml)',
       solo_motor:      motorType === 'mando_distancia' ? 'Motor mando a distancia' : 'Motor mecánico',
       motor_mas_guias: `Motor + Guías ${guideType === 'h25' ? 'H25' : 'V25'}`,
+      pano_mas_guias:  `Paño laminado + Guías ${guideType === 'h25' ? 'H25' : 'V25'}`,
     }
 
     // ── Solo Motor ──────────────────────────────────────────────────────────
@@ -229,6 +233,32 @@ function Configurator() {
         iva, totalConIva, discount,
         finalPrice: totalConIva - discount,
         isSoloGuias: true,
+      }
+    }
+
+    // ── Paño + Guías ────────────────────────────────────────────────────────
+    if (productType === 'pano_mas_guias') {
+      const slatGama = getGamaFromColor(winchesterColors, slatColor)
+      const productPricePerSqm = getPricePerSqm(PRICES.laminada, slatGama)
+      const areaSqm = (width / 1000) * (height / 1000)
+      const billableSqm = Math.max(areaSqm, MIN_SQM)
+      const panoCost = productPricePerSqm * billableSqm
+      const pricePerMl = GUIDE_PRICE_PER_ML[guideType] ?? GUIDE_PRICE_PER_ML.v25
+      const guidesCost = 2 * (height / 1000) * pricePerMl
+      const motorCost = mechanism === 'motor' ? (MOTOR_PRICES[motorType] ?? 0) : 0
+      const installacionCost = installacion ? INSTALACION_PRICE * billableSqm : 0
+      const subtotalSinIva = panoCost + guidesCost + motorCost + installacionCost
+      const iva = subtotalSinIva * 0.21
+      const totalConIva = subtotalSinIva * 1.21
+      const discount = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
+      return {
+        productLabel: productLabelMap.pano_mas_guias,
+        productPricePerSqm,
+        boxLabel: '', boxPricePerSqm: 0,
+        guidesCost, motorCost, installacionCost,
+        billableSqm,
+        subtotalSinIva, iva, totalConIva, discount,
+        finalPrice: totalConIva - discount,
       }
     }
 
@@ -319,7 +349,7 @@ function Configurator() {
   const showSlatColor    = !['solo_motor', 'motor_mas_guias'].includes(productType)
 
   // Modo del selector de guías
-  const guideMode = ['solo_guias', 'motor_mas_guias'].includes(productType) ? 'product'
+  const guideMode = ['solo_guias', 'motor_mas_guias', 'pano_mas_guias'].includes(productType) ? 'product'
     : isSistema(productType) ? 'included'
     : 'optional'
 

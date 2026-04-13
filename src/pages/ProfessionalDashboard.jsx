@@ -19,6 +19,7 @@ const BLIND_LABELS = {
   solo_guias:                'Solo guías',
   solo_motor:                'Solo motor',
   motor_mas_guias:           'Motor + Guías',
+  pano_mas_guias:            'Paño + Guías',
 }
 const blindLabel = (t) => BLIND_LABELS[t] ?? t ?? '—'
 
