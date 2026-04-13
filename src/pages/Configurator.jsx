@@ -50,7 +50,8 @@ const PRICES = {
 
 const MOTOR_PRICES = { mecanico: 120, mando_distancia: 260 }
 const GUIDE_PRICE_PER_ML = { v25: 5, h25: 7 }
-const INSTALACION_PRICE = 100
+const INSTALACION_PRICE = 100   // €/m² para paños y sistemas
+const INSTALACION_FIJA  = 150   // precio fijo para solo_motor, solo_guias, motor_mas_guias
 const MIN_SQM = 1.5
 const CART_KEY = 'ps_cart'
 
@@ -201,17 +202,19 @@ function Configurator() {
 
     // ── Solo Motor ──────────────────────────────────────────────────────────
     if (productType === 'solo_motor') {
-      const motorCost = MOTOR_PRICES[motorType] ?? 0
-      const iva = motorCost * 0.21
-      const totalConIva = motorCost * 1.21
-      const discount = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
+      const motorCost       = MOTOR_PRICES[motorType] ?? 0
+      const installacionCost = installacion ? INSTALACION_FIJA : 0
+      const subtotalSinIva  = motorCost + installacionCost
+      const iva             = subtotalSinIva * 0.21
+      const totalConIva     = subtotalSinIva * 1.21
+      const discount        = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
       return {
         productLabel: productLabelMap.solo_motor,
         productPricePerSqm: 0,
         boxLabel: '', boxPricePerSqm: 0,
-        guidesCost: 0, motorCost, installacionCost: 0,
+        guidesCost: 0, motorCost, installacionCost,
         billableSqm: 0,
-        subtotalSinIva: motorCost,
+        subtotalSinIva,
         iva, totalConIva, discount,
         finalPrice: totalConIva - discount,
         isSoloMotor: true,
@@ -220,18 +223,20 @@ function Configurator() {
 
     // ── Solo Guías ──────────────────────────────────────────────────────────
     if (productType === 'solo_guias') {
-      const pricePerMl = GUIDE_PRICE_PER_ML[guideType] ?? GUIDE_PRICE_PER_ML.v25
-      const guidesCost = 2 * (height / 1000) * pricePerMl
-      const iva = guidesCost * 0.21
-      const totalConIva = guidesCost * 1.21
-      const discount = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
+      const pricePerMl      = GUIDE_PRICE_PER_ML[guideType] ?? GUIDE_PRICE_PER_ML.v25
+      const guidesCost      = 2 * (height / 1000) * pricePerMl
+      const installacionCost = installacion ? INSTALACION_FIJA : 0
+      const subtotalSinIva  = guidesCost + installacionCost
+      const iva             = subtotalSinIva * 0.21
+      const totalConIva     = subtotalSinIva * 1.21
+      const discount        = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
       return {
         productLabel: productLabelMap.solo_guias,
         productPricePerSqm: 0,
         boxLabel: '', boxPricePerSqm: 0,
-        guidesCost, motorCost: 0, installacionCost: 0,
+        guidesCost, motorCost: 0, installacionCost,
         billableSqm: 0,
-        subtotalSinIva: guidesCost,
+        subtotalSinIva,
         iva, totalConIva, discount,
         finalPrice: totalConIva - discount,
         isSoloGuias: true,
@@ -266,18 +271,19 @@ function Configurator() {
 
     // ── Motor + Guías ───────────────────────────────────────────────────────
     if (productType === 'motor_mas_guias') {
-      const motorCost  = MOTOR_PRICES[motorType] ?? 0
-      const pricePerMl = GUIDE_PRICE_PER_ML[guideType] ?? GUIDE_PRICE_PER_ML.v25
-      const guidesCost = 2 * (height / 1000) * pricePerMl
-      const subtotalSinIva = motorCost + guidesCost
-      const iva = subtotalSinIva * 0.21
-      const totalConIva = subtotalSinIva * 1.21
-      const discount = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
+      const motorCost        = MOTOR_PRICES[motorType] ?? 0
+      const pricePerMl       = GUIDE_PRICE_PER_ML[guideType] ?? GUIDE_PRICE_PER_ML.v25
+      const guidesCost       = 2 * (height / 1000) * pricePerMl
+      const installacionCost = installacion ? INSTALACION_FIJA : 0
+      const subtotalSinIva   = motorCost + guidesCost + installacionCost
+      const iva              = subtotalSinIva * 0.21
+      const totalConIva      = subtotalSinIva * 1.21
+      const discount         = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
       return {
         productLabel: productLabelMap.motor_mas_guias,
         productPricePerSqm: 0,
         boxLabel: '', boxPricePerSqm: 0,
-        guidesCost, motorCost, installacionCost: 0,
+        guidesCost, motorCost, installacionCost,
         billableSqm: 0,
         subtotalSinIva, iva, totalConIva, discount,
         finalPrice: totalConIva - discount,
