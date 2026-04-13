@@ -643,7 +643,47 @@ export default function ProfessionalDashboard() {
                   <EmptyState label="No tienes configuraciones guardadas" action="Crear configuración" to="/configurador" />
                 ) : (
                   <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <table className="w-full text-sm">
+                    {/* Mobile cards */}
+                    <div className="sm:hidden divide-y divide-gray-100">
+                      {configuraciones.map(c => (
+                        <div key={c.id} className="p-4 space-y-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="font-semibold text-gray-900 text-sm">{c.blind_type === 'blocking' ? 'Bloqueante' : 'Estándar'}</p>
+                              <p className="text-xs text-gray-400">{c.mechanism}</p>
+                              <p className="text-xs text-gray-400 mt-0.5">{c.width} × {c.height} mm · {fmtDate(c.created_at)}</p>
+                            </div>
+                            <span className="font-bold text-red-700 text-sm flex-shrink-0">{fmt(c.estimated_price)}</span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button onClick={() => setClientBudgetModal(c)}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              Presupuesto
+                            </button>
+                            <button onClick={() => setClientInvoiceModal(c)}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-2.5 py-1.5 rounded-lg transition-colors">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                              </svg>
+                              Factura
+                            </button>
+                            <AddToCartFromDashboard configId={c.id} />
+                            <button onClick={() => handleDeleteConfig(c.id)}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-auto">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Desktop table */}
+                    <table className="hidden sm:table w-full text-sm">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Tipo</th>
@@ -713,7 +753,21 @@ export default function ProfessionalDashboard() {
                   <EmptyState label="No tienes pedidos todavía" action="Ir al configurador" to="/configurador" />
                 ) : (
                   <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <table className="w-full text-sm">
+                    {/* Mobile cards */}
+                    <div className="sm:hidden divide-y divide-gray-100">
+                      {pedidos.map(p => (
+                        <div key={p.id} className="p-4 flex items-center justify-between gap-3">
+                          <div>
+                            <p className="font-mono text-xs text-gray-500">#{p.id.slice(0,8).toUpperCase()}</p>
+                            <p className="text-xs text-gray-400 mt-0.5">{fmtDate(p.created_at)}</p>
+                            <div className="mt-1.5"><StatusBadge status={p.status} /></div>
+                          </div>
+                          <span className="font-bold text-gray-900 text-sm flex-shrink-0">{fmt(p.total_with_iva)}</span>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Desktop table */}
+                    <table className="hidden sm:table w-full text-sm">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">ID</th>
@@ -745,7 +799,39 @@ export default function ProfessionalDashboard() {
                   <EmptyState label="No tienes presupuestos todavía" action="Ir al configurador" to="/configurador" />
                 ) : (
                   <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <table className="w-full text-sm">
+                    {/* Mobile cards */}
+                    <div className="sm:hidden divide-y divide-gray-100">
+                      {presupuestos.map(p => (
+                        <div key={p.id} className="p-4 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="font-mono text-xs text-gray-500">{p.budget_number ?? `#${p.id.slice(0,8).toUpperCase()}`}</p>
+                              <p className="text-xs text-gray-400 mt-0.5">{fmtDate(p.created_at)}</p>
+                              <div className="mt-1.5"><StatusBadge status={p.status} /></div>
+                            </div>
+                            <span className="font-bold text-gray-900 text-sm flex-shrink-0">{fmt(p.total_with_iva)}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button onClick={() => redownloadBudgetPDF(p)}
+                              className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition-colors">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                              </svg>
+                              PDF
+                            </button>
+                            <button onClick={() => handleDeleteBudget(p.id)}
+                              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors ml-auto">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Desktop table */}
+                    <table className="hidden sm:table w-full text-sm">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nº Presupuesto</th>
@@ -799,7 +885,32 @@ export default function ProfessionalDashboard() {
                   </div>
                 ) : (
                   <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                    <table className="w-full text-sm">
+                    {/* Mobile cards */}
+                    <div className="sm:hidden divide-y divide-gray-100">
+                      {facturas.map(f => (
+                        <div key={f.id} className="p-4 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="font-mono text-xs text-gray-500">{f.invoice_number}</p>
+                              <p className="text-xs text-gray-400 mt-0.5">{fmtDate(f.created_at)}</p>
+                              <div className="mt-1.5">
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                  f.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                                }`}>
+                                  {f.payment_status === 'paid' ? 'Pagada' : 'Pendiente de pago'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <p className="font-bold text-gray-900 text-sm">{fmt(f.total_with_iva)}</p>
+                              <div className="mt-2"><DownloadInvoiceButton invoice={f} /></div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Desktop table */}
+                    <table className="hidden sm:table w-full text-sm">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                           <th className="text-left px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">Nº Factura</th>
