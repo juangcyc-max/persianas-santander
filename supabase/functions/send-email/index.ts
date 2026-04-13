@@ -318,8 +318,9 @@ serve(async (req) => {
 
       case 'send_invoice': {
         const attachments = data.pdf_base64
-          ? [{ filename: data.pdf_filename ?? `Factura_${data.invoice_number}.pdf`, content: data.pdf_base64 }]
+          ? [{ filename: data.pdf_filename ?? `Factura_${data.invoice_number}.pdf`, content: data.pdf_base64, content_type: 'application/pdf' }]
           : undefined
+        console.log('[send_invoice] adjunto:', attachments ? `${data.pdf_filename} (${data.pdf_base64?.length ?? 0} chars)` : 'sin adjunto')
         await send(data.user_email, `Tu factura ${data.invoice_number} — Persianas Santander`, tplFacturaCliente(data), attachments)
         break
       }
