@@ -168,9 +168,9 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null, { 
 
   // ── TABLA PRODUCTOS ───────────────────────────────────────────────────
   const items = order?.items ?? invoice?.items ?? []
-  const BLIND_LABELS_INV = {'laminada':'Paño Laminado','autoblocante':'Paño Autoblocante','blocking':'Bloqueante','sistema_mini_pvc':'Sistema Mini PVC','sistema_mini_aluminio':'Sistema Mini Aluminio','sistema_mini_autoblocante':'Sistema Mini Autoblocante','solo_guias':'Solo Guías','solo_motor':'Solo Motor','motor_mas_guias':'Motor + Guías','pano_mas_guias':'Paño + Guías','normal':'Estándar'}
-  const SISTEMAS_INV     = ['sistema_mini_pvc','sistema_mini_aluminio','sistema_mini_autoblocante']
-  const PANOS_INV        = ['laminada','autoblocante','blocking','pano_mas_guias']
+  const BLIND_LABELS_INV = {'laminada':'Paño Laminado','autoblocante':'Paño Autoblocante','blocking':'Bloqueante','sistema_mini_cajon_pvc':'Sistema Mini Cajón PVC','sistema_mini_cajon_aluminio':'Sistema Mini Cajón Aluminio','sistema_mini_autoblocante':'Sistema Mini Autoblocante','solo_guias':'Solo Guías','solo_motor':'Solo Motor','mosquitera_enrollable':'Mosquitera Enrollable','sistema_mini_pvc':'Sistema Mini PVC','sistema_mini_aluminio':'Sistema Mini Aluminio','motor_mas_guias':'Motor + Guías','pano_mas_guias':'Paño + Guías','normal':'Estándar'}
+  const SISTEMAS_INV     = ['sistema_mini_cajon_pvc','sistema_mini_cajon_aluminio','sistema_mini_autoblocante','sistema_mini_pvc','sistema_mini_aluminio']
+  const PANOS_INV        = ['laminada','autoblocante','blocking','mosquitera_enrollable','pano_mas_guias']
   const GUIDE_PROD_INV   = ['solo_guias','motor_mas_guias']
 
   const getMedidas = (i) => {

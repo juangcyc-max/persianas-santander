@@ -10,16 +10,20 @@ const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency:
 const fmtDate = (d) => d ? new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(d)) : '—'
 
 const BLIND_LABELS = {
-  laminada:                  'Paño laminado',
-  autoblocante:              'Paño autoblocante',
-  blocking:                  'Bloqueante',
-  sistema_mini_pvc:          'Sistema Mini PVC',
-  sistema_mini_aluminio:     'Sistema Mini Aluminio',
-  sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
-  solo_guias:                'Solo guías',
-  solo_motor:                'Solo motor',
-  motor_mas_guias:           'Motor + Guías',
-  pano_mas_guias:            'Paño + Guías',
+  laminada:                    'Paño laminado',
+  autoblocante:                'Paño autoblocante',
+  blocking:                    'Bloqueante',
+  sistema_mini_cajon_pvc:      'Sistema Mini Cajón PVC',
+  sistema_mini_cajon_aluminio: 'Sistema Mini Cajón Aluminio',
+  sistema_mini_autoblocante:   'Sistema Mini Autoblocante',
+  solo_guias:                  'Solo guías',
+  solo_motor:                  'Solo motor',
+  mosquitera_enrollable:       'Mosquitera Enrollable',
+  // legacy
+  sistema_mini_pvc:            'Sistema Mini PVC',
+  sistema_mini_aluminio:       'Sistema Mini Aluminio',
+  motor_mas_guias:             'Motor + Guías',
+  pano_mas_guias:              'Paño + Guías',
 }
 const blindLabel = (t) => BLIND_LABELS[t] ?? t ?? '—'
 

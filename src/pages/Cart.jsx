@@ -13,19 +13,22 @@ function fmt(n) {
 }
 
 const PRODUCT_LABELS = {
-  laminada:                  'Paño Laminado',
-  autoblocante:              'Paño Autoblocante',
-  sistema_mini_pvc:          'Sistema Mini PVC',
-  sistema_mini_aluminio:     'Sistema Mini Aluminio',
-  sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
-  solo_motor:                'Solo Motor',
-  solo_guias:                'Solo Guías',
-  motor_mas_guias:           'Motor + Guías',
-  pano_mas_guias:            'Paño + Guías',
+  laminada:                    'Paño Laminado',
+  autoblocante:                'Paño Autoblocante',
+  blocking:                    'Bloqueante',
+  sistema_mini_cajon_pvc:      'Sistema Mini Cajón PVC',
+  sistema_mini_cajon_aluminio: 'Sistema Mini Cajón Aluminio',
+  sistema_mini_autoblocante:   'Sistema Mini Autoblocante',
+  solo_motor:                  'Solo Motor',
+  solo_guias:                  'Solo Guías',
+  mosquitera_enrollable:       'Mosquitera Enrollable',
   // legacy
-  sistema_mini:              'Sistema Mini Autoblocante',
-  blocking:                  'Paño Bloqueante',
-  normal:                    'Paño Estándar',
+  sistema_mini_pvc:            'Sistema Mini PVC',
+  sistema_mini_aluminio:       'Sistema Mini Aluminio',
+  motor_mas_guias:             'Motor + Guías',
+  pano_mas_guias:              'Paño + Guías',
+  sistema_mini:                'Sistema Mini Autoblocante',
+  normal:                      'Paño Estándar',
 }
 const MOTOR_LABELS  = { mecanico: 'Mecánico', mando_distancia: 'Mando a distancia' }
 const GUIDE_LABELS  = { v25: 'Guía V25 (5 €/ml)', h25: 'Guía H25 (7 €/ml)', none: 'Sin guías' }
@@ -39,8 +42,8 @@ function CartItem({ item, onRemove }) {
   const type        = config.blind_type
   const isSoloMotor = type === 'solo_motor'
   const isSoloGuias = type === 'solo_guias'
-  const isSistema   = ['sistema_mini_pvc','sistema_mini_aluminio','sistema_mini_autoblocante','sistema_mini'].includes(type)
-  const isPano      = !isSoloMotor && !isSoloGuias
+  const isSistema   = ['sistema_mini_cajon_pvc','sistema_mini_cajon_aluminio','sistema_mini_autoblocante','sistema_mini_pvc','sistema_mini_aluminio','sistema_mini'].includes(type)
+
 
   const maskStyle = (src) => ({
     maskImage: `url(${src})`, maskSize: 'contain', maskRepeat: 'no-repeat', maskPosition: 'center',

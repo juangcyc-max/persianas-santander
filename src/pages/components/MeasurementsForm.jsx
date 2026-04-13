@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react'
 
-const SISTEMAS_MINI = ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante']
-
 function MeasurementsForm({ productType, width, height, onWidthChange, onHeightChange, heightOnly = false }) {
-  const isMini = SISTEMAS_MINI.includes(productType)
-  const minSize = isMini ? 701 : 301
-  const maxSize = isMini ? 5001 : 3001
+  // sistema_mini_autoblocante: 700–5000; todos los demás: 300–3000
+  const isBigSistema = productType === 'sistema_mini_autoblocante'
+  const minSize = isBigSistema ? 701 : 301
+  const maxSize = isBigSistema ? 5001 : 3001
 
   const snapNoZero = (n) => (n % 10 === 0 ? n + 1 : n)
   const clamp = (n) => snapNoZero(Math.min(maxSize, Math.max(minSize, n)))

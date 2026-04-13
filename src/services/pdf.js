@@ -19,19 +19,22 @@ const COLORS = {
 
 const LABELS = {
   productType: {
-    laminada:                  'Paño Laminado',
-    autoblocante:              'Paño Autoblocante',
-    sistema_mini_pvc:          'Sistema Mini PVC',
-    sistema_mini_aluminio:     'Sistema Mini Aluminio',
-    sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
-    solo_motor:                'Solo Motor',
-    solo_guias:                'Solo Guías',
-    motor_mas_guias:           'Motor + Guías',
-    pano_mas_guias:            'Paño + Guías',
+    laminada:                    'Paño Laminado',
+    autoblocante:                'Paño Autoblocante',
+    blocking:                    'Bloqueante',
+    sistema_mini_cajon_pvc:      'Sistema Mini Cajón PVC',
+    sistema_mini_cajon_aluminio: 'Sistema Mini Cajón Aluminio',
+    sistema_mini_autoblocante:   'Sistema Mini Autoblocante',
+    solo_motor:                  'Solo Motor',
+    solo_guias:                  'Solo Guías',
+    mosquitera_enrollable:       'Mosquitera Enrollable',
     // legacy
-    sistema_mini: 'Sistema Mini Autoblocante',
-    blocking:     'Bloqueante',
-    normal:       'Estándar',
+    sistema_mini_pvc:     'Sistema Mini PVC',
+    sistema_mini_aluminio:'Sistema Mini Aluminio',
+    motor_mas_guias:      'Motor + Guías',
+    pano_mas_guias:       'Paño + Guías',
+    sistema_mini:         'Sistema Mini Autoblocante',
+    normal:               'Estándar',
   },
   mechanism:   { muelle: 'Muelle', cinta: 'Cinta manual', motor: 'Motor' },
   motorType:   { mecanico: 'Mecánico', mando_distancia: 'Mando / Radio' },
@@ -225,12 +228,13 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
     const productType    = configuration.productType ?? configuration.blindType
     const productLabel   = LABELS.productType[productType] ?? 'Estándar'
     const guideLabel     = LABELS.guideType[configuration.guideType] ?? 'Sin guías'
-    const isSistemaType  = ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante'].includes(productType)
-    const isPanoType     = ['laminada', 'autoblocante', 'blocking', 'pano_mas_guias'].includes(productType)
+    const isSistemaType  = ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante', 'sistema_mini_pvc', 'sistema_mini_aluminio'].includes(productType)
+    const isPanoType     = ['laminada', 'autoblocante', 'blocking', 'mosquitera_enrollable', 'pano_mas_guias'].includes(productType)
     const isSoloMotor    = productType === 'solo_motor'
     const isGuideProduct = ['solo_guias', 'motor_mas_guias'].includes(productType)
-    const showMotorRow   = configuration.mechanism === 'motor' || isSoloMotor || productType === 'motor_mas_guias' || productType === 'sistema_mini_autoblocante'
-    const showMecRow     = !isSoloMotor && !isGuideProduct && productType !== 'sistema_mini_autoblocante'
+    const isMotorOnly    = ['autoblocante', 'blocking', 'sistema_mini_autoblocante'].includes(productType)
+    const showMotorRow   = configuration.mechanism === 'motor' || isSoloMotor || isMotorOnly
+    const showMecRow     = !isSoloMotor && !isGuideProduct && !isMotorOnly
     const colorName      = (name, gama) => name ? `${name} (${gama ?? '—'})` : '—'
 
     const tableRows = [
@@ -436,12 +440,13 @@ export async function generateClientBudgetPDF({
     const productType    = configuration.productType ?? configuration.blindType
     const productLabel   = LABELS.productType[productType] ?? 'Estándar'
     const guideLabel     = LABELS.guideType[configuration.guideType] ?? 'Sin guías'
-    const isSistemaType  = ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante'].includes(productType)
-    const isPanoType     = ['laminada', 'autoblocante', 'blocking', 'pano_mas_guias'].includes(productType)
+    const isSistemaType  = ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante', 'sistema_mini_pvc', 'sistema_mini_aluminio'].includes(productType)
+    const isPanoType     = ['laminada', 'autoblocante', 'blocking', 'mosquitera_enrollable', 'pano_mas_guias'].includes(productType)
     const isSoloMotor    = productType === 'solo_motor'
     const isGuideProduct = ['solo_guias', 'motor_mas_guias'].includes(productType)
-    const showMotorRow   = configuration.mechanism === 'motor' || isSoloMotor || productType === 'motor_mas_guias' || productType === 'sistema_mini_autoblocante'
-    const showMecRow     = !isSoloMotor && !isGuideProduct && productType !== 'sistema_mini_autoblocante'
+    const isMotorOnly    = ['autoblocante', 'blocking', 'sistema_mini_autoblocante'].includes(productType)
+    const showMotorRow   = configuration.mechanism === 'motor' || isSoloMotor || isMotorOnly
+    const showMecRow     = !isSoloMotor && !isGuideProduct && !isMotorOnly
     const colorName      = (name, gama) => name ? `${name} (${gama ?? '—'})` : '—'
 
     const tableRows = [

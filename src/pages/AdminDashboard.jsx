@@ -262,7 +262,7 @@ function OrderModal({ order, onClose, onUpdate }) {
                 <div key={i} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 text-sm">
                   <div>
                     <span className="font-semibold text-gray-900">
-                      {({'laminada':'Paño laminado','autoblocante':'Paño autoblocante','blocking':'Bloqueante','sistema_mini_pvc':'Sistema Mini PVC','sistema_mini_aluminio':'Sistema Mini Aluminio','sistema_mini_autoblocante':'Sistema Mini Autoblocante','solo_guias':'Solo guías','solo_motor':'Solo motor','motor_mas_guias':'Motor + Guías','pano_mas_guias':'Paño + Guías','normal':'Estándar'})[item.blind_type] ?? item.blind_type ?? '—'}
+                      {({'laminada':'Paño laminado','autoblocante':'Paño autoblocante','blocking':'Bloqueante','sistema_mini_cajon_pvc':'Sistema Mini Cajón PVC','sistema_mini_cajon_aluminio':'Sistema Mini Cajón Aluminio','sistema_mini_autoblocante':'Sistema Mini Autoblocante','solo_guias':'Solo guías','solo_motor':'Solo motor','mosquitera_enrollable':'Mosquitera Enrollable','sistema_mini_pvc':'Sistema Mini PVC','sistema_mini_aluminio':'Sistema Mini Aluminio','motor_mas_guias':'Motor + Guías','pano_mas_guias':'Paño + Guías','normal':'Estándar'})[item.blind_type] ?? item.blind_type ?? '—'}
                       {item.quantity > 1 && ` ×${item.quantity}`}
                     </span>
                     <span className="text-gray-500 ml-2">{item.width}×{item.height}mm · {item.mechanism}</span>

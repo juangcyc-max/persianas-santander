@@ -5,9 +5,9 @@ const GROUPS = [
       {
         id: 'laminada',
         title: 'Paño Laminado',
-        subtitle: 'Mecanismo libre',
-        desc: 'Paño de persiana laminada de aluminio. Guías opcionales.',
-        sizes: '300 – 3.000 mm',
+        subtitle: 'Mecanismo libre · Guías opcionales',
+        desc: 'Paño de persiana laminada de aluminio. Guías V25/H25 opcionales.',
+        sizes: '301 – 3.000 mm',
         icon: (
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12h18M3 6h18M3 18h18" />
@@ -17,14 +17,28 @@ const GROUPS = [
       {
         id: 'autoblocante',
         title: 'Paño Autoblocante',
-        subtitle: 'Mecanismo libre · Alta seguridad',
-        desc: 'Paño autoblocante anti-levantamiento certificado. Guías opcionales.',
-        sizes: '300 – 3.000 mm',
+        subtitle: 'Solo motor · Alta seguridad · Guías opcionales',
+        desc: 'Paño autoblocante anti-levantamiento certificado. Requiere motor. Guías opcionales.',
+        sizes: '301 – 3.000 mm',
         badge: 'Alta seguridad',
         icon: (
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
               d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        ),
+      },
+      {
+        id: 'blocking',
+        title: 'Bloqueante',
+        subtitle: 'Solo motor · Máxima seguridad · Guías opcionales',
+        desc: 'Persiana bloqueante de máxima seguridad. Requiere motor. Guías opcionales.',
+        sizes: '301 – 3.000 mm',
+        badge: 'Máx. seguridad',
+        icon: (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
           </svg>
         ),
       },
@@ -34,11 +48,11 @@ const GROUPS = [
     label: 'Sistemas completos',
     types: [
       {
-        id: 'sistema_mini_pvc',
-        title: 'Sistema Mini PVC',
-        subtitle: 'Cajón PVC · Motor · Guías incluidas',
-        desc: 'Sistema completo con cajón mini de PVC integrado. Guías incluidas.',
-        sizes: '700 – 5.000 mm',
+        id: 'sistema_mini_cajon_pvc',
+        title: 'Sistema Mini Cajón PVC',
+        subtitle: 'Cajón PVC · Motor · Guías opcionales',
+        desc: 'Sistema completo con cajón mini de PVC integrado. Guías V25/H25 opcionales.',
+        sizes: '301 – 3.000 mm',
         icon: (
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -47,11 +61,11 @@ const GROUPS = [
         ),
       },
       {
-        id: 'sistema_mini_aluminio',
-        title: 'Sistema Mini Aluminio',
-        subtitle: 'Cajón aluminio · Motor · Guías incluidas',
-        desc: 'Sistema completo con cajón mini de aluminio extrusionado. Guías incluidas.',
-        sizes: '700 – 5.000 mm',
+        id: 'sistema_mini_cajon_aluminio',
+        title: 'Sistema Mini Cajón Aluminio',
+        subtitle: 'Cajón aluminio · Motor · Guías opcionales',
+        desc: 'Sistema completo con cajón mini de aluminio extrusionado. Guías V25/H25 opcionales.',
+        sizes: '301 – 3.000 mm',
         icon: (
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
@@ -62,7 +76,7 @@ const GROUPS = [
       {
         id: 'sistema_mini_autoblocante',
         title: 'Sistema Mini Autoblocante',
-        subtitle: 'Sistema completo · Motor · Guías incluidas',
+        subtitle: 'Solo motor · Alta seguridad · Guías opcionales',
         desc: 'Sistema completo con cajón mini y lamas autoblocantes de alta seguridad.',
         sizes: '700 – 5.000 mm',
         badge: 'Alta seguridad',
@@ -79,15 +93,15 @@ const GROUPS = [
     label: 'Productos individuales',
     types: [
       {
-        id: 'pano_mas_guias',
-        title: 'Paño + Guías',
-        subtitle: 'Paño laminado con guías incluidas',
-        desc: 'Paño laminado de aluminio con guías laterales V25 o H25. Sin cajón.',
-        sizes: '300 – 3.000 mm',
+        id: 'mosquitera_enrollable',
+        title: 'Mosquitera Enrollable',
+        subtitle: 'Muelle o cinta · Sin motor',
+        desc: 'Mosquitera enrollable de aluminio. Colores Grupo Base. Sin motor.',
+        sizes: '301 – 3.000 mm',
         icon: (
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M3 12h18M3 6h18M3 18h18M19 4v16M5 4v16" />
+              d="M4 6h16M4 10h16M4 14h16M4 18h16" />
           </svg>
         ),
       },
@@ -114,19 +128,6 @@ const GROUPS = [
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
               d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-          </svg>
-        ),
-      },
-      {
-        id: 'motor_mas_guias',
-        title: 'Motor + Guías',
-        subtitle: 'Motor y guías sin persiana',
-        desc: 'Motor mecánico o a distancia más guías laterales. Sin caja ni paño.',
-        sizes: null,
-        icon: (
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M13 10V3L4 14h7v7l9-11h-7z M3 17h2m14 0h2" />
           </svg>
         ),
       },
@@ -201,14 +202,41 @@ function BlindTypeSelector({ blindType, onTypeChange }) {
         ))}
       </div>
 
-      {['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante'].includes(blindType) && (
+      {/* Banner motor obligatorio para bloqueantes */}
+      {['autoblocante', 'blocking', 'sistema_mini_autoblocante'].includes(blindType) && (
+        <div className="mt-3 flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+          <svg className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          <p className="text-xs text-blue-700">
+            Motor obligatorio para este tipo de persiana.
+          </p>
+        </div>
+      )}
+
+      {/* Banner sistemas completos */}
+      {['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante'].includes(blindType) && (
         <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
           <svg className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <p className="text-xs text-amber-700">
-            Sistema completo. Motor obligatorio. Guías laterales incluidas en el precio.
+            Sistema completo con cajón. Motor obligatorio. Guías V25/H25 opcionales con precio por metro lineal.
+          </p>
+        </div>
+      )}
+
+      {/* Banner mosquitera: sin motor */}
+      {blindType === 'mosquitera_enrollable' && (
+        <div className="mt-3 flex items-start gap-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
+          <svg className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-xs text-green-700">
+            Disponible en colores Grupo Base. Mecanismo muelle o cinta (sin motor). Sin guías.
           </p>
         </div>
       )}

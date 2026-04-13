@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { getProfessionalDiscount, getProfessionalDiscountForUser } from '../services/settings'
 import BlindPreview from './components/BlindPreview'
@@ -28,13 +28,19 @@ const PRICES = {
     'Grupo 2':    176.4,
     'Grupo 3':    238,
   },
-  sistema_mini_pvc: {
+  blocking: {
+    'Grupo Base': 134.4,
+    'Grupo 1':    166.6,
+    'Grupo 2':    176.4,
+    'Grupo 3':    238,
+  },
+  sistema_mini_cajon_pvc: {
     'Grupo Base': 100,
     'Grupo 1':    102,
     'Grupo 2':    106,
     'Grupo 3':    124.6,
   },
-  sistema_mini_aluminio: {
+  sistema_mini_cajon_aluminio: {
     'Grupo Base': 105,
     'Grupo 1':    110,
     'Grupo 2':    114,
@@ -46,17 +52,27 @@ const PRICES = {
     'Grupo 2':    244.58,
     'Grupo 3':    323.80,
   },
+  mosquitera_enrollable: {
+    'Grupo Base': 80,
+  },
 }
 
 const MOTOR_PRICES = { mecanico: 120, mando_distancia: 260 }
 const GUIDE_PRICE_PER_ML = { v25: 5, h25: 7 }
 const INSTALACION_PRICE = 100   // €/m² para paños y sistemas
-const INSTALACION_FIJA  = 150   // precio fijo para solo_motor, solo_guias, motor_mas_guias
+const INSTALACION_FIJA  = 150   // precio fijo para solo_motor, solo_guias
 const MIN_SQM = 1.5
 const CART_KEY = 'ps_cart'
 
-const SISTEMAS = ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante']
+const SISTEMAS = ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante']
 const isSistema = (type) => SISTEMAS.includes(type)
+
+// Tipos que requieren motor (no muelle/cinta)
+const MOTOR_ONLY = ['autoblocante', 'blocking', 'sistema_mini_autoblocante']
+const isMotorOnly = (type) => MOTOR_ONLY.includes(type)
+
+// Tipos que NO admiten motor
+const NO_MOTOR = ['mosquitera_enrollable']
 
 function loadCart() {
   try {
@@ -71,7 +87,12 @@ function getGamaFromColor(colors, hex) {
   return colors.find(c => c.hex === hex)?.gama ?? 'Grupo Base'
 }
 
-const VALID_TYPES = ['laminada', 'autoblocante', 'sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante', 'solo_guias', 'solo_motor', 'motor_mas_guias', 'pano_mas_guias']
+const VALID_TYPES = [
+  'laminada', 'autoblocante', 'blocking',
+  'sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante',
+  'solo_guias', 'solo_motor',
+  'mosquitera_enrollable',
+]
 
 function getPricePerSqm(table, gama) {
   if (!table) return 0
@@ -79,6 +100,7 @@ function getPricePerSqm(table, gama) {
 }
 
 function Configurator() {
+  const navigate = useNavigate()
   const [isProfessional, setIsProfessional] = useState(false)
   const [proDiscount, setProDiscount] = useState(20)
   const [userType, setUserType] = useState('public')
@@ -133,35 +155,33 @@ function Configurator() {
     }
   }, [])
 
-  // Al cambiar tipo: ajustar motor y guías por defecto
+  // Al cambiar tipo: ajustar motor, guías y mecanismo por defecto
   useEffect(() => {
-    if (productType === 'sistema_mini_autoblocante') {
+    // Motor obligatorio para bloqueantes y sistemas autoblocantes
+    if (isMotorOnly(productType)) {
       setMechanism('motor')
     }
-    if (isSistema(productType)) {
-      if (guideType === 'none') setGuideType('v25')
+    // Mosquitera: sin motor → forzar muelle si venían de motor
+    if (NO_MOTOR.includes(productType) && mechanism === 'motor') {
+      setMechanism('muelle')
     }
+    // Sistemas: por defecto guía H25
+    if (isSistema(productType)) {
+      if (guideType === 'none') setGuideType('h25')
+    }
+    // Solo motor: sin guías
     if (productType === 'solo_motor') {
       setMechanism('motor')
     }
+    // Solo guías: forzar guía por defecto
     if (productType === 'solo_guias') {
       if (guideType === 'none') setGuideType('v25')
     }
-    if (productType === 'motor_mas_guias') {
-      setMechanism('motor')
-      if (guideType === 'none') setGuideType('v25')
-    }
-    if (productType === 'pano_mas_guias') {
-      if (guideType === 'none') setGuideType('v25')
+    // Mosquitera: sin guías
+    if (productType === 'mosquitera_enrollable') {
+      setGuideType('none')
     }
   }, [productType]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Para paños y solo_guias: el color de caja sigue al color de lamas
-  useEffect(() => {
-    if (!isSistema(productType) && productType !== 'solo_motor') {
-      setBoxColor(slatColor)
-    }
-  }, [slatColor, productType])
 
   // Colores disponibles
   const winchesterColors = [
@@ -186,18 +206,30 @@ function Configurator() {
     { name: 'Gris Moteado',  hex: '#7A7A7A', gama: 'Grupo 3' },
   ]
 
+  // Mosquitera solo admite Grupo Base
+  const availableColors = productType === 'mosquitera_enrollable'
+    ? winchesterColors.filter(c => c.gama === 'Grupo Base')
+    : winchesterColors
+
+  // Para paños y solo_guias: el color de caja sigue al color de lamas
+  useEffect(() => {
+    if (!isSistema(productType) && productType !== 'solo_motor') {
+      setBoxColor(slatColor)
+    }
+  }, [slatColor, productType])
+
   // ─── Cálculo de precios ──────────────────────────────────────────────────
   const calculatePriceBreakdown = () => {
     const productLabelMap = {
-      laminada:                  'Paño laminado',
-      autoblocante:              'Paño autoblocante',
-      sistema_mini_pvc:          'Sistema Mini PVC',
-      sistema_mini_aluminio:     'Sistema Mini Aluminio',
-      sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
+      laminada:                    'Paño laminado',
+      autoblocante:                'Paño autoblocante',
+      blocking:                    'Bloqueante',
+      sistema_mini_cajon_pvc:      'Sistema Mini Cajón PVC',
+      sistema_mini_cajon_aluminio: 'Sistema Mini Cajón Aluminio',
+      sistema_mini_autoblocante:   'Sistema Mini Autoblocante',
       solo_guias:      guideType === 'h25' ? 'Guías H25 (7 €/ml)' : 'Guías V25 (5 €/ml)',
       solo_motor:      motorType === 'mando_distancia' ? 'Motor mando a distancia' : 'Motor mecánico',
-      motor_mas_guias: `Motor + Guías ${guideType === 'h25' ? 'H25' : 'V25'}`,
-      pano_mas_guias:  `Paño laminado + Guías ${guideType === 'h25' ? 'H25' : 'V25'}`,
+      mosquitera_enrollable: 'Mosquitera Enrollable',
     }
 
     // ── Solo Motor ──────────────────────────────────────────────────────────
@@ -243,65 +275,17 @@ function Configurator() {
       }
     }
 
-    // ── Paño + Guías ────────────────────────────────────────────────────────
-    if (productType === 'pano_mas_guias') {
-      const slatGama = getGamaFromColor(winchesterColors, slatColor)
-      const productPricePerSqm = getPricePerSqm(PRICES.laminada, slatGama)
-      const areaSqm = (width / 1000) * (height / 1000)
-      const billableSqm = Math.max(areaSqm, MIN_SQM)
-      const panoCost = productPricePerSqm * billableSqm
-      const pricePerMl = GUIDE_PRICE_PER_ML[guideType] ?? GUIDE_PRICE_PER_ML.v25
-      const guidesCost = 2 * (height / 1000) * pricePerMl
-      const motorCost = mechanism === 'motor' ? (MOTOR_PRICES[motorType] ?? 0) : 0
-      const installacionCost = installacion ? INSTALACION_PRICE * billableSqm : 0
-      const subtotalSinIva = panoCost + guidesCost + motorCost + installacionCost
-      const iva = subtotalSinIva * 0.21
-      const totalConIva = subtotalSinIva * 1.21
-      const discount = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
-      return {
-        productLabel: productLabelMap.pano_mas_guias,
-        productPricePerSqm,
-        boxLabel: '', boxPricePerSqm: 0,
-        guidesCost, motorCost, installacionCost,
-        billableSqm,
-        subtotalSinIva, iva, totalConIva, discount,
-        finalPrice: totalConIva - discount,
-      }
-    }
-
-    // ── Motor + Guías ───────────────────────────────────────────────────────
-    if (productType === 'motor_mas_guias') {
-      const motorCost        = MOTOR_PRICES[motorType] ?? 0
-      const pricePerMl       = GUIDE_PRICE_PER_ML[guideType] ?? GUIDE_PRICE_PER_ML.v25
-      const guidesCost       = 2 * (height / 1000) * pricePerMl
-      const installacionCost = installacion ? INSTALACION_FIJA : 0
-      const subtotalSinIva   = motorCost + guidesCost + installacionCost
-      const iva              = subtotalSinIva * 0.21
-      const totalConIva      = subtotalSinIva * 1.21
-      const discount         = userType === 'professional' ? totalConIva * (proDiscount / 100) : 0
-      return {
-        productLabel: productLabelMap.motor_mas_guias,
-        productPricePerSqm: 0,
-        boxLabel: '', boxPricePerSqm: 0,
-        guidesCost, motorCost, installacionCost,
-        billableSqm: 0,
-        subtotalSinIva, iva, totalConIva, discount,
-        finalPrice: totalConIva - discount,
-        isMotorMasGuias: true,
-      }
-    }
-
-    // ── Paños y Sistemas ────────────────────────────────────────────────────
+    // ── Paños, Sistemas y Mosquitera ────────────────────────────────────────
     const areaSqm = (width / 1000) * (height / 1000)
     const billableSqm = Math.max(areaSqm, MIN_SQM)
-    const slatGama = getGamaFromColor(winchesterColors, slatColor)
+    const slatGama = getGamaFromColor(availableColors, slatColor)
 
     const productTable = PRICES[productType]
     const productPricePerSqm = getPricePerSqm(productTable, slatGama)
 
-    // Guías: paños pagan por ml, sistemas las incluyen sin coste extra
+    // Guías: todos los tipos pagan por ml (incluyendo sistemas)
     let guidesCost = 0
-    if (!isSistema(productType) && guideType !== 'none') {
+    if (guideType !== 'none' && productType !== 'mosquitera_enrollable') {
       guidesCost = 2 * (height / 1000) * (GUIDE_PRICE_PER_ML[guideType] ?? 0)
     }
 
@@ -347,19 +331,18 @@ function Configurator() {
   }
 
   // Flags de visibilidad
-  const showPreview      = !['solo_motor', 'motor_mas_guias'].includes(productType)
-  const showMechanism    = productType !== 'sistema_mini_autoblocante' && !['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(productType)
-  const showMotorType    = mechanism === 'motor' || productType === 'sistema_mini_autoblocante' || ['solo_motor', 'motor_mas_guias'].includes(productType)
+  const showPreview      = !['solo_motor'].includes(productType)
+  const showMechanism    = !isMotorOnly(productType) && !['solo_motor', 'solo_guias'].includes(productType)
+  const showMotorType    = mechanism === 'motor' || isMotorOnly(productType) || productType === 'solo_motor'
   const showMeasurements = productType !== 'solo_motor'
-  const showGuides       = true
+  const showGuides       = productType !== 'mosquitera_enrollable' && productType !== 'solo_motor'
   const showInstallation = true
   const showBoxColor     = isSistema(productType)
   const showSlatColor    = productType !== 'solo_motor'
 
   // Modo del selector de guías
-  const guideMode = productType === 'solo_motor' ? 'install_only'
-    : ['solo_guias', 'motor_mas_guias', 'pano_mas_guias'].includes(productType) ? 'product'
-    : isSistema(productType) ? 'included'
+  const guideMode = productType === 'solo_guias' ? 'product'
+    : isSistema(productType) ? 'optional'
     : 'optional'
 
   return (
@@ -432,7 +415,7 @@ function Configurator() {
             <div className="space-y-3">
               <SaveConfigurationButton
                 configuration={configuration}
-                onSuccess={() => setShowCustomerForm(false)}
+                onSuccess={() => navigate('/mis-configuraciones')}
                 proDiscount={proDiscount}
               />
               <button
@@ -487,6 +470,40 @@ function Configurator() {
               />
             )}
 
+            {/* Instalación para solo_motor y mosquitera (sin selector de guías) */}
+            {(productType === 'solo_motor' || productType === 'mosquitera_enrollable') && (
+              <div>
+                <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Instalación</h2>
+                <button
+                  onClick={() => setInstallacion(v => !v)}
+                  className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                    installacion ? 'border-red-600 bg-red-50' : 'border-gray-200 bg-white hover:border-gray-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${installacion ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <p className={`text-sm font-semibold ${installacion ? 'text-red-700' : 'text-gray-800'}`}>
+                        {installacion ? 'Con instalación' : 'Sin instalación'}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        {productType === 'mosquitera_enrollable' ? '+100 €/m²' : '+150 € precio fijo'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${installacion ? 'border-red-600 bg-red-600' : 'border-gray-300'}`}>
+                    {installacion && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>}
+                  </div>
+                </button>
+              </div>
+            )}
+
             {showBoxColor && (
               <ColorPicker
                 label="Color del Cajón"
@@ -500,12 +517,13 @@ function Configurator() {
               <ColorPicker
                 label={
                   isSistema(productType) ? 'Color de las Lamas'
-                  : ['solo_guias', 'motor_mas_guias'].includes(productType) ? 'Color de las Guías'
+                  : productType === 'solo_guias' ? 'Color de las Guías'
+                  : productType === 'mosquitera_enrollable' ? 'Color'
                   : 'Color'
                 }
                 selectedColor={slatColor}
                 onColorChange={setSlatColor}
-                colors={winchesterColors}
+                colors={availableColors}
               />
             )}
           </div>

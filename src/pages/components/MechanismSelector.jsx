@@ -1,5 +1,6 @@
 function MechanismSelector({ productType, mechanism, onMechanismChange, orientation, onOrientationChange }) {
-  const requiresMotor = ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante'].includes(productType)
+  const requiresMotor = ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante', 'autoblocante', 'blocking'].includes(productType)
+  const noMotor = productType === 'mosquitera_enrollable'
 
   const mechanisms = [
     {
@@ -30,6 +31,7 @@ function MechanismSelector({ productType, mechanism, onMechanismChange, orientat
       id: 'motor',
       label: 'Motor',
       detail: 'Automatizado',
+      disabled: noMotor,
       badge: requiresMotor ? 'Requerido' : null,
       showBadge: requiresMotor,
       icon: (

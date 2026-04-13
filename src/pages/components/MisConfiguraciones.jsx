@@ -59,20 +59,24 @@ function BlindSVGPreview({ boxColor = '#dc2626', slatColor = '#ffffff' }) {
 
 // ─── Etiquetas de tipo ────────────────────────────────────────────────────────
 const BLIND_LABELS = {
-  laminada:                  'Paño laminado',
-  autoblocante:              'Paño autoblocante',
-  blocking:                  'Bloqueante',
-  sistema_mini_pvc:          'Sistema Mini PVC',
-  sistema_mini_aluminio:     'Sistema Mini Aluminio',
-  sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
-  solo_guias:                'Solo guías',
-  solo_motor:                'Solo motor',
-  motor_mas_guias:           'Motor + Guías',
-  pano_mas_guias:            'Paño + Guías',
+  laminada:                    'Paño laminado',
+  autoblocante:                'Paño autoblocante',
+  blocking:                    'Bloqueante',
+  sistema_mini_cajon_pvc:      'Sistema Mini Cajón PVC',
+  sistema_mini_cajon_aluminio: 'Sistema Mini Cajón Aluminio',
+  sistema_mini_autoblocante:   'Sistema Mini Autoblocante',
+  solo_guias:                  'Solo guías',
+  solo_motor:                  'Solo motor',
+  mosquitera_enrollable:       'Mosquitera Enrollable',
+  // legacy
+  sistema_mini_pvc:            'Sistema Mini PVC',
+  sistema_mini_aluminio:       'Sistema Mini Aluminio',
+  motor_mas_guias:             'Motor + Guías',
+  pano_mas_guias:              'Paño + Guías',
 }
 const blindLabel = (t) => BLIND_LABELS[t] ?? t ?? '—'
-const isProductoIndividual = (t) => ['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(t)
-const isSistema = (t) => ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante'].includes(t)
+const isProductoIndividual = (t) => ['solo_motor', 'solo_guias'].includes(t)
+const isSistema = (t) => ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante', 'sistema_mini_pvc', 'sistema_mini_aluminio'].includes(t)
 
 // ─── Custom hook ─────────────────────────────────────────────────────────────
 const useConfigurations = () => {
@@ -206,13 +210,13 @@ const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => 
         </div>
 
         <dl className="grid grid-cols-2 gap-2 text-xs mb-4">
-          {!esIndiv || tipo === 'solo_guias' || tipo === 'motor_mas_guias' ? (
+          {!esIndiv || tipo === 'solo_guias' ? (
             <div>
               <dt className="text-gray-400 uppercase tracking-wide mb-0.5">
-                {tipo === 'solo_guias' || tipo === 'motor_mas_guias' ? 'Altura guías' : 'Medidas'}
+                {tipo === 'solo_guias' ? 'Altura guías' : 'Medidas'}
               </dt>
               <dd className="text-gray-700 font-semibold">
-                {tipo === 'solo_guias' || tipo === 'motor_mas_guias'
+                {tipo === 'solo_guias'
                   ? `${config.height} mm`
                   : `${config.width} × ${config.height} mm`}
               </dd>
@@ -309,9 +313,9 @@ export default function MisConfiguraciones() {
                         c.box_color_name?.toLowerCase().includes(q) ||
                         c.slat_color_name?.toLowerCase().includes(q)
     const matchFilter = activeFilter === 'all' ||
-      (activeFilter === 'panos'      && ['laminada', 'autoblocante', 'blocking'].includes(c.blind_type)) ||
-      (activeFilter === 'sistemas'   && ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante'].includes(c.blind_type)) ||
-      (activeFilter === 'individual' && ['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(c.blind_type))
+      (activeFilter === 'panos'      && ['laminada', 'autoblocante', 'blocking', 'mosquitera_enrollable'].includes(c.blind_type)) ||
+      (activeFilter === 'sistemas'   && ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante', 'sistema_mini_pvc', 'sistema_mini_aluminio'].includes(c.blind_type)) ||
+      (activeFilter === 'individual' && ['solo_motor', 'solo_guias'].includes(c.blind_type))
     return matchSearch && matchFilter
   }), [configs, search, activeFilter])
 
