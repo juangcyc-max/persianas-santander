@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { supabase } from './services/supabase/client'
 import { CartProvider } from './context/CartContext'
@@ -20,6 +20,20 @@ import { PoliticaPrivacidad, PoliticaCookies, TerminosCondiciones } from './page
 import { ForgotPassword, ResetPassword } from './pages/PasswordPages'
 import CookieBanner from './shared/CookieBanner'
 import WAButton from './shared/WAButton'
+
+// ── Detecta PASSWORD_RECOVERY y redirige a /reset-password ───────────────
+function AuthEventHandler() {
+  const navigate = useNavigate()
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        navigate('/reset-password')
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [navigate])
+  return null
+}
 
 // ── Ruta protegida que redirige según tipo de usuario ─────────────────────
 function SmartRedirect() {
@@ -70,6 +84,7 @@ function App() {
   return (
     <HelmetProvider>
       <Router>
+        <AuthEventHandler />
         <ToastProvider>
           <CartProvider>
           <CookieBanner />
