@@ -849,6 +849,9 @@ export default function AdminDashboard() {
         {/* ── SECCIÓN PRESUPUESTOS ADMIN ── */}
         <AdminBudgetsSection />
 
+        {/* ── SECCIÓN PROYECTOS PROFESIONALES ADMIN ── */}
+        <AdminProProjectsSection />
+
         {/* ── SECCIÓN FACTURAS ADMIN ── */}
         <AdminInvoicesSection />
 
@@ -1157,6 +1160,275 @@ function AdminBudgetsSection() {
           budget={selected}
           onClose={() => setSelected(null)}
           onSaved={() => { setSelected(null); loadBudgets() }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── SECCIÓN PROYECTOS PROFESIONALES ADMIN ────────────────────────────────
+const PRO_PROJECT_STATUS = {
+  draft:    { label: 'Borrador',  cls: 'bg-gray-100 text-gray-600'    },
+  sent:     { label: 'Enviado',   cls: 'bg-blue-100 text-blue-700'    },
+  accepted: { label: 'Aceptado',  cls: 'bg-green-100 text-green-700'  },
+  rejected: { label: 'Rechazado', cls: 'bg-red-100 text-red-700'      },
+}
+
+function ProProjectModal({ project: initial, onClose, onSaved }) {
+  const [status,     setStatus]     = useState(initial.status ?? 'draft')
+  const [adminNotes, setAdminNotes] = useState(initial.admin_notes ?? '')
+  const [items,      setItems]      = useState(initial.items ?? [])
+  const [saving,     setSaving]     = useState(false)
+  const [saved,      setSaved]      = useState(false)
+
+  const total = items.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
+
+  function updateItemPrice(item_id, val) {
+    setItems(prev => prev.map(it => it.item_id === item_id ? { ...it, client_price: parseFloat(val) || 0 } : it))
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    const { error } = await supabase.from('pro_projects').update({
+      status,
+      admin_notes: adminNotes || null,
+      items,
+      updated_at: new Date().toISOString(),
+    }).eq('id', initial.id)
+    setSaving(false)
+    if (!error) { setSaved(true); setTimeout(() => { setSaved(false); onSaved() }, 1500) }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-6">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div>
+            <p className="text-xs font-mono text-gray-400">{initial.budget_number ?? `#${initial.id?.slice(0,8).toUpperCase()}`}</p>
+            <h2 className="text-lg font-bold text-gray-900 mt-0.5">{initial.name || initial.client_name || 'Proyecto sin nombre'}</h2>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Profesional + Cliente */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="bg-blue-50 rounded-xl p-4">
+              <p className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1">Profesional</p>
+              <p className="font-semibold text-blue-900">{initial._empresa ?? '—'}</p>
+              <p className="text-xs text-blue-600 mt-0.5">{initial._email ?? ''}</p>
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Cliente final</p>
+              <p className="font-semibold text-gray-900">{initial.client_name || '—'}</p>
+              {initial.client_phone && <p className="text-xs text-gray-500 mt-0.5">{initial.client_phone}</p>}
+              {initial.client_email && <p className="text-xs text-gray-500">{initial.client_email}</p>}
+              {initial.client_address && <p className="text-xs text-gray-500">{initial.client_address}</p>}
+            </div>
+          </div>
+
+          {/* Items */}
+          {items.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Partidas ({items.length})</p>
+              <div className="space-y-2">
+                {items.map(it => (
+                  <div key={it.item_id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 truncate">{it.description || BUDGET_TYPE_LABELS[it.blind_type] ?? it.blind_type}</p>
+                      <p className="text-xs text-gray-400">{it.width} × {it.height} mm · {it.mechanism}</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <input
+                        type="number" min="0" step="0.01"
+                        value={it.client_price ?? ''}
+                        onChange={e => updateItemPrice(it.item_id, e.target.value)}
+                        className="w-24 px-2.5 py-1.5 text-sm font-bold text-right border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400"
+                      />
+                      <span className="text-xs text-gray-400">€</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end mt-3">
+                <p className="text-sm font-bold text-gray-900">Total: <span className="text-red-700">{fmt(total)}</span> <span className="font-normal text-gray-400 text-xs">(con IVA)</span></p>
+              </div>
+            </div>
+          )}
+
+          {/* Notas del profesional */}
+          {initial.notes && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Notas del profesional</p>
+              <p className="text-sm text-amber-800 whitespace-pre-wrap">{initial.notes}</p>
+            </div>
+          )}
+
+          {/* Estado */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Estado</label>
+            <div className="flex gap-2 flex-wrap">
+              {Object.entries(PRO_PROJECT_STATUS).map(([key, { label, cls }]) => (
+                <button key={key} onClick={() => setStatus(key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${
+                    status === key ? `${cls} border-current` : 'border-transparent bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Notas admin */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Notas internas (solo admin)</label>
+            <textarea rows={3} value={adminNotes} onChange={e => setAdminNotes(e.target.value)}
+              placeholder="Observaciones internas sobre este proyecto…"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 resize-none" />
+          </div>
+
+          {/* Acciones */}
+          <div className="flex gap-3 pt-1">
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button onClick={handleSave} disabled={saving || saved}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${saved ? 'bg-green-600 text-white' : 'bg-red-700 hover:bg-red-800 text-white disabled:opacity-60'}`}>
+              {saving ? '…' : saved ? '✓ Guardado' : 'Guardar cambios'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AdminProProjectsSection() {
+  const [projects, setProjects] = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [search,   setSearch]   = useState('')
+  const [statusF,  setStatusF]  = useState('all')
+  const [selected, setSelected] = useState(null)
+
+  useEffect(() => { loadProjects() }, [])
+
+  async function loadProjects() {
+    setLoading(true)
+    const { data: projects } = await supabase
+      .from('pro_projects')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (!projects) { setProjects([]); setLoading(false); return }
+
+    // Enriquecer con datos del profesional
+    const userIds = [...new Set(projects.map(p => p.user_id).filter(Boolean))]
+    const { data: empData } = await supabase
+      .from('professional_data')
+      .select('user_id, razon_social, email_facturacion')
+      .in('user_id', userIds)
+
+    const empMap = Object.fromEntries((empData ?? []).map(e => [e.user_id, e]))
+
+    setProjects(projects.map(p => ({
+      ...p,
+      _empresa: empMap[p.user_id]?.razon_social ?? null,
+      _email:   empMap[p.user_id]?.email_facturacion ?? null,
+    })))
+    setLoading(false)
+  }
+
+  const filtered = projects.filter(p => {
+    const q = search.toLowerCase()
+    const matchSearch = !search ||
+      (p.name ?? '').toLowerCase().includes(q) ||
+      (p.client_name ?? '').toLowerCase().includes(q) ||
+      (p._empresa ?? '').toLowerCase().includes(q) ||
+      (p.budget_number ?? '').toLowerCase().includes(q)
+    const matchStatus = statusF === 'all' || p.status === statusF
+    return matchSearch && matchStatus
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h2 className="text-lg font-bold text-gray-900">Proyectos profesionales</h2>
+        <div className="flex items-center gap-2 flex-wrap">
+          <select value={statusF} onChange={e => setStatusF(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-gray-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 bg-white">
+            <option value="all">Todos</option>
+            {Object.entries(PRO_PROJECT_STATUS).map(([k, { label }]) => (
+              <option key={k} value={k}>{label}</option>
+            ))}
+          </select>
+          <input type="text" placeholder="Buscar empresa, cliente o nº…" value={search} onChange={e => setSearch(e.target.value)}
+            className="px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 w-56" />
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-10">
+            <div className="w-6 h-6 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-10 text-gray-400 text-sm">No hay proyectos profesionales</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  {['Nº Presupuesto', 'Profesional', 'Cliente final', 'Partidas', 'Total', 'Estado', 'Fecha', ''].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filtered.map(p => {
+                  const total = (p.items ?? []).reduce((s, it) => s + (Number(it.client_price) || 0), 0)
+                  const st = PRO_PROJECT_STATUS[p.status] ?? PRO_PROJECT_STATUS.draft
+                  return (
+                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{p.budget_number ?? `#${p.id?.slice(0,8).toUpperCase()}`}</td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900">{p._empresa ?? '—'}</p>
+                        <p className="text-xs text-gray-400">{p._email ?? ''}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-700">{p.client_name || '—'}</p>
+                        <p className="text-xs text-gray-400">{p.client_phone ?? ''}</p>
+                      </td>
+                      <td className="px-4 py-3 text-center text-gray-600">{(p.items ?? []).length}</td>
+                      <td className="px-4 py-3 font-bold text-red-700">{fmt(total)}</td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(p.created_at)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button onClick={() => setSelected(p)}
+                          className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                          Gestionar
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {selected && (
+        <ProProjectModal
+          project={selected}
+          onClose={() => setSelected(null)}
+          onSaved={() => { setSelected(null); loadProjects() }}
         />
       )}
     </div>
