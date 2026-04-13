@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 
@@ -124,23 +124,66 @@ export function ResetPassword() {
   const [done,     setDone]     = useState(false)
   const [error,    setError]    = useState('')
   const [showPass, setShowPass] = useState(false)
+  const [ready,    setReady]    = useState(false)   // true solo tras evento PASSWORD_RECOVERY
+  const [expired,  setExpired]  = useState(false)
+
+  useEffect(() => {
+    // Supabase dispara PASSWORD_RECOVERY cuando procesa el token del enlace
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setReady(true)
+    })
+    // Si en 8 s no llega el evento, el enlace es inválido/expirado
+    const timer = setTimeout(() => setExpired(true), 8000)
+    return () => { subscription.unsubscribe(); clearTimeout(timer) }
+  }, [])
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (password.length < 6) { setError('Mínimo 6 caracteres'); return }
+    if (password.length < 8) { setError('Mínimo 8 caracteres'); return }
     if (password !== confirm) { setError('Las contraseñas no coinciden'); return }
     setLoading(true)
     setError('')
 
     const { error: err } = await supabase.auth.updateUser({ password })
 
-    setLoading(false)
     if (err) {
+      setLoading(false)
       setError('No se pudo actualizar la contraseña. El enlace puede haber expirado.')
     } else {
+      // Cerrar sesión por seguridad: el usuario debe volver a identificarse
+      await supabase.auth.signOut()
+      setLoading(false)
       setDone(true)
     }
   }
+
+  // Enlace inválido o expirado
+  if (expired && !ready) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 max-w-sm w-full text-center">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-5">
+          <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-2">Enlace no válido</h2>
+        <p className="text-gray-500 text-sm mb-6">
+          Este enlace de recuperación ha expirado o ya fue usado. Solicita uno nuevo.
+        </p>
+        <Link to="/recuperar"
+          className="block w-full py-3 bg-red-700 text-white rounded-xl font-bold text-sm hover:bg-red-800 transition-colors text-center">
+          Solicitar nuevo enlace
+        </Link>
+      </div>
+    </div>
+  )
+
+  // Esperando que Supabase procese el token
+  if (!ready) return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="w-8 h-8 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
 
   if (done) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">

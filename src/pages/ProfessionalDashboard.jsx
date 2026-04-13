@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
 import { generateGroupBudgetPDF, generateGroupInvoicePDF } from '../services/pdf'
 import { getProfessionalDiscountForUser } from '../services/settings'
+import WAButton from '../shared/WAButton'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 const fmt     = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
@@ -1247,6 +1248,8 @@ export default function ProfessionalDashboard() {
           </div>
         </div>
       )}
+
+      <WAButton />
     </div>
   )
 }

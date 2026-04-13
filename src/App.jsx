@@ -19,6 +19,7 @@ import { ProtectedRoute, AdminRoute, ProfessionalRoute } from './shared/Protecte
 import { PoliticaPrivacidad, PoliticaCookies, TerminosCondiciones } from './pages/LegalPages'
 import { ForgotPassword, ResetPassword } from './pages/PasswordPages'
 import CookieBanner from './shared/CookieBanner'
+import WAButton from './shared/WAButton'
 
 // ── Ruta protegida que redirige según tipo de usuario ─────────────────────
 function SmartRedirect() {
@@ -79,6 +80,7 @@ function App() {
             <Route path="/*" element={
               <div className="min-h-screen bg-gray-50 w-full">
                 <Header />
+                <WAButton />
                 <main className="w-full">
                   <Routes>
                     <Route path="/"                    element={<Home />} />
