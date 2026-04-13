@@ -1,19 +1,46 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
-const ADMIN_EMAIL    = 'adminpersianassantander@gmail.com' // email oficial admin
+const ADMIN_EMAIL    = 'adminpersianassantander@gmail.com'
 const FROM           = 'Persianas Santander <noreply@persianassantander.es>'
 
-const ALLOWED_ORIGINS = ['https://persianassantander.es', 'https://www.persianassantander.es']
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
-function getCors(req: Request) {
-  const origin = req.headers.get('origin') ?? ''
-  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
-  return {
-    'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Vary': 'Origin',
-  }
+const BLIND_LABELS: Record<string, string> = {
+  laminada:                  'Paño Laminado',
+  autoblocante:              'Paño Autoblocante',
+  blocking:                  'Bloqueante',
+  sistema_mini_pvc:          'Sistema Mini PVC',
+  sistema_mini_aluminio:     'Sistema Mini Aluminio',
+  sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
+  solo_guias:                'Solo Guías',
+  solo_motor:                'Solo Motor',
+  motor_mas_guias:           'Motor + Guías',
+  pano_mas_guias:            'Paño + Guías',
+}
+
+const SISTEMAS    = ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante']
+const PANOS       = ['laminada', 'autoblocante', 'blocking', 'pano_mas_guias']
+const GUIDE_PRODS = ['solo_guias', 'motor_mas_guias']
+
+function blindLabel(type: string) {
+  return BLIND_LABELS[type] ?? type ?? 'Persiana'
+}
+
+function itemColor(i: any) {
+  if (SISTEMAS.includes(i.blind_type))    return `Cajón: ${i.box_color_name ?? '—'} · Lamas: ${i.slat_color_name ?? '—'}`
+  if (PANOS.includes(i.blind_type))       return `Lamas: ${i.slat_color_name ?? '—'}`
+  if (GUIDE_PRODS.includes(i.blind_type)) return `Guías: ${i.slat_color_name ?? '—'}`
+  return ''
+}
+
+function itemMedidas(i: any) {
+  if (i.blind_type === 'solo_motor')           return ''
+  if (GUIDE_PRODS.includes(i.blind_type))      return `${i.height ?? '—'} mm`
+  return `${i.width ?? '—'}×${i.height ?? '—'} mm`
 }
 
 function fmt(n: number) {
@@ -50,14 +77,18 @@ async function send(to: string | string[], subject: string, html: string) {
 // ── Plantillas ──────────────────────────────────────────────────────────────
 
 function tplNuevoPedido(d: any) {
-  const items = (d.items ?? []).map((i: any) => `
+  const items = (d.items ?? []).map((i: any) => {
+    const medidas = itemMedidas(i)
+    const color   = itemColor(i)
+    return `
     <tr>
       <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;font-size:14px">
-        Persiana ${i.blind_type === 'blocking' ? 'bloqueante' : 'estándar'} · ${i.width}×${i.height}mm · ${i.mechanism}<br>
-        <span style="color:#9ca3af;font-size:12px">Caja: ${i.box_color_name} · Lamas: ${i.slat_color_name}</span>
+        ${blindLabel(i.blind_type)}${medidas ? ` · ${medidas}` : ''}${i.mechanism ? ` · ${i.mechanism}` : ''}<br>
+        ${color ? `<span style="color:#9ca3af;font-size:12px">${color}</span>` : ''}
       </td>
       <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;text-align:right;font-weight:bold;font-size:14px">${fmt(i.estimated_price)}</td>
-    </tr>`).join('')
+    </tr>`
+  }).join('')
 
   const citaBlock = d.installacion === false
     ? `<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:14px;margin:16px 0">
@@ -132,12 +163,20 @@ function tplCambioEstado(d: any) {
        </div>`
     : ''
 
+  const notasBlock = d.admin_notes
+    ? `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin:16px 0">
+        <strong style="color:#374151;font-size:13px">Nota:</strong>
+        <span style="color:#6b7280;font-size:13px"> ${d.admin_notes}</span>
+       </div>`
+    : ''
+
   return layout(`
     <h2 style="color:#111;margin-top:0;font-size:18px">Actualización de tu pedido</h2>
     <div style="border-left:4px solid ${color};background:#f9fafb;padding:14px 18px;border-radius:4px;margin:16px 0">
       <span style="font-size:18px;font-weight:bold;color:${color}">${label}</span>
     </div>
     ${citaBlock}
+    ${notasBlock}
     <p style="color:#9ca3af;font-size:12px">Pedido #${(d.order_id ?? '').slice(0,8).toUpperCase()}</p>
   `)
 }
@@ -150,19 +189,24 @@ function tplConfirmacionCita(d: any) {
       <div style="margin-bottom:10px"><strong style="color:#166534">Hora:</strong>  <span style="color:#374151">${d.confirmed_time}</span></div>
       <div><strong style="color:#166534">Dirección:</strong> <span style="color:#374151">${d.address}</span></div>
     </div>
+    ${d.admin_notes ? `<p style="color:#374151;font-size:14px"><strong>Nota:</strong> ${d.admin_notes}</p>` : ''}
     <p style="color:#374151;font-size:14px">Nuestro técnico se presentará en la dirección indicada. Si necesitas modificar algo, no dudes en contactarnos.</p>
   `)
 }
 
 function tplFacturaCliente(d: any) {
-  const items = (d.items ?? []).map((i: any) => `
+  const items = (d.items ?? []).map((i: any) => {
+    const medidas = itemMedidas(i)
+    const color   = itemColor(i)
+    return `
     <tr>
       <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;font-size:14px">
-        Persiana ${i.blind_type === 'blocking' ? 'bloqueante' : 'estándar'} · ${i.width}×${i.height}mm
-        <br><span style="color:#9ca3af;font-size:12px">Caja: ${i.box_color_name} · Lamas: ${i.slat_color_name}</span>
+        ${blindLabel(i.blind_type)}${medidas ? ` · ${medidas}` : ''}
+        ${color ? `<br><span style="color:#9ca3af;font-size:12px">${color}</span>` : ''}
       </td>
       <td style="padding:10px 8px;border-bottom:1px solid #f0f0f0;text-align:right;font-weight:bold;font-size:14px">${fmt(i.estimated_price * (i.quantity ?? 1))}</td>
-    </tr>`).join('')
+    </tr>`
+  }).join('')
 
   const pagoBlock = d.payment_status === 'paid'
     ? `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;padding:14px;margin:16px 0">
@@ -237,8 +281,7 @@ function tplPresupuestoCliente(d: any) {
 
 // ── Servidor ────────────────────────────────────────────────────────────────
 
-serve(async (req: Request) => {
-  const cors = getCors(req)
+serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
   try {
