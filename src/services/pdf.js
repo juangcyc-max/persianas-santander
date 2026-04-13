@@ -769,3 +769,343 @@ export async function redownloadBudgetPDF(budget) {
     budgetNumberOverride: budget.budget_number,
   })
 }
+
+// ── PRESUPUESTO MULTI-ÍTEM PARA PROFESIONAL ───────────────────────────────
+// items: [{ description, blind_type, mechanism, motor_type, guide_type, width, height,
+//            box_color_name, slat_color_name, client_price }]
+export async function generateGroupBudgetPDF({
+  project = {},
+  empresa = {},
+  logoUrl = null,
+  returnBase64 = false,
+} = {}) {
+  try {
+    const doc    = new jsPDF()
+    const W      = doc.internal.pageSize.width
+    const H      = doc.internal.pageSize.height
+    const bNum   = project.budget_number ?? `PRO-${Date.now().toString().slice(-6)}`
+    const today  = formatDate(new Date())
+    const items  = project.items ?? []
+
+    const logoImg = logoUrl ? await loadImage(logoUrl) : null
+
+    // ── CABECERA ────────────────────────────────────────────────────────────
+    doc.setFillColor(...COLORS.blue)
+    doc.rect(0, 0, W, 32, 'F')
+    doc.setFillColor(60, 110, 190)
+    doc.rect(0, 32, W, 1.5, 'F')
+
+    if (logoImg) {
+      doc.addImage(logoImg, 'PNG', 14, 6, 0, 20)
+    } else {
+      doc.setTextColor(...COLORS.white)
+      doc.setFontSize(13)
+      doc.setFont('helvetica', 'bold')
+      doc.text(empresa.razon_social || 'Empresa', 14, 20)
+    }
+
+    doc.setTextColor(...COLORS.white)
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.text('PRESUPUESTO', W - 14, 14, { align: 'right' })
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.text(bNum, W - 14, 21, { align: 'right' })
+    doc.text(today, W - 14, 27, { align: 'right' })
+
+    let y = 42
+
+    // ── BLOQUE EMPRESA (izq) + CLIENTE (der) ────────────────────────────────
+    const blockH = 38
+    doc.setFillColor(...COLORS.grayBg)
+    doc.roundedRect(14, y, (W - 32) / 2 - 2, blockH, 3, 3, 'F')
+    doc.roundedRect(14 + (W - 32) / 2 + 2, y, (W - 32) / 2 - 2, blockH, 3, 3, 'F')
+
+    // Empresa
+    const ex = 20
+    sectionLabel(doc, ex, y + 8, 'Emisor')
+    doc.setTextColor(...COLORS.dark)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text(empresa.razon_social || '—', ex, y + 16)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(...COLORS.mid)
+    doc.text(empresa.cif_nif || '', ex, y + 22)
+    doc.text(empresa.direccion_fiscal || '', ex, y + 27)
+    doc.text([empresa.codigo_postal, empresa.ciudad].filter(Boolean).join(' '), ex, y + 32)
+    doc.text(empresa.telefono || '', ex, y + 37)
+
+    // Cliente
+    const cx = 14 + (W - 32) / 2 + 8
+    sectionLabel(doc, cx, y + 8, 'Cliente')
+    doc.setTextColor(...COLORS.dark)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text(project.client_name || '—', cx, y + 16)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(...COLORS.mid)
+    if (project.client_nif)     doc.text(`NIF: ${project.client_nif}`, cx, y + 22)
+    if (project.client_phone)   doc.text(project.client_phone, cx, y + 27)
+    if (project.client_email)   doc.text(project.client_email, cx, y + 32)
+    if (project.client_address) doc.text(project.client_address, cx, y + 37)
+
+    y += blockH + 10
+
+    // ── NOMBRE DEL PROYECTO ─────────────────────────────────────────────────
+    if (project.name) {
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...COLORS.dark)
+      doc.text(project.name, 14, y)
+      y += 7
+    }
+    if (project.notes) {
+      doc.setFontSize(8)
+      doc.setFont('helvetica', 'italic')
+      doc.setTextColor(...COLORS.mid)
+      doc.text(project.notes, 14, y)
+      y += 6
+    }
+
+    // ── TABLA DE ÍTEMS ──────────────────────────────────────────────────────
+    const tableBody = items.map((item, i) => [
+      `${i + 1}. ${item.description || '—'}`,
+      LABELS.productType[item.blind_type] ?? item.blind_type ?? '—',
+      item.width && item.height ? `${item.width}×${item.height} mm` : '—',
+      LABELS.mechanism[item.mechanism] ?? item.mechanism ?? '—',
+      [item.box_color_name, item.slat_color_name].filter(Boolean).join(' / ') || '—',
+      formatCurrency(item.client_price ?? 0),
+    ])
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Descripción', 'Tipo', 'Medidas', 'Mecanismo', 'Color', 'Precio']],
+      body: tableBody,
+      headStyles: { fillColor: COLORS.blue, textColor: COLORS.white, fontStyle: 'bold', fontSize: 8, cellPadding: 4 },
+      bodyStyles: { fontSize: 8, cellPadding: 3.5, textColor: COLORS.dark },
+      alternateRowStyles: { fillColor: COLORS.grayBg },
+      columnStyles: {
+        0: { cellWidth: 48 },
+        1: { cellWidth: 32 },
+        2: { cellWidth: 26 },
+        3: { cellWidth: 24 },
+        4: { cellWidth: 32 },
+        5: { cellWidth: 20, halign: 'right', fontStyle: 'bold' },
+      },
+      margin: { left: 14, right: 14 },
+    })
+    y = doc.lastAutoTable.finalY + 8
+
+    // ── BLOQUE PRECIO ───────────────────────────────────────────────────────
+    const totalConIva   = items.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
+    const subtotalSinIva = totalConIva / 1.21
+    const iva = totalConIva - subtotalSinIva
+
+    y = addPriceBlock(doc, y, {
+      subtotalSinIva,
+      iva,
+      totalConIva,
+      finalPrice: totalConIva,
+      discount: 0,
+    }, false, 0)
+
+    // ── CONDICIONES ─────────────────────────────────────────────────────────
+    if (y > H - 60) { doc.addPage(); y = 38 }
+    doc.setTextColor(...COLORS.blue)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text('CONDICIONES', 14, y + 6)
+    const terms = [
+      'Presupuesto válido 30 días desde la fecha de emisión.',
+      'Precio orientativo sujeto a verificación de medidas en visita técnica.',
+      'Plazo de entrega estimado: 7-15 días laborables desde confirmación.',
+      'Garantía: 3 años en todos los componentes y acabados.',
+    ]
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(...COLORS.mid)
+    let tY = y + 13
+    terms.forEach(t => {
+      const lines = doc.splitTextToSize(`• ${t}`, W - 28)
+      doc.text(lines, 14, tY)
+      tY += lines.length * 5
+    })
+
+    // ── CABECERAS Y PIES ─────────────────────────────────────────────────────
+    const pageCount = doc.internal.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      // pie
+      const footY = H - 12
+      doc.setFillColor(...COLORS.grayBg)
+      doc.rect(0, footY - 6, W, 18, 'F')
+      doc.setTextColor(...COLORS.light)
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'normal')
+      const footLines = [
+        `${empresa.razon_social || ''}  ·  CIF: ${empresa.cif_nif || ''}  ·  ${empresa.direccion_fiscal || ''}`,
+        `${empresa.telefono || ''}  ·  ${empresa.email_facturacion || ''}`,
+      ].filter(l => l.trim().replace(/·/g, '').trim())
+      footLines.forEach((line, idx) => doc.text(line, W / 2, footY - 1 + idx * 5, { align: 'center' }))
+      doc.text(`Página ${i} de ${pageCount}`, W - 14, footY + 4, { align: 'right' })
+    }
+
+    if (returnBase64) {
+      return doc.output('datauristring').split(',')[1]
+    }
+
+    const safeName = (project.client_name || 'Proyecto').trim().replace(/[^a-z0-9]/gi, '_')
+    doc.save(`Presupuesto_${safeName}_${bNum}.pdf`)
+
+  } catch (err) {
+    console.error('Error generando presupuesto de grupo:', err)
+  }
+}
+
+// ── FACTURA MULTI-ÍTEM PARA PROFESIONAL ──────────────────────────────────
+export async function generateGroupInvoicePDF({
+  project = {},
+  empresa = {},
+  logoUrl = null,
+  invoiceNumber = null,
+} = {}) {
+  try {
+    const doc    = new jsPDF()
+    const W      = doc.internal.pageSize.width
+    const H      = doc.internal.pageSize.height
+    const iNum   = invoiceNumber ?? `F-${Date.now().toString().slice(-6)}`
+    const today  = formatDate(new Date())
+    const items  = project.items ?? []
+
+    const logoImg = logoUrl ? await loadImage(logoUrl) : null
+
+    // ── CABECERA verde oscuro ───────────────────────────────────────────────
+    const brandColor = [20, 100, 50]
+    doc.setFillColor(...brandColor)
+    doc.rect(0, 0, W, 32, 'F')
+
+    if (logoImg) {
+      doc.addImage(logoImg, 'PNG', 14, 6, 0, 20)
+    } else {
+      doc.setTextColor(...COLORS.white)
+      doc.setFontSize(13)
+      doc.setFont('helvetica', 'bold')
+      doc.text(empresa.razon_social || 'Empresa', 14, 20)
+    }
+
+    doc.setTextColor(...COLORS.white)
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.text('FACTURA', W - 14, 14, { align: 'right' })
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.text(iNum, W - 14, 21, { align: 'right' })
+    doc.text(today, W - 14, 27, { align: 'right' })
+
+    let y = 42
+
+    // ── BLOQUES EMPRESA + CLIENTE ───────────────────────────────────────────
+    const blockH = 40
+    doc.setFillColor(...COLORS.grayBg)
+    doc.roundedRect(14, y, (W - 32) / 2 - 2, blockH, 3, 3, 'F')
+    doc.roundedRect(14 + (W - 32) / 2 + 2, y, (W - 32) / 2 - 2, blockH, 3, 3, 'F')
+
+    const ex = 20
+    sectionLabel(doc, ex, y + 8, 'Emisor', brandColor)
+    doc.setTextColor(...COLORS.dark)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text(empresa.razon_social || '—', ex, y + 16)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(...COLORS.mid)
+    doc.text(`CIF/NIF: ${empresa.cif_nif || '—'}`, ex, y + 22)
+    doc.text(empresa.direccion_fiscal || '', ex, y + 27)
+    doc.text([empresa.codigo_postal, empresa.ciudad].filter(Boolean).join(' '), ex, y + 32)
+    doc.text(empresa.telefono || '', ex, y + 37)
+
+    const cx = 14 + (W - 32) / 2 + 8
+    sectionLabel(doc, cx, y + 8, 'Cliente', brandColor)
+    doc.setTextColor(...COLORS.dark)
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'bold')
+    doc.text(project.client_name || '—', cx, y + 16)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(...COLORS.mid)
+    if (project.client_nif)     doc.text(`NIF/DNI: ${project.client_nif}`, cx, y + 22)
+    if (project.client_phone)   doc.text(project.client_phone, cx, y + 27)
+    if (project.client_email)   doc.text(project.client_email, cx, y + 32)
+    if (project.client_address) doc.text(project.client_address, cx, y + 37)
+
+    y += blockH + 10
+
+    if (project.name) {
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...COLORS.dark)
+      doc.text(project.name, 14, y)
+      y += 7
+    }
+
+    // ── TABLA ────────────────────────────────────────────────────────────────
+    const tableBody = items.map((item, i) => [
+      `${i + 1}. ${item.description || '—'}`,
+      LABELS.productType[item.blind_type] ?? item.blind_type ?? '—',
+      item.width && item.height ? `${item.width}×${item.height} mm` : '—',
+      LABELS.mechanism[item.mechanism] ?? item.mechanism ?? '—',
+      [item.box_color_name, item.slat_color_name].filter(Boolean).join(' / ') || '—',
+      formatCurrency(item.client_price ?? 0),
+    ])
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Descripción', 'Tipo', 'Medidas', 'Mecanismo', 'Color', 'Importe']],
+      body: tableBody,
+      headStyles: { fillColor: brandColor, textColor: COLORS.white, fontStyle: 'bold', fontSize: 8, cellPadding: 4 },
+      bodyStyles: { fontSize: 8, cellPadding: 3.5, textColor: COLORS.dark },
+      alternateRowStyles: { fillColor: COLORS.grayBg },
+      columnStyles: {
+        0: { cellWidth: 48 },
+        1: { cellWidth: 32 },
+        2: { cellWidth: 26 },
+        3: { cellWidth: 24 },
+        4: { cellWidth: 32 },
+        5: { cellWidth: 20, halign: 'right', fontStyle: 'bold' },
+      },
+      margin: { left: 14, right: 14 },
+    })
+    y = doc.lastAutoTable.finalY + 8
+
+    // ── PRECIO ──────────────────────────────────────────────────────────────
+    const totalConIva    = items.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
+    const subtotalSinIva = totalConIva / 1.21
+    const iva = totalConIva - subtotalSinIva
+    y = addPriceBlock(doc, y, { subtotalSinIva, iva, totalConIva, finalPrice: totalConIva, discount: 0 }, false, 0)
+
+    // ── PIE ─────────────────────────────────────────────────────────────────
+    const pageCount = doc.internal.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      const footY = H - 12
+      doc.setFillColor(...COLORS.grayBg)
+      doc.rect(0, footY - 6, W, 18, 'F')
+      doc.setTextColor(...COLORS.light)
+      doc.setFontSize(7)
+      doc.setFont('helvetica', 'normal')
+      const footLines = [
+        `${empresa.razon_social || ''}  ·  CIF: ${empresa.cif_nif || ''}  ·  ${empresa.direccion_fiscal || ''}`,
+        `${empresa.telefono || ''}  ·  ${empresa.email_facturacion || ''}`,
+      ].filter(l => l.trim().replace(/·/g, '').trim())
+      footLines.forEach((line, idx) => doc.text(line, W / 2, footY - 1 + idx * 5, { align: 'center' }))
+      doc.text(`Página ${i} de ${pageCount}`, W - 14, footY + 4, { align: 'right' })
+    }
+
+    const safeName = (project.client_name || 'Proyecto').trim().replace(/[^a-z0-9]/gi, '_')
+    doc.save(`Factura_${safeName}_${iNum}.pdf`)
+
+  } catch (err) {
+    console.error('Error generando factura de grupo:', err)
+  }
+}
