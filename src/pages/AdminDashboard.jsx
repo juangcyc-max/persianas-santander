@@ -846,6 +846,9 @@ export default function AdminDashboard() {
         {/* ── ANALYTICS ── */}
         <AdminAnalyticsSection />
 
+        {/* ── SECCIÓN PRESUPUESTOS ADMIN ── */}
+        <AdminBudgetsSection />
+
         {/* ── SECCIÓN FACTURAS ADMIN ── */}
         <AdminInvoicesSection />
 
@@ -863,6 +866,297 @@ export default function AdminDashboard() {
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
           onUpdate={() => { loadOrders(); setSelectedOrder(null) }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ── SECCIÓN PRESUPUESTOS ADMIN ───────────────────────────────────────────
+const BUDGET_STATUS_MAP = {
+  pending:  { label: 'Pendiente',  cls: 'bg-amber-100 text-amber-700'  },
+  reviewed: { label: 'Revisado',   cls: 'bg-blue-100 text-blue-700'    },
+  sent:     { label: 'Enviado',    cls: 'bg-purple-100 text-purple-700' },
+  accepted: { label: 'Aceptado',   cls: 'bg-green-100 text-green-700'  },
+  rejected: { label: 'Rechazado',  cls: 'bg-red-100 text-red-700'      },
+}
+
+const BUDGET_TYPE_LABELS = {
+  laminada:                    'Paño Laminado',
+  autoblocante:                'Autoblocante',
+  blocking:                    'Bloqueante',
+  sistema_mini_cajon_pvc:      'Mini Cajón PVC',
+  sistema_mini_cajon_aluminio: 'Mini Cajón Aluminio',
+  sistema_mini_autoblocante:   'Mini Autoblocante',
+  solo_motor:                  'Solo Motor',
+  solo_guias:                  'Solo Guías',
+  mosquitera_enrollable:       'Mosquitera',
+  sistema_mini_pvc:            'Mini PVC',
+  sistema_mini_aluminio:       'Mini Aluminio',
+  motor_mas_guias:             'Motor + Guías',
+  normal:                      'Estándar',
+}
+
+function BudgetModal({ budget, onClose, onSaved }) {
+  const [status,     setStatus]     = useState(budget.budget_status ?? 'pending')
+  const [adminNotes, setAdminNotes] = useState(budget.admin_notes ?? '')
+  const [adminPrice, setAdminPrice] = useState(budget.admin_price != null ? String(budget.admin_price) : '')
+  const [saving,     setSaving]     = useState(false)
+  const [saved,      setSaved]      = useState(false)
+
+  async function handleSave() {
+    setSaving(true)
+    const updates = {
+      budget_status: status,
+      admin_notes:   adminNotes || null,
+      admin_price:   adminPrice !== '' ? parseFloat(adminPrice) : null,
+    }
+    const { error } = await supabase.from('budgets').update(updates).eq('id', budget.id)
+    setSaving(false)
+    if (!error) {
+      setSaved(true)
+      setTimeout(() => { setSaved(false); onSaved() }, 1500)
+    }
+  }
+
+  const typeLabel = BUDGET_TYPE_LABELS[budget.blind_type] ?? budget.blind_type ?? '—'
+  const statusInfo = BUDGET_STATUS_MAP[status] ?? BUDGET_STATUS_MAP.pending
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div>
+            <p className="text-xs font-mono text-gray-400">{budget.budget_number ?? `#${budget.id?.slice(0,8).toUpperCase()}`}</p>
+            <h2 className="text-lg font-bold text-gray-900 mt-0.5">Presupuesto</h2>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Cliente */}
+          <div className="bg-gray-50 rounded-xl p-4 space-y-1">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Cliente</p>
+            <p className="font-semibold text-gray-900">{budget.customer_name ?? '—'}</p>
+            <p className="text-sm text-gray-500">{budget.customer_phone ?? ''}{budget.customer_phone && budget.customer_email ? '  ·  ' : ''}{budget.customer_email ?? ''}</p>
+            {budget.customer_address && <p className="text-sm text-gray-500">{budget.customer_address}</p>}
+          </div>
+
+          {/* Configuración */}
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs text-gray-400 mb-0.5">Tipo</p>
+              <p className="font-medium text-gray-800">{typeLabel}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 mb-0.5">Medidas</p>
+              <p className="font-medium text-gray-800">{budget.width ? `${budget.width} × ${budget.height} mm` : '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 mb-0.5">Mecanismo</p>
+              <p className="font-medium text-gray-800 capitalize">{budget.mechanism ?? '—'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 mb-0.5">Precio original</p>
+              <p className="font-bold text-red-700">{fmtDate ? fmt(budget.total_with_iva) : `${budget.total_with_iva ?? 0} €`}</p>
+            </div>
+          </div>
+
+          {/* Comentarios del cliente */}
+          {budget.client_notes && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Comentarios del cliente</p>
+              <p className="text-sm text-amber-800 whitespace-pre-wrap">{budget.client_notes}</p>
+            </div>
+          )}
+
+          {/* Estado */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Estado</label>
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+              {Object.entries(BUDGET_STATUS_MAP).map(([key, { label, cls }]) => (
+                <button
+                  key={key}
+                  onClick={() => setStatus(key)}
+                  className={`px-2 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${
+                    status === key ? `${cls} border-current` : 'border-transparent bg-gray-100 text-gray-500 hover:bg-gray-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Precio modificado */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Precio ajustado (€ con IVA)</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={adminPrice}
+              onChange={e => setAdminPrice(e.target.value)}
+              placeholder={`Original: ${fmt(budget.total_with_iva)}`}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400"
+            />
+            <p className="text-xs text-gray-400 mt-1">Deja vacío para mantener el precio original calculado automáticamente.</p>
+          </div>
+
+          {/* Notas del admin */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Notas internas</label>
+            <textarea
+              rows={3}
+              value={adminNotes}
+              onChange={e => setAdminNotes(e.target.value)}
+              placeholder="Notas visibles solo para el administrador…"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 resize-none"
+            />
+          </div>
+
+          {/* Acciones */}
+          <div className="flex gap-3 pt-1">
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saving || saved}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${saved ? 'bg-green-600 text-white' : 'bg-red-700 hover:bg-red-800 text-white disabled:opacity-60'}`}
+            >
+              {saving ? '…' : saved ? '✓ Guardado' : 'Guardar cambios'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AdminBudgetsSection() {
+  const [budgets,  setBudgets]  = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [search,   setSearch]   = useState('')
+  const [selected, setSelected] = useState(null)
+  const [statusFilter, setStatusFilter] = useState('all')
+
+  useEffect(() => { loadBudgets() }, [])
+
+  async function loadBudgets() {
+    setLoading(true)
+    const { data } = await supabase
+      .from('budgets')
+      .select('*')
+      .order('created_at', { ascending: false })
+    setBudgets(data ?? [])
+    setLoading(false)
+  }
+
+  const filtered = budgets.filter(b => {
+    const matchSearch = !search ||
+      b.customer_name?.toLowerCase().includes(search.toLowerCase()) ||
+      b.customer_email?.toLowerCase().includes(search.toLowerCase()) ||
+      b.budget_number?.toLowerCase().includes(search.toLowerCase())
+    const matchStatus = statusFilter === 'all' || (b.budget_status ?? 'pending') === statusFilter
+    return matchSearch && matchStatus
+  })
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h2 className="text-lg font-bold text-gray-900">Presupuestos</h2>
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={statusFilter}
+            onChange={e => setStatusFilter(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-gray-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 bg-white"
+          >
+            <option value="all">Todos</option>
+            {Object.entries(BUDGET_STATUS_MAP).map(([key, { label }]) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+          <input
+            type="text"
+            placeholder="Buscar cliente o número…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 w-56"
+          />
+        </div>
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-10">
+            <div className="w-6 h-6 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-10 text-gray-400 text-sm">No hay presupuestos</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  {['Número', 'Cliente', 'Tipo', 'Precio', 'Estado', 'Comentarios', 'Fecha', ''].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {filtered.map(b => {
+                  const st = BUDGET_STATUS_MAP[b.budget_status ?? 'pending'] ?? BUDGET_STATUS_MAP.pending
+                  const effectivePrice = b.admin_price != null ? b.admin_price : b.total_with_iva
+                  return (
+                    <tr key={b.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{b.budget_number ?? `#${b.id?.slice(0,8).toUpperCase()}`}</td>
+                      <td className="px-4 py-3">
+                        <p className="font-medium text-gray-900">{b.customer_name ?? '—'}</p>
+                        <p className="text-xs text-gray-400">{b.customer_email ?? ''}</p>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 text-xs">{BUDGET_TYPE_LABELS[b.blind_type] ?? b.blind_type ?? '—'}</td>
+                      <td className="px-4 py-3 font-bold text-red-700">
+                        {fmt(effectivePrice)}
+                        {b.admin_price != null && <span className="ml-1 text-xs font-normal text-blue-600">(ajust.)</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                      </td>
+                      <td className="px-4 py-3 max-w-[180px]">
+                        {b.client_notes
+                          ? <p className="text-xs text-gray-500 truncate" title={b.client_notes}>{b.client_notes}</p>
+                          : <span className="text-xs text-gray-300">—</span>
+                        }
+                      </td>
+                      <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(b.created_at)}</td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          onClick={() => setSelected(b)}
+                          className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
+                        >
+                          Gestionar
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {selected && (
+        <BudgetModal
+          budget={selected}
+          onClose={() => setSelected(null)}
+          onSaved={() => { setSelected(null); loadBudgets() }}
         />
       )}
     </div>

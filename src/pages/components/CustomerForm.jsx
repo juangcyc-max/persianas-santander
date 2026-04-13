@@ -5,10 +5,11 @@ import { sanitizeObject } from '../../services/sanitize'
 import { useRateLimit } from '../../services/useRateLimit'
 
 function CustomerForm({ customerData = {}, onCustomerDataChange, configuration = {}, onSubmit }) {
-  const [sending,   setSending]   = useState(false)
-  const [pdfLoading,setPdfLoading]= useState(false)
-  const [errors,    setErrors]    = useState({})
-  const [sent,      setSent]      = useState(false)
+  const [sending,     setSending]     = useState(false)
+  const [pdfLoading,  setPdfLoading]  = useState(false)
+  const [errors,      setErrors]      = useState({})
+  const [sent,        setSent]        = useState(false)
+  const [clientNotes, setClientNotes] = useState('')
   const { secondsLeft, consume } = useRateLimit(60_000)
 
   const handleChange = (field, value) => {
@@ -34,7 +35,7 @@ function CustomerForm({ customerData = {}, onCustomerDataChange, configuration =
 
     setSending(true)
     try {
-      const result = await sendBudgetResend(sanitizeObject(customerData), configuration)
+      const result = await sendBudgetResend(sanitizeObject(customerData), { ...configuration, clientNotes })
       if (result.success) {
         setSent(true)
         onSubmit?.()
@@ -53,7 +54,7 @@ function CustomerForm({ customerData = {}, onCustomerDataChange, configuration =
     if (Object.keys(errs).length) { setErrors(errs); return }
     setPdfLoading(true)
     try {
-      await generateBudgetPDF(sanitizeObject(customerData), configuration)
+      await generateBudgetPDF(sanitizeObject(customerData), { ...configuration, clientNotes })
     } catch {
       setErrors({ _global: 'Error generando el PDF. Inténtalo de nuevo.' })
     } finally {
@@ -133,6 +134,16 @@ function CustomerForm({ customerData = {}, onCustomerDataChange, configuration =
           onChange={v => handleChange('address', v)}
           placeholder="Calle Mayor 1, Santander"
         />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Comentarios adicionales</label>
+          <textarea
+            rows={3}
+            value={clientNotes}
+            onChange={e => setClientNotes(e.target.value)}
+            placeholder="Indícanos cualquier detalle: tipo de ventana, acceso, preferencias de color, horario de visita…"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 resize-none"
+          />
+        </div>
       </div>
 
       {/* Precio resumen */}

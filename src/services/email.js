@@ -78,5 +78,6 @@ export function sendBudgetResend(customerData, configuration) {
     box_color:        configuration?.boxColorName  || '',
     slat_color:       configuration?.slatColorName || '',
     estimated_price:  fmt(configuration?.estimatedPrice ?? 0),
+    client_notes:     configuration?.clientNotes   || '',
   })
 }

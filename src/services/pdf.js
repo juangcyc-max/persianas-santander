@@ -341,6 +341,8 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
             user_type:         user.user_metadata?.user_type ?? 'public',
             customer_data:     customerData,
             status:            'pending',
+            budget_status:     'pending',
+            client_notes:      configuration.clientNotes || null,
           })
         }
       } catch (dbErr) {
