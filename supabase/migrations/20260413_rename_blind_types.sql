@@ -40,43 +40,35 @@ ALTER TABLE blind_configurations
     'sistema_mini'
   ));
 
--- ── 2. cart_items (referencias a blind_configurations) ───────
--- Los cart_items referencian blind_configurations via FK,
--- no almacenan blind_type directamente → no requieren cambio.
+-- ── 2. mechanism column ───────────────────────────────────────
+-- Por si acaso existe un CHECK en mechanism:
+ALTER TABLE blind_configurations
+  DROP CONSTRAINT IF EXISTS blind_configurations_mechanism_check;
 
--- ── 3. orders / order_items ──────────────────────────────────
+ALTER TABLE blind_configurations
+  ADD CONSTRAINT blind_configurations_mechanism_check
+  CHECK (mechanism IN ('muelle', 'cinta', 'motor'));
 
--- Quitar restricción CHECK existente en blind_type (si la hay)
-ALTER TABLE order_items
-  DROP CONSTRAINT IF EXISTS order_items_blind_type_check;
+-- ── 3. orders.items (JSONB array) ────────────────────────────
+-- Los items se guardan como JSON dentro de orders.items.
+-- Hacemos replace sobre el texto del JSON (seguro porque buscamos
+-- strings con comillas, únicos en el JSON).
 
-UPDATE order_items
-  SET blind_type = 'sistema_mini_cajon_pvc'
-  WHERE blind_type = 'sistema_mini_pvc';
+UPDATE orders
+  SET items = replace(
+    items::text,
+    '"sistema_mini_pvc"',
+    '"sistema_mini_cajon_pvc"'
+  )::jsonb
+  WHERE items::text LIKE '%"sistema_mini_pvc"%';
 
-UPDATE order_items
-  SET blind_type = 'sistema_mini_cajon_aluminio'
-  WHERE blind_type = 'sistema_mini_aluminio';
-
-ALTER TABLE order_items
-  ADD CONSTRAINT order_items_blind_type_check
-  CHECK (blind_type IN (
-    'laminada',
-    'autoblocante',
-    'blocking',
-    'sistema_mini_cajon_pvc',
-    'sistema_mini_cajon_aluminio',
-    'sistema_mini_autoblocante',
-    'solo_guias',
-    'solo_motor',
-    'mosquitera_enrollable',
-    'sistema_mini_pvc',
-    'sistema_mini_aluminio',
-    'motor_mas_guias',
-    'pano_mas_guias',
-    'normal',
-    'sistema_mini'
-  ));
+UPDATE orders
+  SET items = replace(
+    items::text,
+    '"sistema_mini_aluminio"',
+    '"sistema_mini_cajon_aluminio"'
+  )::jsonb
+  WHERE items::text LIKE '%"sistema_mini_aluminio"%';
 
 -- ── 4. budgets ───────────────────────────────────────────────
 
@@ -111,17 +103,7 @@ ALTER TABLE budgets
     'sistema_mini'
   ));
 
--- ── 5. mechanism column — añadir 'motor' como valor válido para bloqueantes ─
--- (si existe un CHECK en mechanism, asegurarse de que 'motor' está permitido)
--- Generalmente ya está permitido, pero por si acaso:
-
-ALTER TABLE blind_configurations
-  DROP CONSTRAINT IF EXISTS blind_configurations_mechanism_check;
-
-ALTER TABLE blind_configurations
-  ADD CONSTRAINT blind_configurations_mechanism_check
-  CHECK (mechanism IN ('muelle', 'cinta', 'motor'));
-
 -- ── Verificación (ejecutar manualmente para comprobar) ───────
 -- SELECT blind_type, COUNT(*) FROM blind_configurations GROUP BY blind_type ORDER BY blind_type;
--- SELECT blind_type, COUNT(*) FROM order_items GROUP BY blind_type ORDER BY blind_type;
+-- SELECT blind_type, COUNT(*) FROM budgets GROUP BY blind_type ORDER BY blind_type;
+-- SELECT COUNT(*) FROM orders WHERE items::text LIKE '%sistema_mini_pvc%';
