@@ -134,8 +134,10 @@ function Configurator() {
 
   // Al cambiar tipo: ajustar motor y guías por defecto
   useEffect(() => {
-    if (isSistema(productType)) {
+    if (productType === 'sistema_mini_autoblocante') {
       setMechanism('motor')
+    }
+    if (isSistema(productType)) {
       if (guideType === 'none') setGuideType('v25')
     }
     if (productType === 'solo_motor') {
@@ -325,7 +327,7 @@ function Configurator() {
     productType,
     blindType: productType,
     mechanism, orientation, motorType, guideType,
-    installacion: ['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(productType) ? false : installacion,
+    installacion,
     width, height,
     boxColor:     effectiveBoxColor,
     slatColor,
@@ -340,16 +342,17 @@ function Configurator() {
 
   // Flags de visibilidad
   const showPreview      = !['solo_motor', 'motor_mas_guias'].includes(productType)
-  const showMechanism    = !isSistema(productType) && !['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(productType)
-  const showMotorType    = mechanism === 'motor' || isSistema(productType) || ['solo_motor', 'motor_mas_guias'].includes(productType)
-  const showMeasurements = !['solo_motor'].includes(productType)
-  const showGuides       = !['solo_motor'].includes(productType)
-  const showInstallation = !['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(productType)
+  const showMechanism    = productType !== 'sistema_mini_autoblocante' && !['solo_motor', 'solo_guias', 'motor_mas_guias'].includes(productType)
+  const showMotorType    = mechanism === 'motor' || productType === 'sistema_mini_autoblocante' || ['solo_motor', 'motor_mas_guias'].includes(productType)
+  const showMeasurements = productType !== 'solo_motor'
+  const showGuides       = true
+  const showInstallation = true
   const showBoxColor     = isSistema(productType)
-  const showSlatColor    = !['solo_motor', 'motor_mas_guias'].includes(productType)
+  const showSlatColor    = productType !== 'solo_motor'
 
   // Modo del selector de guías
-  const guideMode = ['solo_guias', 'motor_mas_guias', 'pano_mas_guias'].includes(productType) ? 'product'
+  const guideMode = productType === 'solo_motor' ? 'install_only'
+    : ['solo_guias', 'motor_mas_guias', 'pano_mas_guias'].includes(productType) ? 'product'
     : isSistema(productType) ? 'included'
     : 'optional'
 
@@ -489,7 +492,11 @@ function Configurator() {
 
             {showSlatColor && (
               <ColorPicker
-                label={isSistema(productType) ? 'Color de las Lamas' : 'Color'}
+                label={
+                  isSistema(productType) ? 'Color de las Lamas'
+                  : ['solo_guias', 'motor_mas_guias'].includes(productType) ? 'Color de las Guías'
+                  : 'Color'
+                }
                 selectedColor={slatColor}
                 onColorChange={setSlatColor}
                 colors={winchesterColors}

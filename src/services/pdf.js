@@ -222,23 +222,30 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
     y += 44
 
     // ── TABLA CONFIGURACIÓN ───────────────────────────────────────────────
-    const productLabel = LABELS.productType[configuration.productType ?? configuration.blindType] ?? 'Estándar'
-    const boxLabel = ''
-    const guideLabel = LABELS.guideType[configuration.guideType] ?? 'Sin guías'
-    const motorDisplay = configuration.mechanism === 'motor'
-      ? (LABELS.motorType[configuration.motorType] || '—')
-      : '—'
+    const productType    = configuration.productType ?? configuration.blindType
+    const productLabel   = LABELS.productType[productType] ?? 'Estándar'
+    const guideLabel     = LABELS.guideType[configuration.guideType] ?? 'Sin guías'
+    const isSistemaType  = ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante'].includes(productType)
+    const isPanoType     = ['laminada', 'autoblocante', 'blocking', 'pano_mas_guias'].includes(productType)
+    const isSoloMotor    = productType === 'solo_motor'
+    const isGuideProduct = ['solo_guias', 'motor_mas_guias'].includes(productType)
+    const showMotorRow   = configuration.mechanism === 'motor' || isSoloMotor || productType === 'motor_mas_guias' || productType === 'sistema_mini_autoblocante'
+    const showMecRow     = !isSoloMotor && !isGuideProduct && productType !== 'sistema_mini_autoblocante'
+    const colorName      = (name, gama) => name ? `${name} (${gama ?? '—'})` : '—'
 
     const tableRows = [
-      ['Tipo de persiana',       productLabel],
-      boxLabel && ['Cajón',      boxLabel],
-      ['Medidas (ancho × alto)', `${configuration.width || 0} × ${configuration.height || 0} mm`],
-      ['Mecanismo',              LABELS.mechanism[configuration.mechanism] || '—'],
-      configuration.mechanism === 'motor' && ['Tipo de motor', motorDisplay],
-      ['Guías',                  guideLabel],
-      ['Instalación',            configuration.installacion === false ? 'Sin instalación' : 'Con instalación'],
-      ['Color del cajón',        configuration.boxColorName  ? `${configuration.boxColorName} (${configuration.boxColorGama ?? '—'})` : '—'],
-      ['Color de lamas',         configuration.slatColorName ? `${configuration.slatColorName} (${configuration.slatColorGama ?? '—'})` : '—'],
+      ['Tipo de persiana', productLabel],
+      !isSoloMotor && ['Medidas',
+        isGuideProduct
+          ? `${configuration.height || 0} mm (altura)`
+          : `${configuration.width || 0} × ${configuration.height || 0} mm`],
+      showMecRow && ['Mecanismo', LABELS.mechanism[configuration.mechanism] || '—'],
+      showMotorRow && ['Tipo de motor', LABELS.motorType[configuration.motorType] || '—'],
+      !isSoloMotor && ['Guías', guideLabel],
+      ['Instalación', configuration.installacion === false ? 'Sin instalación' : 'Con instalación'],
+      isSistemaType && ['Color del cajón', colorName(configuration.boxColorName, configuration.boxColorGama)],
+      (isSistemaType || isPanoType) && ['Color de lamas', colorName(configuration.slatColorName, configuration.slatColorGama)],
+      isGuideProduct && ['Color de guías', colorName(configuration.slatColorName, configuration.slatColorGama)],
     ].filter(Boolean)
 
     autoTable(doc, {
@@ -426,23 +433,30 @@ export async function generateClientBudgetPDF({
     y += 44
 
     // ── TABLA CONFIGURACIÓN ───────────────────────────────────────────────
-    const productLabel = LABELS.productType[configuration.productType ?? configuration.blindType] ?? 'Estándar'
-    const boxLabel = ''
-    const guideLabel = LABELS.guideType[configuration.guideType] ?? 'Sin guías'
-    const motorDisplay = configuration.mechanism === 'motor'
-      ? (LABELS.motorType[configuration.motorType] || '—')
-      : '—'
+    const productType    = configuration.productType ?? configuration.blindType
+    const productLabel   = LABELS.productType[productType] ?? 'Estándar'
+    const guideLabel     = LABELS.guideType[configuration.guideType] ?? 'Sin guías'
+    const isSistemaType  = ['sistema_mini_pvc', 'sistema_mini_aluminio', 'sistema_mini_autoblocante'].includes(productType)
+    const isPanoType     = ['laminada', 'autoblocante', 'blocking', 'pano_mas_guias'].includes(productType)
+    const isSoloMotor    = productType === 'solo_motor'
+    const isGuideProduct = ['solo_guias', 'motor_mas_guias'].includes(productType)
+    const showMotorRow   = configuration.mechanism === 'motor' || isSoloMotor || productType === 'motor_mas_guias' || productType === 'sistema_mini_autoblocante'
+    const showMecRow     = !isSoloMotor && !isGuideProduct && productType !== 'sistema_mini_autoblocante'
+    const colorName      = (name, gama) => name ? `${name} (${gama ?? '—'})` : '—'
 
     const tableRows = [
-      ['Tipo de persiana',       productLabel],
-      boxLabel && ['Cajón',      boxLabel],
-      ['Medidas (ancho × alto)', `${configuration.width || 0} × ${configuration.height || 0} mm`],
-      ['Mecanismo',              LABELS.mechanism[configuration.mechanism] || '—'],
-      configuration.mechanism === 'motor' && ['Tipo de motor', motorDisplay],
-      ['Guías',                  guideLabel],
-      ['Instalación',            configuration.installacion === false ? 'Sin instalación' : 'Con instalación'],
-      ['Color del cajón',        configuration.boxColorName  ? `${configuration.boxColorName} (${configuration.boxColorGama ?? '—'})` : '—'],
-      ['Color de lamas',         configuration.slatColorName ? `${configuration.slatColorName} (${configuration.slatColorGama ?? '—'})` : '—'],
+      ['Tipo de persiana', productLabel],
+      !isSoloMotor && ['Medidas',
+        isGuideProduct
+          ? `${configuration.height || 0} mm (altura)`
+          : `${configuration.width || 0} × ${configuration.height || 0} mm`],
+      showMecRow && ['Mecanismo', LABELS.mechanism[configuration.mechanism] || '—'],
+      showMotorRow && ['Tipo de motor', LABELS.motorType[configuration.motorType] || '—'],
+      !isSoloMotor && ['Guías', guideLabel],
+      ['Instalación', configuration.installacion === false ? 'Sin instalación' : 'Con instalación'],
+      isSistemaType && ['Color del cajón', colorName(configuration.boxColorName, configuration.boxColorGama)],
+      (isSistemaType || isPanoType) && ['Color de lamas', colorName(configuration.slatColorName, configuration.slatColorGama)],
+      isGuideProduct && ['Color de guías', colorName(configuration.slatColorName, configuration.slatColorGama)],
     ].filter(Boolean)
 
     autoTable(doc, {

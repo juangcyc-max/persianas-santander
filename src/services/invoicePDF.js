@@ -168,12 +168,29 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
 
   // ── TABLA PRODUCTOS ───────────────────────────────────────────────────
   const items = order?.items ?? invoice?.items ?? []
+  const BLIND_LABELS_INV = {'laminada':'Paño Laminado','autoblocante':'Paño Autoblocante','blocking':'Bloqueante','sistema_mini_pvc':'Sistema Mini PVC','sistema_mini_aluminio':'Sistema Mini Aluminio','sistema_mini_autoblocante':'Sistema Mini Autoblocante','solo_guias':'Solo Guías','solo_motor':'Solo Motor','motor_mas_guias':'Motor + Guías','pano_mas_guias':'Paño + Guías','normal':'Estándar'}
+  const SISTEMAS_INV     = ['sistema_mini_pvc','sistema_mini_aluminio','sistema_mini_autoblocante']
+  const PANOS_INV        = ['laminada','autoblocante','blocking','pano_mas_guias']
+  const GUIDE_PROD_INV   = ['solo_guias','motor_mas_guias']
+
+  const getMedidas = (i) => {
+    if (i.blind_type === 'solo_motor') return '—'
+    if (GUIDE_PROD_INV.includes(i.blind_type)) return `${i.height ?? '—'} mm`
+    return `${i.width ?? '—'}×${i.height ?? '—'} mm`
+  }
+  const getColores = (i) => {
+    if (SISTEMAS_INV.includes(i.blind_type))    return `Cajón: ${i.box_color_name ?? '—'}\nLamas: ${i.slat_color_name ?? '—'}`
+    if (PANOS_INV.includes(i.blind_type))       return `Lamas: ${i.slat_color_name ?? '—'}`
+    if (GUIDE_PROD_INV.includes(i.blind_type))  return `Guías: ${i.slat_color_name ?? '—'}`
+    return '—'
+  }
+
   const tableData = items.length > 0
     ? items.map(i => [
-        `${({'laminada':'Paño Laminado','autoblocante':'Paño Autoblocante','blocking':'Bloqueante','sistema_mini_pvc':'Sistema Mini PVC','sistema_mini_aluminio':'Sistema Mini Aluminio','sistema_mini_autoblocante':'Sistema Mini Autoblocante','solo_guias':'Solo Guías','solo_motor':'Solo Motor','motor_mas_guias':'Motor + Guías','pano_mas_guias':'Paño + Guías','normal':'Estándar'})[i.blind_type] ?? i.blind_type ?? 'Persiana'}${(i.quantity ?? 1) > 1 ? ` ×${i.quantity}` : ''}`,
-        `${i.width ?? '—'}×${i.height ?? '—'} mm`,
+        `${BLIND_LABELS_INV[i.blind_type] ?? i.blind_type ?? 'Persiana'}${(i.quantity ?? 1) > 1 ? ` ×${i.quantity}` : ''}`,
+        getMedidas(i),
         i.mechanism ?? '—',
-        `Caja: ${i.box_color_name ?? '—'}\nLamas: ${i.slat_color_name ?? '—'}`,
+        getColores(i),
         fmt(i.estimated_price * (i.quantity ?? 1)),
       ])
     : [['Sin detalle de productos', '', '', '', fmt(invoice.total_with_iva)]]
