@@ -191,12 +191,14 @@ function OrderModal({ order, onClose, onUpdate }) {
       const clientEmail = order.profiles?.email
       if (clientEmail) {
         if (existingInvoice) {
-          // Enviar factura al cliente
+          // Generar PDF en base64 y enviarlo adjunto
+          const pdfBase64 = await generateInvoicePDF(existingInvoice, order, null, { returnBase64: true })
           await sendInvoiceEmail({
             userEmail: clientEmail,
             invoice:   existingInvoice,
             orderId:   order.id,
             items:     order.items,
+            pdfBase64,
           })
         } else {
           // Sin factura: enviar confirmación de cita

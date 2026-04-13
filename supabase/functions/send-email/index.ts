@@ -63,11 +63,23 @@ function layout(body: string) {
   </body></html>`
 }
 
-async function send(to: string | string[], subject: string, html: string) {
+async function send(
+  to: string | string[],
+  subject: string,
+  html: string,
+  attachments?: Array<{ filename: string; content: string }>,
+) {
+  const body: Record<string, unknown> = {
+    from: FROM,
+    to: Array.isArray(to) ? to : [to],
+    subject,
+    html,
+  }
+  if (attachments?.length) body.attachments = attachments
   const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: FROM, to: Array.isArray(to) ? to : [to], subject, html }),
+    body: JSON.stringify(body),
   })
   const json = await res.json()
   if (!res.ok) throw new Error(json.message ?? 'Error Resend')
@@ -304,9 +316,13 @@ serve(async (req) => {
         await send(data.user_email, 'Cita de medición confirmada — Persianas Santander', tplConfirmacionCita(data))
         break
 
-      case 'send_invoice':
-        await send(data.user_email, `Tu factura ${data.invoice_number} — Persianas Santander`, tplFacturaCliente(data))
+      case 'send_invoice': {
+        const attachments = data.pdf_base64
+          ? [{ filename: data.pdf_filename ?? `Factura_${data.invoice_number}.pdf`, content: data.pdf_base64 }]
+          : undefined
+        await send(data.user_email, `Tu factura ${data.invoice_number} — Persianas Santander`, tplFacturaCliente(data), attachments)
         break
+      }
 
       case 'budget_request':
         await Promise.all([

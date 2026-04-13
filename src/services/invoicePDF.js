@@ -41,7 +41,7 @@ function label(doc, x, y, text, color = C.red) {
 }
 
 // ── GENERADOR PRINCIPAL ───────────────────────────────────────────────────
-export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
+export async function generateInvoicePDF(invoice, order = {}, empresa = null, { returnBase64 = false } = {}) {
   const doc  = new jsPDF()
   const W    = doc.internal.pageSize.width   // 210
   const H    = doc.internal.pageSize.height  // 297
@@ -344,5 +344,8 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
     )
   }
 
+  if (returnBase64) {
+    return doc.output('datauristring').split(',')[1]
+  }
   doc.save(`Factura_${invoice.invoice_number}.pdf`)
 }

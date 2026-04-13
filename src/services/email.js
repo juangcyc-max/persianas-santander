@@ -48,7 +48,7 @@ export function confirmAppointment({ userEmail, confirmedDate, confirmedTime, ad
 }
 
 /** Envía la factura al cliente por email */
-export function sendInvoiceEmail({ userEmail, invoice, orderId, items }) {
+export function sendInvoiceEmail({ userEmail, invoice, orderId, items, pdfBase64 }) {
   return callSendEmail('send_invoice', {
     user_email:        userEmail,
     order_id:          orderId,
@@ -58,6 +58,8 @@ export function sendInvoiceEmail({ userEmail, invoice, orderId, items }) {
     total_with_iva:    invoice.total_with_iva,
     payment_status:    invoice.payment_status,
     items:             items ?? [],
+    pdf_base64:        pdfBase64 ?? null,
+    pdf_filename:      `Factura_${invoice.invoice_number}.pdf`,
   })
 }
 
