@@ -1550,6 +1550,59 @@ function AdminProProjectsSection() {
 }
 
 // ── SECCIÓN FACTURAS ADMIN ────────────────────────────────────────────────
+function SendInvoiceRowButton({ inv }) {
+  const [sending, setSending] = useState(false)
+  const [sent,    setSent]    = useState(false)
+  const [err,     setErr]     = useState(false)
+
+  const clientEmail = inv.orders?.profiles?.email
+
+  async function handleSend() {
+    if (!clientEmail) return
+    setSending(true); setErr(false)
+    try {
+      const pdfBase64 = await generateInvoicePDF(inv, inv.orders ?? {}, null, { returnBase64: true })
+      await sendInvoiceEmail({
+        userEmail: clientEmail,
+        invoice:   inv,
+        orderId:   inv.order_id,
+        items:     inv.orders?.items ?? [],
+        pdfBase64,
+      })
+      setSent(true)
+      setTimeout(() => setSent(false), 3000)
+    } catch {
+      setErr(true)
+      setTimeout(() => setErr(false), 3000)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  if (!clientEmail) return <span className="text-xs text-gray-300">Sin email</span>
+
+  return (
+    <button
+      onClick={handleSend}
+      disabled={sending || sent}
+      className={`inline-flex items-center gap-1 text-xs font-semibold transition-colors ${
+        sent ? 'text-green-600' : err ? 'text-red-500' : 'text-blue-600 hover:text-blue-800'
+      }`}
+    >
+      {sending ? (
+        <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+      ) : sent ? '✓ Enviada' : err ? 'Error' : (
+        <>
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Enviar
+        </>
+      )}
+    </button>
+  )
+}
+
 function AdminInvoicesSection() {
   const [invoices,    setInvoices]    = useState([])
   const [loading,     setLoading]     = useState(true)
@@ -1562,7 +1615,7 @@ function AdminInvoicesSection() {
     setLoading(true)
     const { data } = await supabase
       .from('invoices')
-      .select('*, orders(user_id, items, address, phone)')
+      .select('*, orders(user_id, items, address, phone, profiles(email))')
       .order('created_at', { ascending: false })
     setInvoices(data ?? [])
     setLoading(false)
@@ -1652,7 +1705,7 @@ function AdminInvoicesSection() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {['Nº Factura', 'Fecha', 'Total', 'Estado pago', 'Cambiar estado', 'PDF'].map(h => (
+                  {['Nº Factura', 'Fecha', 'Total', 'Estado pago', 'Cambiar estado', 'PDF', 'Email'].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -1706,6 +1759,9 @@ function AdminInvoicesSection() {
                         </svg>
                         PDF
                       </button>
+                    </td>
+                    <td className="px-4 py-3">
+                      <SendInvoiceRowButton inv={inv} />
                     </td>
                   </tr>
                 ))}
