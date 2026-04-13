@@ -42,11 +42,12 @@ const ORDER_STATUS = {
 }
 
 const TABS = [
-  { id: 'overview',  label: 'Resumen',   icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
-  { id: 'proyectos', label: 'Proyectos', icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
-  { id: 'pedidos',   label: 'Pedidos',   icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
-  { id: 'facturas',  label: 'Facturas',  icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
-  { id: 'empresa',   label: 'Mi empresa',icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+  { id: 'overview',         label: 'Resumen',          icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+  { id: 'proyectos',        label: 'Proyectos',        icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
+  { id: 'configuraciones',  label: 'Configuraciones',  icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+  { id: 'pedidos',          label: 'Pedidos',          icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+  { id: 'facturas',         label: 'Facturas',         icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
+  { id: 'empresa',          label: 'Mi empresa',       icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
 ]
 
 // ── Componentes base ──────────────────────────────────────────────────────
@@ -585,6 +586,122 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
   )
 }
 
+// ── Tab Configuraciones ───────────────────────────────────────────────────
+function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
+  const navigate     = useNavigate()
+  const [search,     setSearch]     = useState('')
+  const [deleting,   setDeleting]   = useState(null)
+  const [confirmDel, setConfirmDel] = useState(null)
+
+  const filtered = configuraciones.filter(c => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      blindLabel(c.blind_type).toLowerCase().includes(q) ||
+      (c.configuration_number ?? '').toLowerCase().includes(q) ||
+      (c.mechanism ?? '').toLowerCase().includes(q) ||
+      (c.slat_color_name ?? '').toLowerCase().includes(q)
+    )
+  })
+
+  async function handleDelete(id) {
+    setDeleting(id)
+    const { error } = await supabase.from('blind_configurations').delete().eq('id', id)
+    if (!error) setConfiguraciones(prev => prev.filter(c => c.id !== id))
+    setDeleting(null)
+    setConfirmDel(null)
+  }
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader title="Configuraciones guardadas" action={
+        <Link to="/configurador"
+          className="flex items-center gap-2 text-sm font-bold bg-red-700 text-white px-4 py-2 rounded-xl hover:bg-red-800 transition-colors">
+          + Nueva configuración
+        </Link>
+      } />
+
+      {configuraciones.length > 0 && (
+        <div className="relative">
+          <svg className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por tipo, mecanismo…"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+        </div>
+      )}
+
+      {filtered.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+          <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <p className="font-semibold text-gray-700 mb-1">{search ? 'Sin resultados' : 'Todavía no hay configuraciones'}</p>
+          <p className="text-sm text-gray-400 mb-5">
+            {search ? 'Prueba con otro término' : 'Guarda una persiana desde el configurador para verla aquí.'}
+          </p>
+          {!search && (
+            <Link to="/configurador"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-700 text-white text-sm font-bold rounded-xl hover:bg-red-800 transition-colors">
+              Ir al configurador
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {filtered.map(c => (
+            <div key={c.id} className="bg-white border border-gray-200 rounded-2xl p-4 hover:border-gray-300 hover:shadow-sm transition-all">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="min-w-0">
+                  <p className="font-bold text-gray-900 text-sm truncate">{blindLabel(c.blind_type)}</p>
+                  <p className="text-xs text-gray-400 font-mono mt-0.5 truncate">{c.configuration_number}</p>
+                </div>
+                <p className="text-lg font-black text-red-700 flex-shrink-0">{fmt(c.estimated_price)}</p>
+              </div>
+
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-4">
+                <span>{c.width} × {c.height} mm</span>
+                {c.mechanism && <span>{c.mechanism}</span>}
+                {c.slat_color_name && <span>{c.slat_color_name}</span>}
+                <span>{fmtDate(c.created_at)}</span>
+              </div>
+
+              <div className="flex gap-2">
+                <button onClick={() => navigate('/configurador')}
+                  className="flex-1 text-xs font-semibold py-2 px-3 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+                  Nueva similar
+                </button>
+                {confirmDel === c.id ? (
+                  <div className="flex gap-1.5">
+                    <button onClick={() => setConfirmDel(null)}
+                      className="text-xs font-semibold py-2 px-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
+                      Cancelar
+                    </button>
+                    <button onClick={() => handleDelete(c.id)} disabled={deleting === c.id}
+                      className="text-xs font-bold py-2 px-3 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors flex items-center gap-1.5">
+                      {deleting === c.id ? <Spinner small /> : null}
+                      Eliminar
+                    </button>
+                  </div>
+                ) : (
+                  <button onClick={() => setConfirmDel(c.id)}
+                    className="text-xs font-semibold py-2 px-3 rounded-lg border border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-600 hover:bg-red-50 transition-colors">
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Tab Pedidos ───────────────────────────────────────────────────────────
 function PedidosTab({ pedidos }) {
   return (
@@ -926,6 +1043,9 @@ export default function ProfessionalDashboard() {
                   {id === 'proyectos' && proyectos.length > 0 && (
                     <span className="ml-auto text-xs font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{proyectos.length}</span>
                   )}
+                  {id === 'configuraciones' && configuraciones.length > 0 && (
+                    <span className="ml-auto text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">{configuraciones.length}</span>
+                  )}
                 </button>
               ))}
             </nav>
@@ -1029,6 +1149,11 @@ export default function ProfessionalDashboard() {
                 logoUrl={logoUrl}
                 user={user}
               />
+            )}
+
+            {/* ── CONFIGURACIONES ── */}
+            {activeTab === 'configuraciones' && (
+              <ConfiguracionesTab configuraciones={configuraciones} setConfiguraciones={setConfiguraciones} />
             )}
 
             {/* ── PEDIDOS ── */}
