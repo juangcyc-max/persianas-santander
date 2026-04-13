@@ -1240,7 +1240,7 @@ function ProProjectModal({ project: initial, onClose, onSaved }) {
                 {items.map(it => (
                   <div key={it.item_id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{it.description || BUDGET_TYPE_LABELS[it.blind_type] ?? it.blind_type}</p>
+                      <p className="text-sm font-semibold text-gray-900 truncate">{it.description || (BUDGET_TYPE_LABELS[it.blind_type] ?? it.blind_type)}</p>
                       <p className="text-xs text-gray-400">{it.width} × {it.height} mm · {it.mechanism}</p>
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
