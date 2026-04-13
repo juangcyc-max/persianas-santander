@@ -50,7 +50,7 @@ const GROUPS = [
       {
         id: 'sistema_mini_cajon_pvc',
         title: 'Sistema Mini Cajón PVC',
-        subtitle: 'Cajón PVC · Motor · Guías opcionales',
+        subtitle: 'Cajón PVC · Muelle, cinta o motor · Guías opcionales',
         desc: 'Sistema completo con cajón mini de PVC integrado. Guías V25/H25 opcionales.',
         sizes: '301 – 3.000 mm',
         icon: (
@@ -63,7 +63,7 @@ const GROUPS = [
       {
         id: 'sistema_mini_cajon_aluminio',
         title: 'Sistema Mini Cajón Aluminio',
-        subtitle: 'Cajón aluminio · Motor · Guías opcionales',
+        subtitle: 'Cajón aluminio · Muelle, cinta o motor · Guías opcionales',
         desc: 'Sistema completo con cajón mini de aluminio extrusionado. Guías V25/H25 opcionales.',
         sizes: '301 – 3.000 mm',
         icon: (
@@ -215,8 +215,21 @@ function BlindTypeSelector({ blindType, onTypeChange }) {
         </div>
       )}
 
-      {/* Banner sistemas completos */}
-      {['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante'].includes(blindType) && (
+      {/* Banner sistemas cajón (muelle/cinta/motor) */}
+      {['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio'].includes(blindType) && (
+        <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+          <svg className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-xs text-amber-700">
+            Sistema completo con cajón. Mecanismo libre (muelle, cinta o motor). Guías V25/H25 opcionales con precio por metro lineal.
+          </p>
+        </div>
+      )}
+
+      {/* Banner sistema autoblocante (motor obligatorio) */}
+      {blindType === 'sistema_mini_autoblocante' && (
         <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
           <svg className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
