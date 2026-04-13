@@ -128,22 +128,40 @@ export function ResetPassword() {
   const [expired,  setExpired]  = useState(false)
 
   useEffect(() => {
-    // FIX race condition: Supabase procesa el hash ANTES de que React monte el componente,
-    // por lo que el evento PASSWORD_RECOVERY puede haberse disparado ya.
-    // Solución: leer el hash de la URL directamente (siempre contiene type=recovery).
-    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
-    if (hashParams.get('type') === 'recovery') {
-      setReady(true)
-      return // no hace falta el listener ni el timer
+    let cleanup = () => {}
+
+    async function detect() {
+      // 1. Flujo implícito: Supabase pone type=recovery en el hash
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+      if (hashParams.get('type') === 'recovery') {
+        setReady(true)
+        return
+      }
+
+      // 2. Flujo PKCE: Supabase pone ?code= en el query string
+      const searchParams = new URLSearchParams(window.location.search)
+      if (searchParams.get('code')) {
+        setReady(true)
+        return
+      }
+
+      // 3. Supabase ya procesó el token antes del mount → hay sesión activa
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setReady(true)
+        return
+      }
+
+      // 4. Listener como último recurso
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') setReady(true)
+      })
+      const timer = setTimeout(() => setExpired(true), 8000)
+      cleanup = () => { subscription.unsubscribe(); clearTimeout(timer) }
     }
 
-    // Fallback: escuchar el evento (si el hash aún no fue procesado)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setReady(true)
-    })
-    // Si en 8 s no llega nada, el enlace es inválido/expirado
-    const timer = setTimeout(() => setExpired(true), 8000)
-    return () => { subscription.unsubscribe(); clearTimeout(timer) }
+    detect()
+    return () => cleanup()
   }, [])
 
   async function handleSubmit(e) {
