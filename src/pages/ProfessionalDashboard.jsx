@@ -586,9 +586,97 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
   )
 }
 
+// ── Tarjeta de configuración con carrito ──────────────────────────────────
+function ProConfigCard({ c, onDelete, deleting, confirmDel, setConfirmDel }) {
+  const navigate          = useNavigate()
+  const { addToCart }     = useCart()
+  const [adding,  setAdding]  = useState(false)
+  const [added,   setAdded]   = useState(false)
+
+  async function handleAddToCart() {
+    setAdding(true)
+    const { error } = await addToCart(c.id)
+    setAdding(false)
+    if (!error) { setAdded(true); setTimeout(() => setAdded(false), 3000) }
+  }
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl p-4 hover:border-gray-300 hover:shadow-sm transition-all flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-bold text-gray-900 text-sm truncate">{blindLabel(c.blind_type)}</p>
+          <p className="text-xs text-gray-400 font-mono mt-0.5 truncate">{c.configuration_number}</p>
+        </div>
+        <p className="text-lg font-black text-red-700 flex-shrink-0">{fmt(c.estimated_price)}</p>
+      </div>
+
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+        <span>{c.width} × {c.height} mm</span>
+        {c.mechanism && <span>{c.mechanism}</span>}
+        {c.slat_color_name && <span>{c.slat_color_name}</span>}
+        <span>{fmtDate(c.created_at)}</span>
+      </div>
+
+      {/* Añadir a la cesta */}
+      <button
+        onClick={handleAddToCart}
+        disabled={adding || added}
+        className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors ${
+          added ? 'bg-green-100 text-green-700' : 'bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-60'
+        }`}
+      >
+        {adding ? (
+          <Spinner small />
+        ) : added ? (
+          <>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Añadido a la cesta
+          </>
+        ) : (
+          <>
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            Añadir a la cesta
+          </>
+        )}
+      </button>
+
+      {/* Acciones secundarias */}
+      <div className="flex gap-2">
+        <button onClick={() => navigate('/configurador')}
+          className="flex-1 text-xs font-semibold py-2 px-3 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
+          Nueva similar
+        </button>
+        {confirmDel === c.id ? (
+          <div className="flex gap-1.5">
+            <button onClick={() => setConfirmDel(null)}
+              className="text-xs font-semibold py-2 px-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
+              Cancelar
+            </button>
+            <button onClick={() => onDelete(c.id)} disabled={deleting === c.id}
+              className="text-xs font-bold py-2 px-3 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors flex items-center gap-1.5">
+              {deleting === c.id ? <Spinner small /> : null}
+              Eliminar
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setConfirmDel(c.id)}
+            className="text-xs font-semibold py-2 px-3 rounded-lg border border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-600 hover:bg-red-50 transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── Tab Configuraciones ───────────────────────────────────────────────────
 function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
-  const navigate     = useNavigate()
   const [search,     setSearch]     = useState('')
   const [deleting,   setDeleting]   = useState(null)
   const [confirmDel, setConfirmDel] = useState(null)
@@ -652,49 +740,14 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {filtered.map(c => (
-            <div key={c.id} className="bg-white border border-gray-200 rounded-2xl p-4 hover:border-gray-300 hover:shadow-sm transition-all">
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="min-w-0">
-                  <p className="font-bold text-gray-900 text-sm truncate">{blindLabel(c.blind_type)}</p>
-                  <p className="text-xs text-gray-400 font-mono mt-0.5 truncate">{c.configuration_number}</p>
-                </div>
-                <p className="text-lg font-black text-red-700 flex-shrink-0">{fmt(c.estimated_price)}</p>
-              </div>
-
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-4">
-                <span>{c.width} × {c.height} mm</span>
-                {c.mechanism && <span>{c.mechanism}</span>}
-                {c.slat_color_name && <span>{c.slat_color_name}</span>}
-                <span>{fmtDate(c.created_at)}</span>
-              </div>
-
-              <div className="flex gap-2">
-                <button onClick={() => navigate('/configurador')}
-                  className="flex-1 text-xs font-semibold py-2 px-3 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
-                  Nueva similar
-                </button>
-                {confirmDel === c.id ? (
-                  <div className="flex gap-1.5">
-                    <button onClick={() => setConfirmDel(null)}
-                      className="text-xs font-semibold py-2 px-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
-                      Cancelar
-                    </button>
-                    <button onClick={() => handleDelete(c.id)} disabled={deleting === c.id}
-                      className="text-xs font-bold py-2 px-3 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors flex items-center gap-1.5">
-                      {deleting === c.id ? <Spinner small /> : null}
-                      Eliminar
-                    </button>
-                  </div>
-                ) : (
-                  <button onClick={() => setConfirmDel(c.id)}
-                    className="text-xs font-semibold py-2 px-3 rounded-lg border border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-600 hover:bg-red-50 transition-colors">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-            </div>
+            <ProConfigCard
+              key={c.id}
+              c={c}
+              onDelete={handleDelete}
+              deleting={deleting}
+              confirmDel={confirmDel}
+              setConfirmDel={setConfirmDel}
+            />
           ))}
         </div>
       )}
