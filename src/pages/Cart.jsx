@@ -18,8 +18,10 @@ const PRODUCT_LABELS = {
   sistema_mini_pvc:          'Sistema Mini PVC',
   sistema_mini_aluminio:     'Sistema Mini Aluminio',
   sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
-  solo_motor:                'Motor',
-  solo_guias:                'Guías laterales',
+  solo_motor:                'Solo Motor',
+  solo_guias:                'Solo Guías',
+  motor_mas_guias:           'Motor + Guías',
+  pano_mas_guias:            'Paño + Guías',
   // legacy
   sistema_mini:              'Sistema Mini Autoblocante',
   blocking:                  'Paño Bloqueante',
@@ -532,7 +534,7 @@ export default function Cart() {
                 {items.map(i => (
                   <div key={i.id} className="flex justify-between text-sm">
                     <span className="text-gray-600 truncate pr-2">
-                      Persiana {i.blind_configurations?.blind_type === 'blocking' ? 'bloqueante' : 'estándar'}
+                      {PRODUCT_LABELS[i.blind_configurations?.blind_type] ?? i.blind_configurations?.blind_type ?? 'Persiana'}
                       {i.quantity > 1 && ` ×${i.quantity}`}
                     </span>
                     <span className="text-gray-900 font-medium flex-shrink-0">

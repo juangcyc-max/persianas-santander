@@ -180,7 +180,7 @@ function OrderCard({ order, invoice }) {
               <div key={i} className="flex items-center justify-between bg-gray-50 rounded-lg px-4 py-3 text-sm">
                 <div>
                   <p className="font-semibold text-gray-900">
-                    Persiana {item.blind_type === 'blocking' ? 'bloqueante' : 'estándar'}
+                    {({'laminada':'Paño Laminado','autoblocante':'Paño Autoblocante','blocking':'Bloqueante','sistema_mini_pvc':'Sistema Mini PVC','sistema_mini_aluminio':'Sistema Mini Aluminio','sistema_mini_autoblocante':'Sistema Mini Autoblocante','solo_guias':'Solo Guías','solo_motor':'Solo Motor','motor_mas_guias':'Motor + Guías','pano_mas_guias':'Paño + Guías','normal':'Estándar'})[item.blind_type] ?? item.blind_type ?? 'Persiana'}
                     {item.quantity > 1 && ` ×${item.quantity}`}
                   </p>
                   <p className="text-xs text-gray-500">{item.width}×{item.height}mm · {item.mechanism}</p>

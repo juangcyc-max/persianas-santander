@@ -26,6 +26,8 @@ const LABELS = {
     sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
     solo_motor:                'Solo Motor',
     solo_guias:                'Solo Guías',
+    motor_mas_guias:           'Motor + Guías',
+    pano_mas_guias:            'Paño + Guías',
     // legacy
     sistema_mini: 'Sistema Mini Autoblocante',
     blocking:     'Bloqueante',

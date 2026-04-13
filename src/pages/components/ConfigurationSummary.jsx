@@ -13,11 +13,15 @@ function ConfigurationSummary({
   const productLabels = {
     laminada:                  'Paño Laminado',
     autoblocante:              'Paño Autoblocante',
+    blocking:                  'Bloqueante',
     sistema_mini_pvc:          'Sistema Mini PVC',
     sistema_mini_aluminio:     'Sistema Mini Aluminio',
     sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
     solo_motor:                'Solo Motor',
     solo_guias:                'Solo Guías',
+    motor_mas_guias:           'Motor + Guías',
+    pano_mas_guias:            'Paño + Guías',
+    normal:                    'Estándar',
   }
   const guideLabels = {
     none: 'Sin guías',
@@ -38,9 +42,10 @@ function ConfigurationSummary({
     mando_distancia: 'Mando a distancia (260 €)',
   }
 
-  const isSolo     = productType === 'solo_motor' || productType === 'solo_guias'
+  const INDIVIDUAL = ['solo_motor', 'solo_guias', 'motor_mas_guias', 'pano_mas_guias']
+  const isSolo     = INDIVIDUAL.includes(productType)
   const isSoloMoto = productType === 'solo_motor'
-  const isSoloGuia = productType === 'solo_guias'
+  const isSoloGuia = productType === 'solo_guias' || productType === 'motor_mas_guias' || productType === 'pano_mas_guias'
   const sistema    = isSistema(productType)
 
   const guideValue = sistema

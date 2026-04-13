@@ -154,7 +154,7 @@ function ClientBudgetModal({ config, logoUrl, onGenerate, onClose }) {
         <div className="p-6 space-y-4">
           {/* Resumen configuración */}
           <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm">
-            <p className="font-semibold text-gray-700">{config.blind_type === 'blocking' ? 'Autoblocante' : config.blind_type ?? 'Persiana'}</p>
+            <p className="font-semibold text-gray-700">{blindLabel(config.blind_type)}</p>
             <p className="text-gray-400 text-xs">{config.width} × {config.height} mm · {config.mechanism} · {config.box_color_name}</p>
           </div>
 
@@ -267,7 +267,7 @@ function ClientInvoiceModal({ config, logoUrl, onGenerate, onClose }) {
 
         <div className="p-6 space-y-4">
           <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm">
-            <p className="font-semibold text-gray-700">{config.blind_type ?? 'Persiana'}</p>
+            <p className="font-semibold text-gray-700">{blindLabel(config.blind_type)}</p>
             <p className="text-gray-400 text-xs">{config.width} × {config.height} mm · {config.mechanism}</p>
           </div>
 

@@ -170,7 +170,7 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null) {
   const items = order?.items ?? invoice?.items ?? []
   const tableData = items.length > 0
     ? items.map(i => [
-        `Persiana ${i.blind_type === 'blocking' ? 'bloqueante' : 'estándar'}${(i.quantity ?? 1) > 1 ? ` ×${i.quantity}` : ''}`,
+        `${({'laminada':'Paño Laminado','autoblocante':'Paño Autoblocante','blocking':'Bloqueante','sistema_mini_pvc':'Sistema Mini PVC','sistema_mini_aluminio':'Sistema Mini Aluminio','sistema_mini_autoblocante':'Sistema Mini Autoblocante','solo_guias':'Solo Guías','solo_motor':'Solo Motor','motor_mas_guias':'Motor + Guías','pano_mas_guias':'Paño + Guías','normal':'Estándar'})[i.blind_type] ?? i.blind_type ?? 'Persiana'}${(i.quantity ?? 1) > 1 ? ` ×${i.quantity}` : ''}`,
         `${i.width ?? '—'}×${i.height ?? '—'} mm`,
         i.mechanism ?? '—',
         `Caja: ${i.box_color_name ?? '—'}\nLamas: ${i.slat_color_name ?? '—'}`,

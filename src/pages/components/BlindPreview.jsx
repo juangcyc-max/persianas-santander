@@ -18,9 +18,13 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
         <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Vista previa</h2>
         <div className="flex items-center gap-3">
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-            blindType === 'blocking' ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600'
+            blindType === 'blocking' || blindType === 'autoblocante' || blindType === 'sistema_mini_autoblocante'
+              ? 'bg-gray-900 text-white'
+              : ['sistema_mini_pvc','sistema_mini_aluminio'].includes(blindType)
+              ? 'bg-red-100 text-red-700'
+              : 'bg-gray-100 text-gray-600'
           }`}>
-            {blindType === 'blocking' ? 'Bloqueante' : 'Estándar'}
+            {({'laminada':'Paño laminado','autoblocante':'Autoblocante','blocking':'Bloqueante','sistema_mini_pvc':'Sistema Mini PVC','sistema_mini_aluminio':'Sistema Mini Aluminio','sistema_mini_autoblocante':'Sistema Mini Autoblocante','solo_guias':'Solo guías','solo_motor':'Solo motor','motor_mas_guias':'Motor + Guías','pano_mas_guias':'Paño + Guías'})[blindType] ?? blindType ?? 'Estándar'}
           </span>
           <span className="text-xs text-gray-400">{width} mm</span>
         </div>
