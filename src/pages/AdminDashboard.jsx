@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { generateInvoicePDF } from '../services/invoicePDF'
+import { generateBudgetPDF } from '../services/pdf'
 import { setProfessionalDiscountForUser } from '../services/settings'
-import { notifyStatusChange, confirmAppointment, sendInvoiceEmail } from '../services/email'
+import { notifyStatusChange, confirmAppointment, sendInvoiceEmail, sendBudgetResend } from '../services/email'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
@@ -918,11 +919,14 @@ const BUDGET_TYPE_LABELS = {
 }
 
 function BudgetModal({ budget, onClose, onSaved }) {
-  const [status,     setStatus]     = useState(budget.budget_status ?? 'pending')
-  const [adminNotes, setAdminNotes] = useState(budget.admin_notes ?? '')
-  const [adminPrice, setAdminPrice] = useState(budget.admin_price != null ? String(budget.admin_price) : '')
-  const [saving,     setSaving]     = useState(false)
-  const [saved,      setSaved]      = useState(false)
+  const [status,       setStatus]       = useState(budget.budget_status ?? 'pending')
+  const [adminNotes,   setAdminNotes]   = useState(budget.admin_notes ?? '')
+  const [adminPrice,   setAdminPrice]   = useState(budget.admin_price != null ? String(budget.admin_price) : '')
+  const [saving,       setSaving]       = useState(false)
+  const [saved,        setSaved]        = useState(false)
+  const [downloading,  setDownloading]  = useState(false)
+  const [sending,      setSending]      = useState(false)
+  const [sendFeedback, setSendFeedback] = useState('')
 
   async function handleSave() {
     setSaving(true)
@@ -936,6 +940,66 @@ function BudgetModal({ budget, onClose, onSaved }) {
     if (!error) {
       setSaved(true)
       setTimeout(() => { setSaved(false); onSaved() }, 1500)
+    }
+  }
+
+  function getBudgetParams() {
+    const effectivePrice = adminPrice !== '' ? parseFloat(adminPrice) : (budget.admin_price ?? budget.total_with_iva)
+    const customerData = {
+      name:    budget.customer_name ?? '',
+      phone:   budget.customer_phone ?? '',
+      email:   budget.customer_email ?? '',
+      address: budget.customer_address ?? '',
+    }
+    const configuration = {
+      blindType:      budget.blind_type,
+      mechanism:      budget.mechanism,
+      width:          budget.width,
+      height:         budget.height,
+      estimatedPrice: effectivePrice,
+      motorType:      budget.motor_type ?? null,
+      guideType:      budget.guide_type ?? null,
+      installacion:   budget.installacion !== false,
+      clientNotes:    budget.client_notes ?? '',
+    }
+    return { customerData, configuration }
+  }
+
+  async function handleDownloadPDF() {
+    setDownloading(true)
+    try {
+      const { customerData, configuration } = getBudgetParams()
+      await generateBudgetPDF(customerData, configuration, {
+        skipSave: true,
+        budgetNumberOverride: budget.budget_number ?? null,
+      })
+    } finally {
+      setDownloading(false)
+    }
+  }
+
+  async function handleSendEmail() {
+    setSending(true)
+    setSendFeedback('')
+    try {
+      // Mark as accepted first
+      const effectivePrice = adminPrice !== '' ? parseFloat(adminPrice) : (budget.admin_price ?? budget.total_with_iva)
+      const updates = {
+        budget_status: 'accepted',
+        admin_notes:   adminNotes || null,
+        admin_price:   effectivePrice,
+      }
+      await supabase.from('budgets').update(updates).eq('id', budget.id)
+      setStatus('accepted')
+
+      const { customerData, configuration } = getBudgetParams()
+      await sendBudgetResend(customerData, configuration)
+      setSendFeedback('ok')
+      setTimeout(() => { setSendFeedback(''); onSaved() }, 2000)
+    } catch {
+      setSendFeedback('error')
+    } finally {
+      setSending(false)
     }
   }
 
@@ -1040,8 +1104,36 @@ function BudgetModal({ budget, onClose, onSaved }) {
             />
           </div>
 
-          {/* Acciones */}
-          <div className="flex gap-3 pt-1">
+          {/* Acciones secundarias: PDF + Email */}
+          <div className="flex gap-2 pt-1">
+            <button
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-60 flex items-center justify-center gap-1.5"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              {downloading ? 'Generando…' : 'Descargar PDF'}
+            </button>
+            <button
+              onClick={handleSendEmail}
+              disabled={sending || sendFeedback === 'ok'}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-1.5 ${
+                sendFeedback === 'ok'    ? 'bg-green-600 text-white' :
+                sendFeedback === 'error' ? 'bg-red-200 text-red-800' :
+                'bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-60'
+              }`}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              {sending ? 'Enviando…' : sendFeedback === 'ok' ? '✓ Enviado' : sendFeedback === 'error' ? 'Error al enviar' : 'Enviar al cliente'}
+            </button>
+          </div>
+
+          {/* Acciones principales: Cancelar + Guardar */}
+          <div className="flex gap-3">
             <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
               Cancelar
             </button>
