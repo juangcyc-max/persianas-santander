@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
 import { generateGroupBudgetPDF, generateGroupInvoicePDF } from '../services/pdf'
@@ -770,9 +770,10 @@ function EmpresaTab({ empresa, setEmpresa, user, logoUrl, setLogoUrl }) {
 
 // ── Página principal ──────────────────────────────────────────────────────
 export default function ProfessionalDashboard() {
-  const navigate      = useNavigate()
-  const { itemCount } = useCart()
-  const [activeTab,      setActiveTab]      = useState('overview')
+  const navigate        = useNavigate()
+  const [searchParams]  = useSearchParams()
+  const { itemCount }   = useCart()
+  const [activeTab,      setActiveTab]      = useState(searchParams.get('tab') ?? 'overview')
   const [menuOpen,       setMenuOpen]       = useState(false)
   const [user,           setUser]           = useState(null)
   const [empresa,        setEmpresa]        = useState(null)

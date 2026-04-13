@@ -123,7 +123,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
               Guardada como <span className="font-mono font-bold">{message}</span>
             </p>
             <button
-              onClick={() => navigate('/mis-configuraciones')}
+              onClick={() => onSuccess?.()}
               className="text-xs text-green-700 font-semibold hover:underline flex-shrink-0"
             >
               Ver todas →

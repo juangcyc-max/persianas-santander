@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../services/supabase/client'
 import { useCart } from '../../context/CartContext'
 
@@ -302,9 +302,16 @@ export default function MisConfiguraciones() {
   const navigate = useNavigate()
   const { data: configs, setData, loading, error, refresh } = useConfigurations()
 
-  const [processingId, setProcessingId] = useState(null)
-  const [search,       setSearch]       = useState('')
-  const [activeFilter, setActiveFilter] = useState('all')
+  const [processingId,  setProcessingId]  = useState(null)
+  const [search,        setSearch]        = useState('')
+  const [activeFilter,  setActiveFilter]  = useState('all')
+  const [isProfessional,setIsProfessional]= useState(false)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.user_metadata?.user_type === 'professional') setIsProfessional(true)
+    })
+  }, [])
 
   const filteredConfigs = useMemo(() => configs.filter(c => {
     const q = search.toLowerCase()
@@ -377,7 +384,42 @@ export default function MisConfiguraciones() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50">
+      {/* Barra de navegación del panel profesional */}
+      {isProfessional && (
+        <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-1 h-12 overflow-x-auto">
+              <Link to="/panel-profesional"
+                className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+                Panel profesional
+              </Link>
+              <span className="text-gray-200 text-sm">|</span>
+              {[
+                { label: 'Resumen',    tab: 'overview'  },
+                { label: 'Proyectos', tab: 'proyectos' },
+                { label: 'Pedidos',   tab: 'pedidos'   },
+                { label: 'Facturas',  tab: 'facturas'  },
+                { label: 'Mi empresa',tab: 'empresa'   },
+              ].map(({ label, tab }) => (
+                <Link key={tab} to={`/panel-profesional?tab=${tab}`}
+                  className="text-xs font-semibold text-gray-500 hover:text-red-700 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap">
+                  {label}
+                </Link>
+              ))}
+              <span className="text-gray-200 text-sm">|</span>
+              <span className="text-xs font-bold text-red-700 px-3 py-1.5 bg-red-50 rounded-lg whitespace-nowrap">
+                Mis configuraciones
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="py-8 px-4">
       <div className="max-w-7xl mx-auto">
 
         {/* Cabecera */}
@@ -474,6 +516,7 @@ export default function MisConfiguraciones() {
             ))}
           </div>
         )}
+      </div>
       </div>
     </div>
   )
