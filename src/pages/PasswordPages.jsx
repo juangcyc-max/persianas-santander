@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 
@@ -126,6 +126,12 @@ export function ResetPassword() {
   const [showPass, setShowPass] = useState(false)
   const [ready,    setReady]    = useState(false)   // true solo tras evento PASSWORD_RECOVERY
   const [expired,  setExpired]  = useState(false)
+  const doneRef = useRef(false)
+
+  // Cerrar sesión si el usuario abandona la página sin completar el cambio
+  useEffect(() => {
+    return () => { if (!doneRef.current) supabase.auth.signOut() }
+  }, [])
 
   useEffect(() => {
     let cleanup = () => {}
@@ -178,6 +184,7 @@ export function ResetPassword() {
       setError('No se pudo actualizar la contraseña. El enlace puede haber expirado.')
     } else {
       // Cerrar sesión por seguridad: el usuario debe volver a identificarse
+      doneRef.current = true
       await supabase.auth.signOut()
       setLoading(false)
       setDone(true)

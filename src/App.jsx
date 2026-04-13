@@ -92,6 +92,7 @@ function App() {
             <Route path="/panel-profesional" element={<ProfessionalRoute><ProfessionalDashboard /></ProfessionalRoute>} />
             <Route path="/admin"             element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/inicio"            element={<SmartRedirect />} />
+            <Route path="/reset-password"    element={<ResetPassword />} />
             <Route path="/*" element={
               <div className="min-h-screen bg-gray-50 w-full">
                 <Header />
@@ -109,7 +110,6 @@ function App() {
                     <Route path="/cookies"             element={<PoliticaCookies />} />
                     <Route path="/terminos"            element={<TerminosCondiciones />} />
                     <Route path="/recuperar"           element={<ForgotPassword />} />
-                    <Route path="/reset-password"      element={<ResetPassword />} />
                     <Route path="*"                    element={<NotFound />} />
                   </Routes>
                 </main>
