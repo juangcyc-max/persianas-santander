@@ -27,6 +27,49 @@ function DiagramH25() {
   )
 }
 
+function InstallacionToggle({ installacion, onInstallacionChange, precio = '+100 €/m²' }) {
+  return (
+    <div className="mt-6">
+      <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Instalación</h2>
+      <button
+        onClick={() => onInstallacionChange(!installacion)}
+        className={`w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+          installacion ? 'border-red-600 bg-red-50' : 'border-gray-200 bg-white hover:border-gray-300'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${installacion ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            </svg>
+          </div>
+          <div className="text-left">
+            <p className={`text-sm font-semibold ${installacion ? 'text-red-700' : 'text-gray-800'}`}>
+              {installacion ? 'Con instalación' : 'Sin instalación'}
+            </p>
+            <p className="text-xs text-gray-400">{installacion ? precio : 'Solo material'}</p>
+          </div>
+        </div>
+        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${installacion ? 'border-red-600 bg-red-600' : 'border-gray-300'}`}>
+          {installacion && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+          </svg>}
+        </div>
+      </button>
+      {!installacion && (
+        <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-300 rounded-lg px-3 py-2.5">
+          <svg className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-xs text-amber-800 font-medium leading-snug">
+            AVISO: Sin instalación no nos hacemos responsables si se toman mal las medidas. Asegúrese de medir correctamente antes de confirmar el pedido.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // mode: 'optional'      → paños, puede elegir sin guías / V25 / H25 (con coste)
 // mode: 'included'      → sistemas, elige V25 o H25 (incluidas, sin coste extra)
 // mode: 'product'       → solo guías, elige tipo (es el producto en sí)
@@ -72,70 +115,7 @@ function GuideSelector({ mode = 'optional', guideType, onGuideTypeChange, instal
     : 'Guías laterales'
 
   if (isInstallOnly) {
-    return (
-      <div>
-        <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">
-          {sectionTitle}
-        </h2>
-
-        <div className="grid grid-cols-2 gap-2">
-          <button
-            onClick={() => onInstallacionChange(true)}
-            className={`p-3 rounded-xl border-2 text-left transition-all ${
-              installacion
-                ? 'border-red-600 bg-red-50'
-                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-colors ${
-              installacion ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-500'
-            }`}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-            </div>
-            <p className={`text-xs font-bold ${installacion ? 'text-red-700' : 'text-gray-900'}`}>
-              Con instalación
-            </p>
-          </button>
-
-          <button
-            onClick={() => onInstallacionChange(false)}
-            className={`p-3 rounded-xl border-2 text-left transition-all ${
-              !installacion
-                ? 'border-amber-500 bg-amber-50'
-                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-colors ${
-              !installacion ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500'
-            }`}>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-            </div>
-            <p className={`text-xs font-bold ${!installacion ? 'text-amber-700' : 'text-gray-900'}`}>
-              Sin instalación
-            </p>
-          </button>
-        </div>
-
-        {!installacion && (
-          <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-300 rounded-lg px-3 py-2.5">
-            <svg className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-xs text-amber-800 font-medium leading-snug">
-              AVISO: Sin instalación no nos hacemos responsables si se toman mal las medidas. Asegúrese de medir correctamente antes de confirmar el pedido.
-            </p>
-          </div>
-        )}
-      </div>
-    )
+    return <InstallacionToggle installacion={installacion} onInstallacionChange={onInstallacionChange} precio="+150 € precio fijo" />
   }
 
   return (
@@ -239,72 +219,7 @@ function GuideSelector({ mode = 'optional', guideType, onGuideTypeChange, instal
       </div>
 
       {/* Instalación */}
-      {showInstallation && (
-        <div className="mt-6">
-          <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">
-            Instalación
-          </h2>
-
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              onClick={() => onInstallacionChange(true)}
-              className={`p-3 rounded-xl border-2 text-left transition-all ${
-                installacion
-                  ? 'border-red-600 bg-red-50'
-                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-colors ${
-                installacion ? 'bg-red-600 text-white' : 'bg-gray-100 text-gray-500'
-              }`}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-              </div>
-              <p className={`text-xs font-bold ${installacion ? 'text-red-700' : 'text-gray-900'}`}>
-                Con instalación
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">+100 €/m²</p>
-            </button>
-
-            <button
-              onClick={() => onInstallacionChange(false)}
-              className={`p-3 rounded-xl border-2 text-left transition-all ${
-                !installacion
-                  ? 'border-amber-500 bg-amber-50'
-                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-colors ${
-                !installacion ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-500'
-              }`}>
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                </svg>
-              </div>
-              <p className={`text-xs font-bold ${!installacion ? 'text-amber-700' : 'text-gray-900'}`}>
-                Sin instalación
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">Solo material</p>
-            </button>
-          </div>
-
-          {!installacion && (
-            <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-300 rounded-lg px-3 py-2.5">
-              <svg className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-xs text-amber-800 font-medium leading-snug">
-                AVISO: Sin instalación no nos hacemos responsables si se toman mal las medidas. Asegúrese de medir correctamente antes de confirmar el pedido.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+      {showInstallation && <InstallacionToggle installacion={installacion} onInstallacionChange={onInstallacionChange} precio="+100 €/m²" />}
     </div>
   )
 }
