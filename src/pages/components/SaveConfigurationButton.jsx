@@ -19,13 +19,13 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
     setAddedToCart(false)
     setSavedId(null)
 
+    let redirectUrl = null
+
     try {
-      const authResponse = await supabase.auth.getUser()
-      const user = authResponse.data.user
+      const { data: { user } } = await supabase.auth.getUser()
 
       if (!user) {
         setStatus('auth')
-        setLoading(false)
         return
       }
 
@@ -63,13 +63,19 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
       setStatus('success')
       setMessage(configNumber)
       onSuccess?.(saved)
-      setTimeout(() => { window.location.replace('/mis-configuraciones') }, 600)
+
+      const { data: profile } = await supabase.from('profiles').select('user_type').eq('id', user.id).single()
+      const isPro = profile?.user_type === 'professional' || user.user_metadata?.user_type === 'professional'
+      redirectUrl = isPro ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones'
+
     } catch (err) {
       setStatus('error')
       setMessage(err.message)
     } finally {
       setLoading(false)
     }
+
+    if (redirectUrl) setTimeout(() => { window.location.href = redirectUrl }, 800)
   }
 
   async function handleAddToCart() {
