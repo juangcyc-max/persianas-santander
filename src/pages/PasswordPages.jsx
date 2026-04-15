@@ -126,11 +126,15 @@ export function ResetPassword() {
   const [showPass, setShowPass] = useState(false)
   const [ready,    setReady]    = useState(false)   // true solo tras evento PASSWORD_RECOVERY
   const [expired,  setExpired]  = useState(false)
-  const doneRef = useRef(false)
+  const doneRef  = useRef(false)
+  const readyRef = useRef(false)  // solo true si realmente estamos en flujo recovery
 
-  // Cerrar sesión si el usuario abandona la página sin completar el cambio
+  // Sincronizar readyRef con el estado ready
+  useEffect(() => { if (ready) readyRef.current = true }, [ready])
+
+  // Cerrar sesión solo si estábamos en recovery y el usuario no completó el cambio
   useEffect(() => {
-    return () => { if (!doneRef.current) supabase.auth.signOut() }
+    return () => { if (readyRef.current && !doneRef.current) supabase.auth.signOut() }
   }, [])
 
   useEffect(() => {
