@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Navigate } from 'react-router-dom'
 import { supabase } from '../../services/supabase/client'
 import { useCart } from '../../context/CartContext'
 
@@ -10,6 +10,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
   const [savedId,      setSavedId]      = useState(null)
   const [addingCart,   setAddingCart]   = useState(false)
   const [addedToCart,  setAddedToCart]  = useState(false)
+  const [destUrl,      setDestUrl]      = useState(null)
   const navigate = useNavigate()
   const { addToCart } = useCart()
 
@@ -18,8 +19,6 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
     setStatus(null)
     setAddedToCart(false)
     setSavedId(null)
-
-    let redirectUrl = null
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -66,7 +65,8 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
 
       const { data: profile } = await supabase.from('profiles').select('user_type').eq('id', user.id).single()
       const isPro = profile?.user_type === 'professional' || user.user_metadata?.user_type === 'professional'
-      redirectUrl = isPro ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones'
+      const dest  = isPro ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones'
+      setTimeout(() => setDestUrl(dest), 800)
 
     } catch (err) {
       setStatus('error')
@@ -74,8 +74,6 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
     } finally {
       setLoading(false)
     }
-
-    if (redirectUrl) setTimeout(() => { window.location.href = redirectUrl }, 800)
   }
 
   async function handleAddToCart() {
@@ -85,6 +83,8 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
     setAddingCart(false)
     if (!error) setAddedToCart(true)
   }
+
+  if (destUrl) return <Navigate to={destUrl} replace />
 
   return (
     <div className="space-y-2">
