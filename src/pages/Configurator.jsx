@@ -534,7 +534,7 @@ function Configurator() {
               {items.length === 0 && (
                 <SaveConfigurationButton
                   configuration={configuration}
-                  onSuccess={(saved) => { if (!saved) navigate(userType === 'professional' ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones') }}
+                  onSuccess={() => navigate(userType === 'professional' ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones')}
                   proDiscount={proDiscount}
                 />
               )}
