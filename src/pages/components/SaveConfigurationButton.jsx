@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../services/supabase/client'
 import { useCart } from '../../context/CartContext'
 
-function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20, redirectTo }) {
+function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 }) {
   const [loading,      setLoading]      = useState(false)
   const [status,       setStatus]       = useState(null) // null | 'success' | 'error' | 'auth'
   const [message,      setMessage]      = useState('')
@@ -63,7 +63,11 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20, r
       setStatus('success')
       setMessage(configNumber)
       onSuccess?.(saved)
-      if (redirectTo) { setTimeout(() => { window.location.replace(redirectTo) }, 600) }
+      // Determinar destino consultando profiles (más fiable que user_metadata)
+      const { data: profile } = await supabase.from('profiles').select('user_type').eq('id', user.id).single()
+      const isPro = profile?.user_type === 'professional' || user.user_metadata?.user_type === 'professional'
+      const dest  = isPro ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones'
+      setTimeout(() => { window.location.replace(dest) }, 600)
     } catch (err) {
       setStatus('error')
       setMessage(err.message)

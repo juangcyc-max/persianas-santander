@@ -534,7 +534,6 @@ function Configurator() {
               {items.length === 0 && (
                 <SaveConfigurationButton
                   configuration={configuration}
-                  redirectTo={userType === 'professional' ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones'}
                   proDiscount={proDiscount}
                 />
               )}
