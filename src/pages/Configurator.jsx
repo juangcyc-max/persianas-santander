@@ -128,6 +128,9 @@ function Configurator() {
   const [boxColor,     setBoxColor]     = useState(() => loadCart().boxColor     ?? '#F2ECCA')
   const [slatColor,    setSlatColor]    = useState(() => loadCart().slatColor    ?? '#F2ECCA')
   const [customerData, setCustomerData] = useState({ name: '', phone: '', email: '', address: '' })
+  const [items,     setItems]     = useState([])
+  const [savingAll, setSavingAll] = useState(false)
+  const [savedAll,  setSavedAll]  = useState(false)
 
   useEffect(() => {
     localStorage.setItem(CART_KEY, JSON.stringify({
@@ -330,6 +333,67 @@ function Configurator() {
     customerData,
   }
 
+  // ─── Lista de persianas ─────────────────────────────────────────────────
+  const PRODUCT_LABELS = {
+    laminada: 'Paño Laminado', autoblocante: 'Paño Autoblocante',
+    sistema_mini_cajon_pvc: 'Sistema Mini PVC',
+    sistema_mini_cajon_aluminio: 'Sistema Mini Aluminio',
+    sistema_mini_autoblocante: 'Sistema Mini Autoblocante',
+    mosquitera_enrollable: 'Mosquitera', solo_motor: 'Motor', solo_guias: 'Guías',
+  }
+  const fmtEUR = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n)
+  const listTotal = items.reduce((sum, i) => sum + (i.estimatedPrice ?? 0), 0)
+
+  function handleAddToList() {
+    setItems(prev => [...prev, {
+      id: Date.now(),
+      label: PRODUCT_LABELS[productType] ?? productType,
+      width, height,
+      estimatedPrice: priceBreakdown.finalPrice,
+      configuration: { ...configuration },
+    }])
+    setWidth(1000)
+    setHeight(1200)
+    setSavedAll(false)
+  }
+
+  function removeItem(id) {
+    setItems(prev => prev.filter(i => i.id !== id))
+    setSavedAll(false)
+  }
+
+  async function handleSaveAll() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    setSavingAll(true)
+    for (const item of items) {
+      const conf = item.configuration
+      const configNumber = `CONF-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+      const basePrice = conf.estimatedPrice / 1.21
+      await supabase.from('blind_configurations').insert([{
+        user_id:              user.id,
+        configuration_number: configNumber,
+        blind_type:           conf.productType ?? 'laminada',
+        mechanism:            conf.mechanism,
+        orientation:          conf.orientation,
+        motor_type:           conf.motorType,
+        width:                conf.width,
+        height:               conf.height,
+        box_color:            conf.boxColor,
+        slat_color:           conf.slatColor,
+        box_color_name:       conf.boxColorName,
+        slat_color_name:      conf.slatColorName,
+        price_public:         basePrice,
+        price_professional:   basePrice * (1 - proDiscount / 100),
+        estimated_price:      conf.estimatedPrice,
+        guide_type:           conf.guideType ?? null,
+        installacion:         conf.installacion !== false,
+      }])
+    }
+    setSavingAll(false)
+    setSavedAll(true)
+  }
+
   // Flags de visibilidad
   const showPreview      = !['solo_motor'].includes(productType)
   const showMechanism    = !isMotorOnly(productType) && !['solo_motor', 'solo_guias', 'mosquitera_enrollable'].includes(productType)
@@ -382,6 +446,46 @@ function Configurator() {
               <p className="text-red-200 text-sm">Personaliza cada detalle y obtén tu presupuesto al instante</p>
             </div>
 
+            {/* Lista de persianas configuradas */}
+            {items.length > 0 && (
+              <div className="rounded-lg border border-gray-200 overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
+                  <h3 className="text-sm font-bold text-gray-900">
+                    Lista · {items.length} {items.length === 1 ? 'persiana' : 'persianas'}
+                  </h3>
+                  <button onClick={() => { setItems([]); setSavedAll(false) }}
+                    className="text-xs text-gray-400 hover:text-red-600 transition-colors">
+                    Limpiar todo
+                  </button>
+                </div>
+                <div className="divide-y divide-gray-100 bg-white">
+                  {items.map((item, i) => (
+                    <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                      <span className="w-5 h-5 rounded-full bg-red-100 text-red-700 text-xs font-bold flex items-center justify-center flex-shrink-0">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-gray-900">{item.label}</p>
+                        <p className="text-xs text-gray-400">
+                          {item.width} × {item.height} mm · {fmtEUR(item.estimatedPrice)}
+                        </p>
+                      </div>
+                      <button onClick={() => removeItem(item.id)}
+                        className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
+                  <p className="text-sm font-bold text-gray-900">Total estimado</p>
+                  <p className="text-sm font-bold text-red-700">{fmtEUR(listTotal)}</p>
+                </div>
+              </div>
+            )}
+
             {showPreview && (
               <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <BlindPreview boxColor={effectiveBoxColor} slatColor={slatColor} width={width} blindType={productType} />
@@ -413,11 +517,47 @@ function Configurator() {
             </div>
 
             <div className="space-y-3">
-              <SaveConfigurationButton
-                configuration={configuration}
-                onSuccess={() => navigate(userType === 'professional' ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones')}
-                proDiscount={proDiscount}
-              />
+              {/* Añadir configuración actual a la lista */}
+              <button
+                onClick={handleAddToList}
+                className="w-full py-3 px-6 rounded-xl font-semibold text-sm border-2 border-red-200 text-red-700 hover:bg-red-50 hover:border-red-400 transition-all flex items-center justify-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Añadir a la lista
+              </button>
+
+              {/* Sin lista: guardar una sola */}
+              {items.length === 0 && (
+                <SaveConfigurationButton
+                  configuration={configuration}
+                  onSuccess={() => navigate(userType === 'professional' ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones')}
+                  proDiscount={proDiscount}
+                />
+              )}
+
+              {/* Con lista: guardar todas */}
+              {items.length > 0 && (
+                <button
+                  onClick={handleSaveAll}
+                  disabled={savingAll || savedAll}
+                  className={`w-full py-3.5 px-6 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+                    savedAll ? 'bg-green-600 text-white' : 'bg-red-700 hover:bg-red-800 text-white disabled:opacity-60'
+                  }`}
+                >
+                  {savingAll ? (
+                    <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Guardando…</>
+                  ) : savedAll ? (
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>Guardadas en Mis configuraciones</>
+                  ) : (
+                    `Guardar todas (${items.length})`
+                  )}
+                </button>
+              )}
+
               <button
                 onClick={() => setShowCustomerForm(true)}
                 className="w-full py-3 px-6 rounded-xl font-semibold bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 transition-colors text-sm"
