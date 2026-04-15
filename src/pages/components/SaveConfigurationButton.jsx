@@ -63,7 +63,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20, r
       setStatus('success')
       setMessage(configNumber)
       onSuccess?.(saved)
-      if (redirectTo) { navigate(redirectTo) }
+      if (redirectTo) { setTimeout(() => { window.location.replace(redirectTo) }, 600) }
     } catch (err) {
       setStatus('error')
       setMessage(err.message)
