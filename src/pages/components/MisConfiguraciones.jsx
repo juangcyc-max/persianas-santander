@@ -77,6 +77,38 @@ const BLIND_LABELS = {
 const blindLabel = (t) => BLIND_LABELS[t] ?? t ?? '—'
 const isProductoIndividual = (t) => ['solo_motor', 'solo_guias'].includes(t)
 const isSistema = (t) => ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante', 'sistema_mini_pvc', 'sistema_mini_aluminio'].includes(t)
+const fmtEUR = (v) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(v)
+
+// ─── Agrupar configuraciones por GRUPO-{groupId}-{n} ─────────────────────────
+function processConfigurations(configs) {
+  const groupMap = new Map()
+  const singles  = []
+
+  for (const config of configs) {
+    const match = config.configuration_number?.match(/^GRUPO-(.+)-(\d+)$/)
+    if (match) {
+      const groupId = match[1]
+      if (!groupMap.has(groupId)) groupMap.set(groupId, [])
+      groupMap.get(groupId).push(config)
+    } else {
+      singles.push({ type: 'single', id: config.id, item: config, sortDate: config.created_at })
+    }
+  }
+
+  const result = []
+  for (const [groupId, items] of groupMap) {
+    const sorted = [...items].sort((a, b) => {
+      const na = parseInt(a.configuration_number?.match(/-(\d+)$/)?.[1] ?? '0')
+      const nb = parseInt(b.configuration_number?.match(/-(\d+)$/)?.[1] ?? '0')
+      return na - nb
+    })
+    result.push({ type: 'group', id: `group-${groupId}`, items: sorted, sortDate: sorted[0].created_at })
+  }
+
+  for (const s of singles) result.push(s)
+  result.sort((a, b) => new Date(b.sortDate) - new Date(a.sortDate))
+  return result
+}
 
 // ─── Custom hook ─────────────────────────────────────────────────────────────
 const useConfigurations = () => {
@@ -297,6 +329,96 @@ const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => 
   )
 }
 
+// ─── Tarjeta de grupo ────────────────────────────────────────────────────────
+const GroupCard = ({ items, onDeleteGroup, isProcessing }) => {
+  const { addToCart } = useCart()
+  const [addingCart,  setAddingCart]  = useState(false)
+  const [addedToCart, setAddedToCart] = useState(false)
+
+  const total = items.reduce((sum, c) => sum + (c.estimated_price || 0), 0)
+  const date  = new Intl.DateTimeFormat('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
+    .format(new Date(items[0].created_at))
+
+  async function handleAddAllToCart() {
+    setAddingCart(true)
+    for (const config of items) await addToCart(config.id)
+    setAddingCart(false)
+    setAddedToCart(true)
+  }
+
+  return (
+    <article className="bg-white border-2 border-red-100 rounded-xl overflow-hidden hover:border-red-300 hover:shadow-md transition-all">
+      {/* Header */}
+      <div className="bg-red-50 px-4 py-2.5 flex items-center justify-between border-b border-red-100">
+        <span className="text-xs font-bold text-red-700 flex items-center gap-1.5">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          Grupo · {items.length} persianas
+        </span>
+        <span className="text-xs text-gray-400">{date}</span>
+      </div>
+
+      {/* Lista de items */}
+      <div className="px-4 py-3 space-y-2.5">
+        {items.map((config, i) => (
+          <div key={config.id} className="flex items-center gap-2.5 text-xs">
+            <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold flex-shrink-0 text-[10px]">
+              {i + 1}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-gray-800 truncate">{blindLabel(config.blind_type)}</p>
+              {config.width && config.height
+                ? <p className="text-gray-400">{config.width} × {config.height} mm</p>
+                : config.height
+                ? <p className="text-gray-400">{config.height} mm</p>
+                : null}
+            </div>
+            <span className="font-bold text-gray-700 flex-shrink-0">{fmtEUR(config.estimated_price || 0)}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Footer */}
+      <footer className="px-4 pb-4 pt-2 border-t border-gray-100 space-y-2">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs text-gray-400">Total grupo</p>
+            <span className="text-lg font-black text-red-700">{fmtEUR(total)}</span>
+          </div>
+          <ActionButton onClick={onDeleteGroup} variant="danger" disabled={isProcessing} label="Eliminar grupo" />
+        </div>
+        <button
+          onClick={handleAddAllToCart}
+          disabled={addingCart || addedToCart}
+          className={`w-full py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
+            addedToCart ? 'bg-green-100 text-green-700 cursor-default' : 'bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-60'
+          }`}
+        >
+          {addingCart ? (
+            <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : addedToCart ? (
+            <>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Añadido a la cesta
+            </>
+          ) : (
+            <>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                  d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              Añadir todo a la cesta
+            </>
+          )}
+        </button>
+      </footer>
+    </article>
+  )
+}
+
 // ─── COMPONENTE PRINCIPAL ────────────────────────────────────────────────────
 export default function MisConfiguraciones() {
   const navigate = useNavigate()
@@ -347,6 +469,22 @@ export default function MisConfiguraciones() {
     if (!res.error) refresh()
     setProcessingId(null)
   }
+
+  const handleDeleteGroup = async (entryId, ids) => {
+    if (!confirm(`¿Eliminar este grupo de ${ids.length} configuraciones?`)) return
+    setProcessingId(entryId)
+    try {
+      const res = await supabase.from('blind_configurations').delete().in('id', ids)
+      if (res.error) throw res.error
+      setData(prev => prev.filter(c => !ids.includes(c.id)))
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setProcessingId(null)
+    }
+  }
+
+  const displayEntries = useMemo(() => processConfigurations(filteredConfigs), [filteredConfigs])
 
   // ── Loading ──
   if (loading) {
@@ -470,16 +608,25 @@ export default function MisConfiguraciones() {
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredConfigs.map(config => (
-              <ConfigCard
-                key={config.id}
-                config={config}
-                onDelete={handleDelete}
-                onDuplicate={handleDuplicate}
-                onView={c => navigate('/configurador', { state: { loadConfig: c } })}
-                isProcessing={processingId === config.id || processingId === 'dup-' + config.id}
-              />
-            ))}
+            {displayEntries.map(entry =>
+              entry.type === 'group' ? (
+                <GroupCard
+                  key={entry.id}
+                  items={entry.items}
+                  onDeleteGroup={() => handleDeleteGroup(entry.id, entry.items.map(c => c.id))}
+                  isProcessing={processingId === entry.id}
+                />
+              ) : (
+                <ConfigCard
+                  key={entry.item.id}
+                  config={entry.item}
+                  onDelete={handleDelete}
+                  onDuplicate={handleDuplicate}
+                  onView={c => navigate('/configurador', { state: { loadConfig: c } })}
+                  isProcessing={processingId === entry.item.id || processingId === 'dup-' + entry.item.id}
+                />
+              )
+            )}
           </div>
         )}
       </div>
