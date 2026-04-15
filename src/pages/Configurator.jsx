@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { getProfessionalDiscount, getProfessionalDiscountForUser } from '../services/settings'
 import BlindPreview from './components/BlindPreview'
@@ -100,17 +100,10 @@ function getPricePerSqm(table, gama) {
 }
 
 function Configurator() {
-  const navigate = useNavigate()
+
   const [isProfessional, setIsProfessional] = useState(false)
   const [proDiscount, setProDiscount] = useState(20)
   const [userType, setUserType] = useState('public')
-  const [goToConfigs, setGoToConfigs] = useState(false)
-
-  useEffect(() => {
-    if (goToConfigs) {
-      navigate(userType === 'professional' ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones')
-    }
-  }, [goToConfigs, navigate, userType])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -541,7 +534,7 @@ function Configurator() {
               {items.length === 0 && (
                 <SaveConfigurationButton
                   configuration={configuration}
-                  onSuccess={() => setGoToConfigs(true)}
+                  redirectTo={userType === 'professional' ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones'}
                   proDiscount={proDiscount}
                 />
               )}

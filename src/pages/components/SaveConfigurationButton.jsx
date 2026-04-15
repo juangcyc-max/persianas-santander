@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../services/supabase/client'
 import { useCart } from '../../context/CartContext'
 
-function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 }) {
+function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20, redirectTo }) {
   const [loading,      setLoading]      = useState(false)
   const [status,       setStatus]       = useState(null) // null | 'success' | 'error' | 'auth'
   const [message,      setMessage]      = useState('')
@@ -63,6 +63,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
       setStatus('success')
       setMessage(configNumber)
       onSuccess?.(saved)
+      if (redirectTo) { navigate(redirectTo) }
     } catch (err) {
       setStatus('error')
       setMessage(err.message)
