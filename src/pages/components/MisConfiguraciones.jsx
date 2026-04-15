@@ -428,11 +428,19 @@ export default function MisConfiguraciones() {
   const [search,        setSearch]        = useState('')
   const [activeFilter,  setActiveFilter]  = useState('all')
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    async function checkAndRedirect() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
       if (user?.user_metadata?.user_type === 'professional') {
         navigate('/panel-profesional?tab=configuraciones', { replace: true })
+        return
       }
-    })
+      const { data: profile } = await supabase.from('profiles').select('user_type').eq('id', user.id).single()
+      if (profile?.user_type === 'professional') {
+        navigate('/panel-profesional?tab=configuraciones', { replace: true })
+      }
+    }
+    checkAndRedirect()
   }, [])
 
   const filteredConfigs = useMemo(() => configs.filter(c => {

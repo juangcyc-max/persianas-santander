@@ -63,11 +63,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
       setStatus('success')
       setMessage(configNumber)
       onSuccess?.(saved)
-      // Determinar destino consultando profiles (más fiable que user_metadata)
-      const { data: profile } = await supabase.from('profiles').select('user_type').eq('id', user.id).single()
-      const isPro = profile?.user_type === 'professional' || user.user_metadata?.user_type === 'professional'
-      const dest  = isPro ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones'
-      setTimeout(() => { window.location.replace(dest) }, 600)
+      setTimeout(() => { window.location.replace('/mis-configuraciones') }, 600)
     } catch (err) {
       setStatus('error')
       setMessage(err.message)
