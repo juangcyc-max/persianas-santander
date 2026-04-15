@@ -104,6 +104,13 @@ function Configurator() {
   const [isProfessional, setIsProfessional] = useState(false)
   const [proDiscount, setProDiscount] = useState(20)
   const [userType, setUserType] = useState('public')
+  const [goToConfigs, setGoToConfigs] = useState(false)
+
+  useEffect(() => {
+    if (goToConfigs) {
+      navigate(userType === 'professional' ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones')
+    }
+  }, [goToConfigs, navigate, userType])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -534,7 +541,7 @@ function Configurator() {
               {items.length === 0 && (
                 <SaveConfigurationButton
                   configuration={configuration}
-                  onSuccess={() => navigate(userType === 'professional' ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones')}
+                  onSuccess={() => setGoToConfigs(true)}
                   proDiscount={proDiscount}
                 />
               )}
