@@ -366,9 +366,11 @@ function Configurator() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     setSavingAll(true)
-    for (const item of items) {
+    const groupId = `${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+    for (let idx = 0; idx < items.length; idx++) {
+      const item = items[idx]
       const conf = item.configuration
-      const configNumber = `CONF-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+      const configNumber = `GRUPO-${groupId}-${idx + 1}`
       const basePrice = conf.estimatedPrice / 1.21
       await supabase.from('blind_configurations').insert([{
         user_id:              user.id,
@@ -532,7 +534,7 @@ function Configurator() {
               {items.length === 0 && (
                 <SaveConfigurationButton
                   configuration={configuration}
-                  onSuccess={() => navigate(userType === 'professional' ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones')}
+                  onSuccess={(saved) => { if (!saved) navigate(userType === 'professional' ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones') }}
                   proDiscount={proDiscount}
                 />
               )}
@@ -651,16 +653,26 @@ function Configurator() {
 
       {showCustomerForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative border border-gray-200">
-            <button onClick={() => setShowCustomerForm(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Datos de Contacto</h3>
-            <CustomerForm customerData={customerData} onCustomerDataChange={setCustomerData}
-              configuration={configuration} onSubmit={() => setShowCustomerForm(false)} loading={false} />
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+            {/* Cabecera fija */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Solicitar presupuesto</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Te contactamos en menos de 24 h.</p>
+              </div>
+              <button onClick={() => setShowCustomerForm(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-700 transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            {/* Contenido scrollable */}
+            <div className="overflow-y-auto flex-1 min-h-0 px-6 py-5">
+              <CustomerForm customerData={customerData} onCustomerDataChange={setCustomerData}
+                configuration={items.length > 0 ? { ...configuration, estimatedPrice: listTotal, listItems: items } : configuration}
+                onSubmit={() => setShowCustomerForm(false)} loading={false} />
+            </div>
           </div>
         </div>
       )}
