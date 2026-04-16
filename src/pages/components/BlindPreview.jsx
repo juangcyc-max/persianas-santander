@@ -36,10 +36,10 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
       {/* Imagen con color */}
       <div className="relative w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2000 / 1090', background: '#f8f8f6' }}>
 
-        {/* Capa 1: toda la persiana (guías incluidas) en color cajón */}
+        {/* Capa 1: toda la persiana (guías incluidas) — para laminada color neutro, para el resto color cajón */}
         <div
           className="absolute inset-0 transition-colors duration-500"
-          style={{ backgroundColor: boxColor, ...mask('/persianacompleta.png') }}
+          style={{ backgroundColor: blindType === 'laminada' ? '#c8c2b8' : boxColor, ...mask('/persianacompleta.png') }}
         />
 
         {/* Capa 2: cajón en su propio color */}
