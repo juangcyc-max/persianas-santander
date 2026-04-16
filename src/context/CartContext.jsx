@@ -56,9 +56,9 @@ export function CartProvider({ children }) {
     setItems([])
   }
 
-  // estimated_price ya incluye IVA y descuento profesional aplicado
-  const totalPrice    = items.reduce((acc, i) => acc + (i.blind_configurations?.estimated_price ?? 0) * i.quantity, 0)
-  const totalWithIva  = totalPrice
+  // estimated_price ya incluye IVA; totalWithIva = suma total con IVA, totalPrice = base sin IVA
+  const totalWithIva  = items.reduce((acc, i) => acc + (i.blind_configurations?.estimated_price ?? 0) * i.quantity, 0)
+  const totalPrice    = totalWithIva / 1.21
   const itemCount     = items.reduce((acc, i) => acc + i.quantity, 0)
 
   return (

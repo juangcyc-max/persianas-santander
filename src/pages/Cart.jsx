@@ -120,9 +120,10 @@ export default function Cart() {
   // Si TODOS los items son sin instalación, no hace falta cita
   const sinInstalacion = items.length > 0 && items.every(i => i.blind_configurations?.installacion === false)
 
-  const [step,     setStep]     = useState('cart')   // 'cart' | 'checkout' | 'success'
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState('')
+  const [step,      setStep]      = useState('cart')   // 'cart' | 'checkout' | 'success'
+  const [loading,   setLoading]   = useState(false)
+  const [error,     setError]     = useState('')
+  const [showItems, setShowItems] = useState(false)
 
   // Datos checkout particular
   const [address,  setAddress]  = useState('')
@@ -520,21 +521,32 @@ export default function Cart() {
           {/* Columna derecha — resumen */}
           <div className="space-y-4">
             <div className="bg-white rounded-xl border border-gray-200 p-5 sticky top-24">
-              <h3 className="font-bold text-gray-900 mb-4">Resumen del pedido</h3>
+              <button
+                onClick={() => setShowItems(s => !s)}
+                className="w-full flex items-center justify-between mb-4"
+              >
+                <h3 className="font-bold text-gray-900">Resumen del pedido</h3>
+                <svg className={`w-4 h-4 text-gray-400 transition-transform ${showItems ? 'rotate-180' : ''}`}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
-              <div className="space-y-2 mb-4">
-                {items.map(i => (
-                  <div key={i.id} className="flex justify-between text-sm">
-                    <span className="text-gray-600 truncate pr-2">
-                      {PRODUCT_LABELS[i.blind_configurations?.blind_type] ?? i.blind_configurations?.blind_type ?? 'Persiana'}
-                      {i.quantity > 1 && ` ×${i.quantity}`}
-                    </span>
-                    <span className="text-gray-900 font-medium flex-shrink-0">
-                      {fmt((i.blind_configurations?.estimated_price ?? 0) * i.quantity)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              {showItems && (
+                <div className="space-y-2 mb-4">
+                  {items.map(i => (
+                    <div key={i.id} className="flex justify-between text-sm">
+                      <span className="text-gray-600 truncate pr-2">
+                        {PRODUCT_LABELS[i.blind_configurations?.blind_type] ?? i.blind_configurations?.blind_type ?? 'Persiana'}
+                        {i.quantity > 1 && ` ×${i.quantity}`}
+                      </span>
+                      <span className="text-gray-900 font-medium flex-shrink-0">
+                        {fmt((i.blind_configurations?.estimated_price ?? 0) * i.quantity)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="border-t border-gray-100 pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
