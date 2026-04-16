@@ -1612,28 +1612,11 @@ function AdminInvoicesSection() {
 
   async function loadInvoices() {
     setLoading(true)
-    const { data: invData } = await supabase
+    const { data } = await supabase
       .from('invoices')
-      .select('*, orders(user_id, items, address, phone)')
+      .select('*, orders(user_id, items, address, phone, profiles(email))')
       .order('created_at', { ascending: false })
-
-    const invoiceList = invData ?? []
-
-    // Enriquecer con email desde profiles (join manual para evitar FK no declarada)
-    const userIds = [...new Set(invoiceList.map(i => i.orders?.user_id).filter(Boolean))]
-    let emailMap = {}
-    if (userIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, email')
-        .in('id', userIds)
-      ;(profiles ?? []).forEach(p => { emailMap[p.id] = p.email })
-    }
-
-    setInvoices(invoiceList.map(inv => ({
-      ...inv,
-      orders: inv.orders ? { ...inv.orders, profiles: { email: emailMap[inv.orders.user_id] ?? null } } : null,
-    })))
+    setInvoices(data ?? [])
     setLoading(false)
   }
 
