@@ -458,73 +458,87 @@ function ProjectModal({ project: initial, configuraciones, empresa, logoUrl, onS
   )
 }
 
+// ── Colores del borde izquierdo según estado ─────────────────────────────
+const STATUS_BORDER = {
+  draft:    'border-l-gray-300',
+  sent:     'border-l-blue-400',
+  accepted: 'border-l-green-500',
+  rejected: 'border-l-red-400',
+}
+
 // ── Tarjeta de presupuesto colapsable ─────────────────────────────────────
-function ProyectoCard({ p, pitems, total, st, onEdit }) {
+function ProyectoCard({ p, pitems, total, onEdit }) {
   const [expanded, setExpanded] = useState(false)
+  const borderColor = STATUS_BORDER[p.status] ?? STATUS_BORDER.draft
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-gray-300 hover:shadow-sm transition-all">
-      {/* Cabecera siempre visible */}
+    <div className={`bg-white border border-gray-200 border-l-4 ${borderColor} rounded-2xl overflow-hidden transition-all hover:shadow-md`}>
+
+      {/* ── Cabecera: siempre visible ── */}
       <button
         onClick={() => setExpanded(e => !e)}
-        className="w-full px-4 py-3 flex items-center justify-between text-left"
+        className="w-full px-5 py-4 flex items-center justify-between text-left gap-4"
       >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-gray-900 truncate">{p.name || 'Presupuesto sin nombre'}</p>
-            {p.client_name && <p className="text-xs text-gray-400 truncate">{p.client_name}</p>}
-          </div>
+        {/* Izquierda: nombre + resumen */}
+        <div className="min-w-0 flex-1">
+          <p className="font-bold text-gray-900 truncate leading-tight">
+            {p.name || 'Presupuesto sin nombre'}
+          </p>
+          <p className="text-sm text-gray-500 mt-0.5 truncate">
+            {[
+              p.client_name,
+              pitems.length > 0 ? `${pitems.length} persiana${pitems.length > 1 ? 's' : ''}` : null,
+            ].filter(Boolean).join(' · ')}
+          </p>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+
+        {/* Derecha: total + badge + flecha */}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <span className="text-base font-black text-gray-900">{fmt(total)}</span>
           <Badge status={p.status} />
-          <span className="text-sm font-black text-red-700">{fmt(total)}</span>
-          <span className="text-xs text-gray-400 hidden sm:inline">{fmtDate(p.updated_at ?? p.created_at)}</span>
-          <svg className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          <svg className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${expanded ? 'rotate-180' : ''}`}
             fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </div>
       </button>
 
-      {/* Detalle expandido */}
+      {/* ── Detalle expandido ── */}
       {expanded && (
-        <div className="px-4 pb-4 pt-3 border-t border-gray-100 space-y-3">
-          {/* Info cliente + número */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
-            {p.budget_number && <span className="font-mono font-semibold text-gray-700">{p.budget_number}</span>}
-            {p.client_phone  && <span>{p.client_phone}</span>}
-            {p.client_email  && <span>{p.client_email}</span>}
-            {p.client_address && <span>{p.client_address}</span>}
+        <div className="px-5 pb-5 pt-1 border-t border-gray-100 space-y-4">
+
+          {/* Datos de contacto */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-1.5 gap-x-4 text-sm">
+            {p.client_phone   && <p className="text-gray-600"><span className="font-semibold text-gray-400 text-xs uppercase tracking-wide mr-1">Tel</span>{p.client_phone}</p>}
+            {p.client_email   && <p className="text-gray-600"><span className="font-semibold text-gray-400 text-xs uppercase tracking-wide mr-1">Email</span>{p.client_email}</p>}
+            {p.client_address && <p className="text-gray-600 sm:col-span-2"><span className="font-semibold text-gray-400 text-xs uppercase tracking-wide mr-1">Dir</span>{p.client_address}</p>}
+            {p.budget_number  && <p className="text-gray-400 text-xs font-mono sm:col-span-2">{p.budget_number}</p>}
           </div>
 
-          {/* Chips de persianas */}
+          {/* Persianas incluidas */}
           {pitems.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="space-y-1.5">
               {pitems.map((it, i) => (
-                <span key={it.item_id ?? i}
-                  className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
-                  <span className="font-bold">{i + 1}.</span>
-                  {it.description || blindLabel(it.blind_type)}
-                  {it.client_price ? <span className="font-semibold text-gray-800">· {fmt(it.client_price)}</span> : null}
-                </span>
+                <div key={it.item_id ?? i} className="flex items-center justify-between text-sm bg-gray-50 rounded-xl px-3 py-2">
+                  <span className="text-gray-700">
+                    <span className="font-bold text-gray-400 mr-2">{i + 1}.</span>
+                    {it.description || blindLabel(it.blind_type)}
+                  </span>
+                  {it.client_price ? <span className="font-bold text-gray-800 flex-shrink-0 ml-2">{fmt(it.client_price)}</span> : null}
+                </div>
               ))}
             </div>
           )}
 
           {/* Notas */}
           {p.notes && (
-            <p className="text-xs text-gray-400 italic">{p.notes}</p>
+            <p className="text-sm text-gray-400 italic border-l-2 border-gray-200 pl-3">{p.notes}</p>
           )}
 
           {/* Botón editar */}
           <button onClick={onEdit}
-            className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-gray-900 hover:bg-gray-800 text-white transition-colors">
-            Editar presupuesto
+            className="w-full py-2.5 rounded-xl text-sm font-bold bg-gray-900 hover:bg-gray-800 text-white transition-colors">
+            Abrir y editar presupuesto →
           </button>
         </div>
       )}
@@ -534,9 +548,8 @@ function ProyectoCard({ p, pitems, total, st, onEdit }) {
 
 // ── Tab Proyectos ─────────────────────────────────────────────────────────
 function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoUrl, user }) {
-  const [modal,    setModal]    = useState(null) // null | project object | 'new'
-  const [search,   setSearch]   = useState('')
-  const [statusF,  setStatusF]  = useState('all')
+  const [modal,  setModal]  = useState(null)
+  const [search, setSearch] = useState('')
 
   const EMPTY_PROJECT = {
     user_id:        user?.id,
@@ -571,9 +584,7 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
 
   const filtered = proyectos.filter(p => {
     const q = search.toLowerCase()
-    const matchQ = !q || p.name?.toLowerCase().includes(q) || p.client_name?.toLowerCase().includes(q)
-    const matchS = statusF === 'all' || p.status === statusF
-    return matchQ && matchS
+    return !q || p.name?.toLowerCase().includes(q) || p.client_name?.toLowerCase().includes(q)
   })
 
   return (
@@ -591,20 +602,20 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
         }
       />
 
-      {/* Filtros */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nombre o cliente…"
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
-        </div>
-        <select value={statusF} onChange={e => setStatusF(e.target.value)}
-          className="px-3 py-2.5 rounded-xl border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400">
-          <option value="all">Todos los estados</option>
-          {Object.entries(PROJECT_STATUS).map(([k, { label }]) => <option key={k} value={k}>{label}</option>)}
-        </select>
+      {/* Buscador */}
+      <div className="relative">
+        <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por nombre de obra o cliente…"
+          className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 bg-white" />
+        {search && (
+          <button onClick={() => setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -614,11 +625,11 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
           </div>
-          <p className="font-semibold text-gray-700 mb-1">{search || statusF !== 'all' ? 'Sin resultados' : 'Todavía no hay presupuestos'}</p>
+          <p className="font-semibold text-gray-700 mb-1">{search ? 'Sin resultados' : 'Todavía no hay presupuestos'}</p>
           <p className="text-sm text-gray-400 mb-5">
-            {search || statusF !== 'all' ? 'Prueba con otros filtros' : 'Crea tu primer presupuesto para agrupar persianas de un cliente.'}
+            {search ? 'Prueba con otro nombre o cliente' : 'Crea tu primer presupuesto para agrupar persianas de un cliente.'}
           </p>
-          {!search && statusF === 'all' && (
+          {!search && (
             <button onClick={() => setModal(EMPTY_PROJECT)}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-700 text-white text-sm font-bold rounded-xl hover:bg-red-800 transition-colors">
               + Nuevo presupuesto
@@ -628,16 +639,14 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
       ) : (
         <div className="space-y-3">
           {filtered.map(p => {
-            const pitems    = p.items ?? []
-            const total     = pitems.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
-            const st        = PROJECT_STATUS[p.status] ?? PROJECT_STATUS.draft
+            const pitems = p.items ?? []
+            const total  = pitems.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
             return (
               <ProyectoCard
                 key={p.id}
                 p={p}
                 pitems={pitems}
                 total={total}
-                st={st}
                 onEdit={() => setModal(p)}
               />
             )
