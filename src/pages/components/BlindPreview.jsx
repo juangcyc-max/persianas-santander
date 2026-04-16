@@ -36,24 +36,22 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
       {/* Imagen con color */}
       <div className="relative w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2000 / 1090', background: '#f8f8f6' }}>
 
-        {/* Capa 1: toda la forma de la persiana (guías incluidas) en color cajón */}
+        {/* Capa 1 (abajo): toda la persiana en color cajón — incluye guías */}
         <div
           className="absolute inset-0 transition-colors duration-500"
           style={{ backgroundColor: boxColor, ...mask('/persianacompleta.png') }}
         />
 
-        {/* Capa 2: solo las lamas en su propio color (sistemas: distinto al cajón) */}
-        {isSistema && (
-          <div
-            className="absolute inset-0 transition-colors duration-500"
-            style={{ backgroundColor: slatColor, ...mask('/sololamas.png') }}
-          />
-        )}
-
-        {/* Capa 3: cajón en su color */}
+        {/* Capa 2: cajón en color cajón */}
         <div
           className="absolute inset-0 transition-colors duration-500"
           style={{ backgroundColor: boxColor, ...mask('/caja.png') }}
+        />
+
+        {/* Capa 3 (arriba): lamas en color lamas — sobreescribe el área de lamas */}
+        <div
+          className="absolute inset-0 transition-colors duration-500"
+          style={{ backgroundColor: slatColor, ...mask('/sololamas.png') }}
         />
 
         {/* Capa 4: texturas y sombras */}
