@@ -53,6 +53,12 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
           draggable={false}
           style={{ mixBlendMode: 'multiply' }}
         />
+
+        {/* Capa 4: color guías — máscara sobre guias.png, encima de todo */}
+        <div
+          className="absolute inset-0 transition-colors duration-500"
+          style={{ backgroundColor: boxColor, ...maskStyle('/guias.png') }}
+        />
       </div>
 
       {/* Chips de color */}
