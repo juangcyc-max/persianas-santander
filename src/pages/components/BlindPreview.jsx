@@ -36,23 +36,38 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
       {/* Imagen con color */}
       <div className="relative w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2000 / 1090', background: '#f8f8f6' }}>
 
-        {/* Capa 1: toda la persiana (guías incluidas) — para laminada color neutro, para el resto color cajón */}
+        {/* Capa 1: toda la persiana — color neutro para laminada y solo_guias; color cajón para el resto */}
         <div
           className="absolute inset-0 transition-colors duration-500"
-          style={{ backgroundColor: blindType === 'laminada' ? '#c8c2b8' : boxColor, ...mask('/persianacompleta.png') }}
+          style={{
+            backgroundColor: (blindType === 'laminada' || blindType === 'solo_guias') ? '#c8c2b8' : boxColor,
+            ...mask('/persianacompleta.png'),
+          }}
         />
 
-        {/* Capa 2: cajón en su propio color */}
-        <div
-          className="absolute inset-0 transition-colors duration-500"
-          style={{ backgroundColor: boxColor, ...mask('/caja.png') }}
-        />
+        {/* Capa 2: cajón en su propio color (no aplica para solo_guias ni laminada) */}
+        {blindType !== 'solo_guias' && blindType !== 'laminada' && (
+          <div
+            className="absolute inset-0 transition-colors duration-500"
+            style={{ backgroundColor: boxColor, ...mask('/caja.png') }}
+          />
+        )}
 
-        {/* Capa 3: lamas en color lamas — sobreescribe el área de lamas */}
-        <div
-          className="absolute inset-0 transition-colors duration-500"
-          style={{ backgroundColor: slatColor, ...mask('/sololamas.png') }}
-        />
+        {/* Capa 3a: lamas en color lamas (todos excepto solo_guias) */}
+        {blindType !== 'solo_guias' && (
+          <div
+            className="absolute inset-0 transition-colors duration-500"
+            style={{ backgroundColor: slatColor, ...mask('/sololamas.png') }}
+          />
+        )}
+
+        {/* Capa 3b: solo para solo_guias — solo los carriles laterales cambian de color */}
+        {blindType === 'solo_guias' && (
+          <div
+            className="absolute inset-0 transition-colors duration-500"
+            style={{ backgroundColor: slatColor, ...mask('/sologuias.png') }}
+          />
+        )}
 
         {/* Capa 4: texturas y sombras */}
         <img
