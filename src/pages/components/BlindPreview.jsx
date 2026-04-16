@@ -6,14 +6,14 @@ const BLIND_TYPE_LABELS = {
 }
 
 function BlindPreview({ boxColor, slatColor, width, blindType }) {
-  const isSoloGuias = blindType === 'solo_guias'
-
-  const maskContain = (src) => ({
+  const mask = (src) => ({
     maskImage: `url(${src})`, maskSize: 'contain', maskRepeat: 'no-repeat', maskPosition: 'center',
     WebkitMaskImage: `url(${src})`, WebkitMaskSize: 'contain', WebkitMaskRepeat: 'no-repeat', WebkitMaskPosition: 'center',
   })
 
-return (
+  const isSistema = ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante'].includes(blindType)
+
+  return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
 
       {/* Cabecera */}
@@ -23,7 +23,7 @@ return (
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
             ['blocking', 'autoblocante', 'sistema_mini_autoblocante'].includes(blindType)
               ? 'bg-gray-900 text-white'
-              : ['sistema_mini_cajon_pvc','sistema_mini_cajon_aluminio'].includes(blindType)
+              : ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio'].includes(blindType)
               ? 'bg-red-100 text-red-700'
               : 'bg-gray-100 text-gray-600'
           }`}>
@@ -33,32 +33,30 @@ return (
         </div>
       </div>
 
-      {/* Imagen real con color */}
+      {/* Imagen con color */}
       <div className="relative w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2000 / 1090', background: '#f8f8f6' }}>
 
-        {/* Capa 1: color guías/caja sobre toda la forma de la persiana */}
+        {/* Capa 1: toda la forma de la persiana (guías incluidas) en color cajón */}
         <div
           className="absolute inset-0 transition-colors duration-500"
-          style={{ backgroundColor: boxColor, ...maskContain('/persianacompleta.png') }}
+          style={{ backgroundColor: boxColor, ...mask('/persianacompleta.png') }}
         />
 
-        {/* Capa 2: color caja */}
-        {!isSoloGuias && (
+        {/* Capa 2: solo las lamas en su propio color (sistemas: distinto al cajón) */}
+        {isSistema && (
           <div
             className="absolute inset-0 transition-colors duration-500"
-            style={{ backgroundColor: boxColor, ...maskContain('/caja.png') }}
+            style={{ backgroundColor: slatColor, ...mask('/sololamas.png') }}
           />
         )}
 
-        {/* Capa 3: color lamas — encima de todo, solo para tipos que tienen lamas */}
-        {!isSoloGuias && (
-          <div
-            className="absolute inset-0 transition-colors duration-500"
-            style={{ backgroundColor: slatColor, ...maskContain('/sololamas.png') }}
-          />
-        )}
+        {/* Capa 3: cajón en su color */}
+        <div
+          className="absolute inset-0 transition-colors duration-500"
+          style={{ backgroundColor: boxColor, ...mask('/caja.png') }}
+        />
 
-        {/* Capa 4: imagen persiana con multiply para texturas y sombras */}
+        {/* Capa 4: texturas y sombras */}
         <img
           src="/persianacompleta.png"
           alt="Vista previa persiana"
@@ -70,22 +68,15 @@ return (
 
       {/* Chips de color */}
       <div className="flex gap-2 mt-4">
-        {isSoloGuias ? (
+        <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+          <div className="w-4 h-4 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: boxColor }} />
+          <span className="text-xs text-gray-500 truncate">{blindType === 'solo_guias' ? 'Guías' : 'Caja'}</span>
+        </div>
+        {isSistema && (
           <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-            <div className="w-4 h-4 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: boxColor }} />
-            <span className="text-xs text-gray-500 truncate">Guías</span>
+            <div className="w-4 h-4 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: slatColor }} />
+            <span className="text-xs text-gray-500 truncate">Lamas</span>
           </div>
-        ) : (
-          <>
-            <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-              <div className="w-4 h-4 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: boxColor }} />
-              <span className="text-xs text-gray-500 truncate">Caja</span>
-            </div>
-            <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-              <div className="w-4 h-4 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: slatColor }} />
-              <span className="text-xs text-gray-500 truncate">Lamas</span>
-            </div>
-          </>
         )}
       </div>
     </div>
