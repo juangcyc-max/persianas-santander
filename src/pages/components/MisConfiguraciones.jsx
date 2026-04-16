@@ -165,15 +165,17 @@ const ActionButton = ({ onClick, label, variant = 'default', disabled, children 
 
 // ─── Tarjeta de configuración ────────────────────────────────────────────────
 const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => {
-  const { addToCart } = useCart()
-  const [addingCart,  setAddingCart]  = useState(false)
-  const [allInCart, setAddedToCart] = useState(false)
+  const { addToCart, items: cartItems } = useCart()
+  const navigate = useNavigate()
+  const [addingCart, setAddingCart] = useState(false)
+
+  const allInCart = cartItems.some(ci => ci.configuration_id === config.id)
 
   async function handleAddToCart() {
     setAddingCart(true)
     const { error } = await addToCart(config.id)
     setAddingCart(false)
-    if (!error) setAddedToCart(true)
+    if (!error) setTimeout(() => navigate('/cesta'), 600)
   }
 
   const price = new Intl.NumberFormat('es-ES', {

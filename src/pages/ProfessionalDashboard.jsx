@@ -616,16 +616,17 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
 
 // ── Tarjeta de configuración con carrito ──────────────────────────────────
 function ProConfigCard({ c, onDelete, deleting, confirmDel, setConfirmDel }) {
-  const navigate          = useNavigate()
-  const { addToCart }     = useCart()
-  const [adding,  setAdding]  = useState(false)
-  const [added,   setAdded]   = useState(false)
+  const navigate               = useNavigate()
+  const { addToCart, items: cartItems } = useCart()
+  const [adding, setAdding]    = useState(false)
+
+  const added = cartItems.some(ci => ci.configuration_id === c.id)
 
   async function handleAddToCart() {
     setAdding(true)
     const { error } = await addToCart(c.id)
     setAdding(false)
-    if (!error) { setAdded(true); setTimeout(() => setAdded(false), 3000) }
+    if (!error) setTimeout(() => navigate('/cesta'), 600)
   }
 
   return (
