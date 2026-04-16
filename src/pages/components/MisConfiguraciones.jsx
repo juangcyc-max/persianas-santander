@@ -167,7 +167,7 @@ const ActionButton = ({ onClick, label, variant = 'default', disabled, children 
 const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => {
   const { addToCart } = useCart()
   const [addingCart,  setAddingCart]  = useState(false)
-  const [addedToCart, setAddedToCart] = useState(false)
+  const [allInCart, setAddedToCart] = useState(false)
 
   async function handleAddToCart() {
     setAddingCart(true)
@@ -297,16 +297,16 @@ const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => 
           </div>
           <button
             onClick={handleAddToCart}
-            disabled={addingCart || addedToCart}
+            disabled={addingCart || allInCart}
             className={`w-full py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
-              addedToCart
+              allInCart
                 ? 'bg-green-100 text-green-700 cursor-default'
                 : 'bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-60'
             }`}
           >
             {addingCart ? (
               <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : addedToCart ? (
+            ) : allInCart ? (
               <>
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -331,25 +331,24 @@ const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => 
 
 // ─── Tarjeta de grupo ────────────────────────────────────────────────────────
 const GroupCard = ({ items, onDeleteGroup, isProcessing }) => {
-  const { addToCart } = useCart()
+  const { addToCart, items: cartItems } = useCart()
   const navigate = useNavigate()
-  const [addingCart,  setAddingCart]  = useState(false)
-  const [addedToCart, setAddedToCart] = useState(false)
-  const [expanded,    setExpanded]    = useState(false)
+  const [addingCart, setAddingCart] = useState(false)
+  const [expanded,   setExpanded]   = useState(false)
 
-  const total = items.reduce((sum, c) => sum + (c.estimated_price || 0), 0)
-  const date  = new Intl.DateTimeFormat('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
+  const total      = items.reduce((sum, c) => sum + (c.estimated_price || 0), 0)
+  const date       = new Intl.DateTimeFormat('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
     .format(new Date(items[0].created_at))
+  const allInCart  = cartItems.length > 0 && items.every(c => cartItems.some(ci => ci.configuration_id === c.id))
 
   async function handleAddAllToCart() {
     setAddingCart(true)
     for (const config of items) await addToCart(config.id)
     setAddingCart(false)
-    setAddedToCart(true)
     setTimeout(() => navigate('/cesta'), 600)
   }
 
-  const borderCls = addedToCart
+  const borderCls = allInCart
     ? 'bg-green-50 border-green-200'
     : 'bg-white border-red-100 hover:border-red-300 hover:shadow-md'
 
@@ -361,7 +360,7 @@ const GroupCard = ({ items, onDeleteGroup, isProcessing }) => {
         className="w-full px-4 py-3 flex items-center justify-between text-left"
       >
         <div className="flex items-center gap-2 min-w-0">
-          {addedToCart ? (
+          {allInCart ? (
             <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
@@ -370,12 +369,12 @@ const GroupCard = ({ items, onDeleteGroup, isProcessing }) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           )}
-          <span className={`text-xs font-bold truncate ${addedToCart ? 'text-green-700' : 'text-red-700'}`}>
-            {addedToCart ? 'En cesta · ' : ''}Grupo · {items.length} persianas
+          <span className={`text-xs font-bold truncate ${allInCart ? 'text-green-700' : 'text-red-700'}`}>
+            {allInCart ? 'En cesta · ' : ''}Grupo · {items.length} persianas
           </span>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-          <span className={`text-sm font-black ${addedToCart ? 'text-green-700' : 'text-red-700'}`}>{fmtEUR(total)}</span>
+          <span className={`text-sm font-black ${allInCart ? 'text-green-700' : 'text-red-700'}`}>{fmtEUR(total)}</span>
           <span className="text-xs text-gray-400">{date}</span>
           <svg className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
             fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -386,12 +385,12 @@ const GroupCard = ({ items, onDeleteGroup, isProcessing }) => {
 
       {/* ── Detalle expandido ── */}
       {expanded && (
-        <div className={`px-4 pb-4 pt-3 border-t space-y-3 ${addedToCart ? 'border-green-100' : 'border-gray-100'}`}>
+        <div className={`px-4 pb-4 pt-3 border-t space-y-3 ${allInCart ? 'border-green-100' : 'border-gray-100'}`}>
           {/* Lista */}
           <div className="space-y-2.5">
             {items.map((config, i) => (
               <div key={config.id} className="flex items-center gap-2.5 text-xs">
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-[10px] ${addedToCart ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-[10px] ${allInCart ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                   {i + 1}
                 </span>
                 <div className="flex-1 min-w-0">
@@ -408,7 +407,7 @@ const GroupCard = ({ items, onDeleteGroup, isProcessing }) => {
           </div>
 
           {/* Acciones */}
-          {addedToCart ? (
+          {allInCart ? (
             <button onClick={() => navigate('/cesta')}
               className="w-full py-2 px-3 rounded-lg text-xs font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors">
               Ir a la cesta →

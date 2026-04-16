@@ -705,24 +705,23 @@ function ProConfigCard({ c, onDelete, deleting, confirmDel, setConfirmDel }) {
 
 // ── Tarjeta de grupo (varias persianas de una sesión) ────────────────────
 function ProGroupCard({ items, onDeleteGroup, deleting }) {
-  const { addToCart } = useCart()
+  const { addToCart, items: cartItems } = useCart()
   const navigate = useNavigate()
   const [adding,   setAdding]   = useState(false)
-  const [added,    setAdded]    = useState(false)
   const [expanded, setExpanded] = useState(false)  // collapsed by default
   const [confirm,  setConfirm]  = useState(false)
 
-  const total = items.reduce((s, c) => s + (c.estimated_price ?? 0), 0)
+  const total    = items.reduce((s, c) => s + (c.estimated_price ?? 0), 0)
+  const allInCart = cartItems.length > 0 && items.every(c => cartItems.some(ci => ci.configuration_id === c.id))
 
   async function handleAddAllToCart() {
     setAdding(true)
     for (const c of items) await addToCart(c.id)
     setAdding(false)
-    setAdded(true)
     setTimeout(() => navigate('/cesta'), 600)
   }
 
-  const borderCls = added
+  const borderCls = allInCart
     ? 'bg-green-50 border-green-200'
     : 'bg-white border-red-100 hover:border-red-200 hover:shadow-sm'
 
@@ -734,7 +733,7 @@ function ProGroupCard({ items, onDeleteGroup, deleting }) {
         className="w-full px-4 py-3 flex items-center justify-between text-left"
       >
         <div className="flex items-center gap-2 min-w-0">
-          {added ? (
+          {allInCart ? (
             <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
@@ -743,12 +742,12 @@ function ProGroupCard({ items, onDeleteGroup, deleting }) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
           )}
-          <span className={`text-xs font-bold truncate ${added ? 'text-green-700' : 'text-red-700'}`}>
-            {added ? 'En cesta · ' : ''}Grupo · {items.length} persianas
+          <span className={`text-xs font-bold truncate ${allInCart ? 'text-green-700' : 'text-red-700'}`}>
+            {allInCart ? 'En cesta · ' : ''}Grupo · {items.length} persianas
           </span>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-          <span className={`text-sm font-black ${added ? 'text-green-700' : 'text-red-700'}`}>{fmt(total)}</span>
+          <span className={`text-sm font-black ${allInCart ? 'text-green-700' : 'text-red-700'}`}>{fmt(total)}</span>
           <span className="text-xs text-gray-400">{fmtDate(items[0].created_at)}</span>
           <svg className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
             fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -759,12 +758,12 @@ function ProGroupCard({ items, onDeleteGroup, deleting }) {
 
       {/* ── Detalle expandido ── */}
       {expanded && (
-        <div className={`px-4 pb-4 pt-3 border-t space-y-3 ${added ? 'border-green-100' : 'border-gray-100'}`}>
+        <div className={`px-4 pb-4 pt-3 border-t space-y-3 ${allInCart ? 'border-green-100' : 'border-gray-100'}`}>
           {/* Lista */}
           <div className="space-y-2">
             {items.map((c, i) => (
               <div key={c.id} className="flex items-center gap-2 text-xs">
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-[10px] ${added ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{i + 1}</span>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-[10px] ${allInCart ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{i + 1}</span>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-800 truncate">{blindLabel(c.blind_type)}</p>
                   {c.width && c.height && <p className="text-gray-400">{c.width} × {c.height} mm{c.mechanism ? ` · ${c.mechanism}` : ''}</p>}
@@ -775,7 +774,7 @@ function ProGroupCard({ items, onDeleteGroup, deleting }) {
           </div>
 
           {/* Acciones */}
-          {added ? (
+          {allInCart ? (
             <button onClick={() => navigate('/cesta')}
               className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-green-600 text-white hover:bg-green-700 transition-colors">
               Ir a la cesta →
