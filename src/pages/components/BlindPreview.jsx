@@ -42,19 +42,19 @@ return (
           style={{ backgroundColor: boxColor, ...maskContain('/persianacompleta.png') }}
         />
 
-        {/* Capa 2: color lamas — solo para tipos que tienen lamas */}
-        {!isSoloGuias && (
-          <div
-            className="absolute inset-0 transition-colors duration-500"
-            style={{ backgroundColor: slatColor, ...maskContain('/sololamas.png') }}
-          />
-        )}
-
-        {/* Capa 3: color caja */}
+        {/* Capa 2: color caja */}
         {!isSoloGuias && (
           <div
             className="absolute inset-0 transition-colors duration-500"
             style={{ backgroundColor: boxColor, ...maskContain('/caja.png') }}
+          />
+        )}
+
+        {/* Capa 3: color lamas — encima de todo, solo para tipos que tienen lamas */}
+        {!isSoloGuias && (
+          <div
+            className="absolute inset-0 transition-colors duration-500"
+            style={{ backgroundColor: slatColor, ...maskContain('/sololamas.png') }}
           />
         )}
 
