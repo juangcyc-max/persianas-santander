@@ -54,10 +54,20 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
           style={{ mixBlendMode: 'multiply' }}
         />
 
-        {/* Capa 4: color guías — máscara sobre guias.png, encima de todo */}
+        {/* Capa 4: color guías — máscara estirada al 100% para alinear con persianacompleta */}
         <div
           className="absolute inset-0 transition-colors duration-500"
-          style={{ backgroundColor: boxColor, ...maskStyle('/guias.png') }}
+          style={{
+            backgroundColor: boxColor,
+            maskImage:          'url(/guias.png)',
+            maskSize:           '100% 100%',
+            maskRepeat:         'no-repeat',
+            maskPosition:       'center',
+            WebkitMaskImage:    'url(/guias.png)',
+            WebkitMaskSize:     '100% 100%',
+            WebkitMaskRepeat:   'no-repeat',
+            WebkitMaskPosition: 'center',
+          }}
         />
       </div>
 
