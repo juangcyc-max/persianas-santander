@@ -68,10 +68,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
       setMessage(configNumber)
       onSuccess?.(saved)
 
-      const { data: profile } = await supabase.from('profiles').select('user_type').eq('id', user.id).single()
-      const isPro = profile?.user_type === 'professional' || user.user_metadata?.user_type === 'professional'
-      const dest  = isPro ? '/panel-profesional?tab=configuraciones' : '/mis-configuraciones'
-      setTimeout(() => setDestUrl(dest), 800)
+      setTimeout(() => setDestUrl('/mis-configuraciones'), 800)
 
     } catch (err) {
       setStatus('error')
