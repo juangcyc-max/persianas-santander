@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
 import { sanitizeText } from '../services/sanitize'
@@ -106,6 +106,7 @@ function CartItem({ item, onRemove }) {
 // ── CESTA PRINCIPAL ───────────────────────────────────────────────────────
 export default function Cart() {
   const { items, totalPrice, totalWithIva, removeFromCart, clearCart, user } = useCart()
+  const navigate = useNavigate()
   const isProfessional = user?.user_metadata?.user_type === 'professional'
   const [proDiscount, setProDiscount] = useState(20)
 
@@ -259,7 +260,10 @@ export default function Cart() {
       ])
 
       await clearCart()
-      setStep('success')
+      const destPath = isProfessional
+        ? `/panel-profesional?tab=pedidos&new=${newOrder.id}`
+        : `/mis-configuraciones?tab=pedidos&new=${newOrder.id}`
+      navigate(destPath, { replace: true })
     } catch (err) {
       const code    = err?.code    ? ` [${err.code}]`    : ''
       const details = err?.details ? ` — ${err.details}` : ''
@@ -269,53 +273,6 @@ export default function Cart() {
     } finally {
       setLoading(false)
     }
-  }
-
-  // ── PANTALLA DE ÉXITO ───────────────────────────────────────────────
-  if (step === 'success') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-10 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-5">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">
-            {isProfessional ? '¡Pedido enviado!' : '¡Solicitud recibida!'}
-          </h2>
-          <p className="text-gray-500 text-sm leading-relaxed mb-2">
-            {isProfessional || sinInstalacion
-              ? 'Hemos recibido tu pedido. Nos pondremos en contacto contigo para confirmar los detalles.'
-              : 'Hemos recibido tu solicitud de medición. Nuestro equipo se pondrá en contacto contigo para confirmar la cita.'
-            }
-          </p>
-          {sinInstalacion && (
-            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mt-4 text-left">
-              <p className="text-xs font-semibold text-amber-700 mb-1">Recuerda</p>
-              <p className="text-sm text-amber-800">El pago debe realizarse en un plazo de <strong>24-48 horas</strong>. Formas de pago: Bizum, transferencia bancaria o efectivo.</p>
-            </div>
-          )}
-          {!isProfessional && !sinInstalacion && (
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mt-4 text-left">
-              <p className="text-xs font-semibold text-blue-700 mb-1">Cita solicitada</p>
-              <p className="text-sm text-blue-900">{date} a las {time}</p>
-              <p className="text-sm text-blue-700">{address}</p>
-            </div>
-          )}
-          <div className="flex flex-col gap-2 mt-6">
-            <Link to="/"
-              className="block w-full py-3 bg-red-700 text-white rounded-xl font-bold text-sm hover:bg-red-800 transition-colors">
-              Volver al inicio
-            </Link>
-            <Link to="/mis-configuraciones"
-              className="block w-full py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold text-sm hover:bg-gray-200 transition-colors">
-              Ver mis configuraciones
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
   }
 
   // ── CESTA VACÍA ─────────────────────────────────────────────────────

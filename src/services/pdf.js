@@ -1114,3 +1114,113 @@ export async function generateGroupInvoicePDF({
     console.error('Error generando factura de grupo:', err)
   }
 }
+
+// ── FACTURA DE PEDIDO (cesta → Persianas Santander) ───────────────────────
+// Genera la factura oficial de PS para pedidos realizados desde la cesta.
+export async function generateOrderInvoicePDF({ order, invoice }) {
+  try {
+    const doc    = new jsPDF()
+    const W      = doc.internal.pageSize.width
+    const H      = doc.internal.pageSize.height
+    const iNum   = invoice?.invoice_number ?? `FAC-${Date.now().toString().slice(-8)}`
+    const today  = formatDate(new Date())
+
+    const isPro         = order.user_type === 'professional'
+    const proDiscount   = Number(invoice?.pro_discount ?? 0)
+    const totalWithIva  = Number(invoice?.total_with_iva ?? order.total_with_iva ?? 0)
+    const subtotalSinIva = totalWithIva / 1.21
+    const iva            = totalWithIva - subtotalSinIva
+    const discount       = isPro && proDiscount > 0 ? totalWithIva * (proDiscount / 100) : 0
+    const finalPrice     = totalWithIva - discount
+
+    const logoImg = await loadImage('/persianassantanderlogo.png')
+    const billing = order.billing_data ?? {}
+    const items   = invoice?.items ?? order.items ?? []
+
+    let y = 38
+
+    // ── BLOQUE CLIENTE ────────────────────────────────────────────────────
+    doc.setFillColor(...COLORS.grayBg)
+    doc.roundedRect(14, y, W - 28, 42, 3, 3, 'F')
+    doc.setTextColor(...COLORS.red)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text('DATOS DEL CLIENTE', 20, y + 7)
+
+    const clientName = billing.nombre
+      ? `${billing.nombre}${billing.apellidos ? ' ' + billing.apellidos : ''}`.trim()
+      : 'Cliente profesional'
+    doc.setTextColor(...COLORS.dark)
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.text(clientName, 20, y + 15)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(...COLORS.mid)
+    if (billing.dni_nif)    doc.text(`DNI/NIF: ${billing.dni_nif}`, 20, y + 22)
+    if (billing.direccion)  doc.text(billing.direccion, 20, y + 29)
+    const city = [billing.codigo_postal, billing.ciudad].filter(Boolean).join(' ')
+    if (city) doc.text(city, 20, y + 36)
+    if (billing.email) doc.text(billing.email, W - 14, y + 22, { align: 'right' })
+    y += 50
+
+    // ── TABLA DE ÍTEMS ────────────────────────────────────────────────────
+    const tableBody = items.map((item, i) => [
+      `${i + 1}. ${LABELS.productType[item.blind_type] ?? item.blind_type ?? '—'}`,
+      item.width && item.height ? `${item.width}×${item.height} mm` : (item.height ? `${item.height} mm` : '—'),
+      LABELS.mechanism[item.mechanism] ?? item.mechanism ?? '—',
+      [item.box_color_name, item.slat_color_name].filter(Boolean).join(' / ') || '—',
+      formatCurrency(item.estimated_price ?? 0),
+    ])
+
+    autoTable(doc, {
+      startY: y,
+      head: [['Concepto', 'Medidas', 'Mecanismo', 'Color', 'Importe']],
+      body: tableBody,
+      headStyles: { fillColor: COLORS.red, textColor: COLORS.white, fontStyle: 'bold', fontSize: 8, cellPadding: 4 },
+      bodyStyles: { fontSize: 8, cellPadding: 3.5, textColor: COLORS.dark },
+      alternateRowStyles: { fillColor: COLORS.grayBg },
+      columnStyles: {
+        0: { cellWidth: 55 },
+        1: { cellWidth: 28 },
+        2: { cellWidth: 26 },
+        3: { cellWidth: 36 },
+        4: { cellWidth: 22, halign: 'right', fontStyle: 'bold' },
+      },
+      margin: { left: 14, right: 14 },
+    })
+    y = doc.lastAutoTable.finalY + 12
+
+    // ── BLOQUE PRECIO ─────────────────────────────────────────────────────
+    y = addPriceBlock(doc, y, { subtotalSinIva, iva, finalPrice, discount }, isPro, proDiscount)
+
+    // ── CONDICIONES DE PAGO ───────────────────────────────────────────────
+    if (y > H - 50) { doc.addPage(); y = 38 }
+    doc.setTextColor(...COLORS.red)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'bold')
+    doc.text('FORMA DE PAGO Y CONDICIONES', 14, y + 6)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.setTextColor(...COLORS.mid)
+    doc.text('Formas de pago aceptadas: Bizum · Transferencia bancaria · Efectivo.', 14, y + 13)
+    doc.text('Esta factura tiene validez fiscal como documento oficial de pago.', 14, y + 20)
+
+    // ── CABECERAS Y PIES ──────────────────────────────────────────────────
+    const pageCount = doc.internal.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      addPageHeader(doc, logoImg, 'FACTURA', iNum, today)
+      addPageFooter(doc, [
+        'Persianas Santander S.L.  ·  NIF: B39476726  ·  C/ Isla Oleo, Nave 9 - Pol. Nueva Montaña, 39011 Santander',
+        '942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com',
+      ], i, pageCount)
+    }
+
+    const safeName = clientName.trim().replace(/[^a-z0-9]/gi, '_')
+    doc.save(`Factura_PS_${safeName}_${iNum}.pdf`)
+
+  } catch (err) {
+    console.error('Error generando factura de pedido:', err)
+  }
+}
