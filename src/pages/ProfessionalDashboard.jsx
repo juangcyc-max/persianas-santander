@@ -1005,7 +1005,7 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
           {displayEntries.map((entry, idx) => {
             const cardKey = entry.type === 'group' ? (entry.id ?? `group-${idx}`) : (entry.item?.id ?? `single-${idx}`)
             return entry.type === 'group' ? (
