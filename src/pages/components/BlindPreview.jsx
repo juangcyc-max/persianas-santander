@@ -13,12 +13,7 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
     WebkitMaskImage: `url(${src})`, WebkitMaskSize: 'contain', WebkitMaskRepeat: 'no-repeat', WebkitMaskPosition: 'center',
   })
 
-  const maskFull = (src) => ({
-    maskImage: `url(${src})`, maskSize: '100% 100%', maskRepeat: 'no-repeat', maskPosition: 'center',
-    WebkitMaskImage: `url(${src})`, WebkitMaskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', WebkitMaskPosition: 'center',
-  })
-
-  return (
+return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
 
       {/* Cabecera */}
@@ -41,39 +36,36 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
       {/* Imagen real con color */}
       <div className="relative w-full rounded-lg overflow-hidden" style={{ aspectRatio: '2000 / 1090', background: '#f8f8f6' }}>
 
-        {/* Solo guías: únicamente la capa de color de guías, centrada */}
-        {isSoloGuias ? (
+        {/* Capa 1: color guías/caja sobre toda la forma de la persiana */}
+        <div
+          className="absolute inset-0 transition-colors duration-500"
+          style={{ backgroundColor: boxColor, ...maskContain('/persianacompleta.png') }}
+        />
+
+        {/* Capa 2: color lamas — solo para tipos que tienen lamas */}
+        {!isSoloGuias && (
           <div
             className="absolute inset-0 transition-colors duration-500"
-            style={{ backgroundColor: boxColor, ...maskContain('/guias.png') }}
+            style={{ backgroundColor: slatColor, ...maskContain('/sololamas.png') }}
           />
-        ) : (
-          <>
-            {/* Capa 1: color lamas */}
-            <div
-              className="absolute inset-0 transition-colors duration-500"
-              style={{ backgroundColor: slatColor, ...maskContain('/persianacompleta.png') }}
-            />
-            {/* Capa 2: color caja */}
-            <div
-              className="absolute inset-0 transition-colors duration-500"
-              style={{ backgroundColor: boxColor, ...maskContain('/caja.png') }}
-            />
-            {/* Capa 3: imagen persiana con multiply para texturas y sombras */}
-            <img
-              src="/persianacompleta.png"
-              alt="Vista previa persiana"
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              draggable={false}
-              style={{ mixBlendMode: 'multiply' }}
-            />
-            {/* Capa 4: color guías alineado al tamaño completo del contenedor */}
-            <div
-              className="absolute inset-0 transition-colors duration-500"
-              style={{ backgroundColor: boxColor, ...maskFull('/guias.png') }}
-            />
-          </>
         )}
+
+        {/* Capa 3: color caja */}
+        {!isSoloGuias && (
+          <div
+            className="absolute inset-0 transition-colors duration-500"
+            style={{ backgroundColor: boxColor, ...maskContain('/caja.png') }}
+          />
+        )}
+
+        {/* Capa 4: imagen persiana con multiply para texturas y sombras */}
+        <img
+          src="/persianacompleta.png"
+          alt="Vista previa persiana"
+          className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+          draggable={false}
+          style={{ mixBlendMode: 'multiply' }}
+        />
       </div>
 
       {/* Chips de color */}
