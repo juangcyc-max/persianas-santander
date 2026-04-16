@@ -37,6 +37,7 @@ const MECH_LABELS   = { muelle: 'Muelle', cinta: 'Cinta', motor: 'Motor' }
 // ── Tarjeta de producto en la cesta ──────────────────────────────────────
 function CartItem({ item, onRemove }) {
   const config = item.blind_configurations
+  const [expanded, setExpanded] = useState(false)
   if (!config) return null
 
   const type        = config.blind_type
@@ -44,15 +45,8 @@ function CartItem({ item, onRemove }) {
   const isSoloGuias = type === 'solo_guias'
   const isSistema   = ['sistema_mini_cajon_pvc','sistema_mini_cajon_aluminio','sistema_mini_autoblocante','sistema_mini_pvc','sistema_mini_aluminio','sistema_mini'].includes(type)
 
-
-  const maskStyle = (src) => ({
-    maskImage: `url(${src})`, maskSize: 'contain', maskRepeat: 'no-repeat', maskPosition: 'center',
-    WebkitMaskImage: `url(${src})`, WebkitMaskSize: 'contain', WebkitMaskRepeat: 'no-repeat', WebkitMaskPosition: 'center',
-  })
-
   const productName = PRODUCT_LABELS[type] ?? type
 
-  // Línea de detalle según tipo
   let detail1 = ''
   let detail2 = ''
   if (isSoloMotor) {
@@ -68,48 +62,43 @@ function CartItem({ item, onRemove }) {
   }
 
   return (
-    <div className="flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl">
-      {/* Icono / preview */}
-      <div className="relative w-20 h-12 flex-shrink-0 rounded-lg overflow-hidden bg-gray-50 flex items-center justify-center">
-        {isSoloMotor ? (
-          <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+      {/* ── Cabecera colapsable ── */}
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full px-4 py-3 flex items-center justify-between text-left"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-sm font-semibold text-gray-900 truncate">{productName}</span>
+          {!expanded && detail1 && (
+            <span className="text-xs text-gray-400 truncate hidden sm:inline">· {detail1}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0 ml-2">
+          <span className="font-bold text-gray-900 text-sm">{fmt(config.estimated_price * item.quantity)}</span>
+          <svg className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
-        ) : isSoloGuias ? (
-          <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-              d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-          </svg>
-        ) : (
-          <>
-            <div className="absolute inset-0 transition-colors"
-              style={{ backgroundColor: config.slat_color ?? '#C4A77D', ...maskStyle('/persianacompleta.png') }} />
-            <img src="/persianacompleta.png" alt="" className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{ mixBlendMode: 'multiply' }} />
-          </>
-        )}
-      </div>
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <p className="font-semibold text-gray-900 text-sm">{productName}</p>
-        {detail1 && <p className="text-xs text-gray-500 mt-0.5">{detail1}</p>}
-        {detail2 && <p className="text-xs text-gray-400">{detail2}</p>}
-      </div>
-
-      {/* Precio */}
-      <div className="text-right flex-shrink-0">
-        <p className="font-bold text-gray-900">{fmt(config.estimated_price * item.quantity)}</p>
-        <p className="text-xs text-gray-400">IVA incl.</p>
-      </div>
-
-      {/* Eliminar */}
-      <button onClick={() => onRemove(item.id)}
-        className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0">
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-        </svg>
+        </div>
       </button>
+
+      {/* ── Detalle expandido ── */}
+      {expanded && (
+        <div className="px-4 pb-4 border-t border-gray-100 pt-3 flex items-center gap-4">
+          <div className="flex-1 min-w-0 space-y-0.5">
+            {detail1 && <p className="text-xs text-gray-500">{detail1}</p>}
+            {detail2 && <p className="text-xs text-gray-400">{detail2}</p>}
+            <p className="text-xs text-gray-400">IVA incl.</p>
+          </div>
+          <button onClick={() => onRemove(item.id)}
+            className="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 p-1">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   )
 }
