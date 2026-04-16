@@ -45,10 +45,25 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
           style={{ backgroundColor: boxColor, ...maskStyle('/caja.png') }}
         />
 
-        {/* Capa 3: imagen original encima con multiply para texturas y sombras */}
+        {/* Capa 3: color guías — recortado a la forma de las guías */}
+        <div
+          className="absolute inset-0 transition-colors duration-500"
+          style={{ backgroundColor: boxColor, ...maskStyle('/guias.png') }}
+        />
+
+        {/* Capa 4: imagen original encima con multiply para texturas y sombras */}
         <img
           src="/persianacompleta.png"
           alt="Vista previa persiana"
+          className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+          draggable={false}
+          style={{ mixBlendMode: 'multiply' }}
+        />
+
+        {/* Capa 5: guías encima con multiply para texturas */}
+        <img
+          src="/guias.png"
+          alt=""
           className="absolute inset-0 w-full h-full object-contain pointer-events-none"
           draggable={false}
           style={{ mixBlendMode: 'multiply' }}
