@@ -48,7 +48,13 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
           style={{ backgroundColor: boxColor, ...mask('/caja.png') }}
         />
 
-        {/* Capa 3: texturas y sombras */}
+        {/* Capa 3: lamas en color lamas — sobreescribe el área de lamas */}
+        <div
+          className="absolute inset-0 transition-colors duration-500"
+          style={{ backgroundColor: slatColor, ...mask('/sololamas.png') }}
+        />
+
+        {/* Capa 4: texturas y sombras */}
         <img
           src="/persianacompleta.png"
           alt="Vista previa persiana"
