@@ -456,13 +456,11 @@ function OrderModal({ order, onClose, onUpdate }) {
 
 // ── TABS SIDEBAR ─────────────────────────────────────────────────────────
 const ADMIN_TABS = [
-  { id: 'overview',      label: 'Resumen',        icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
-  { id: 'pedidos',       label: 'Pedidos',         icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
-  { id: 'presupuestos',  label: 'Presupuestos',    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-  { id: 'proyectos',     label: 'Proyectos Pro',   icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
-  { id: 'facturas',      label: 'Facturas',        icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
-  { id: 'profesionales', label: 'Profesionales',   icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
-  { id: 'clientes',      label: 'Clientes',        icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+  { id: 'overview',     label: 'Resumen',       icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+  { id: 'pedidos',      label: 'Pedidos',        icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+  { id: 'presupuestos', label: 'Presupuestos',   icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
+  { id: 'facturas',     label: 'Facturas',       icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
+  { id: 'clientes',     label: 'Clientes',       icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
 ]
 
 // ── PANEL ADMIN ───────────────────────────────────────────────────────────
@@ -728,9 +726,35 @@ export default function AdminDashboard() {
             {/* ── PEDIDOS ── */}
             {activeTab === 'pedidos' && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <h1 className="text-xl font-bold text-gray-900">Pedidos</h1>
-                  <button onClick={loadOrders} className="text-xs text-red-600 hover:underline">Actualizar</button>
+                  <div className="flex items-center gap-2">
+                    {filtered.length > 0 && (
+                      <button onClick={() => {
+                        const headers = ['ID', 'Email', 'Tipo', 'Fecha', 'Total', 'Estado']
+                        const rows = filtered.map(o => [
+                          o.id.slice(0,8).toUpperCase(),
+                          o.profiles?.email ?? '',
+                          o.user_type === 'professional' ? 'Profesional' : 'Particular',
+                          o.created_at ? new Date(o.created_at).toLocaleDateString('es-ES') : '',
+                          (o.total_with_iva ?? 0).toFixed(2).replace('.', ','),
+                          STATUS_MAP[o.status]?.label ?? o.status,
+                        ])
+                        const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(';')).join('\n')
+                        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a'); a.href = url
+                        a.download = `pedidos_${new Date().toISOString().slice(0,10)}.csv`; a.click()
+                        URL.revokeObjectURL(url)
+                      }} className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Exportar CSV
+                      </button>
+                    )}
+                    <button onClick={loadOrders} className="text-xs text-red-600 hover:underline">Actualizar</button>
+                  </div>
                 </div>
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-col sm:flex-row gap-3">
@@ -864,14 +888,8 @@ export default function AdminDashboard() {
             {/* ── PRESUPUESTOS ── */}
             {activeTab === 'presupuestos' && <AdminBudgetsSection />}
 
-            {/* ── PROYECTOS PRO ── */}
-            {activeTab === 'proyectos' && <AdminProProjectsSection />}
-
             {/* ── FACTURAS ── */}
             {activeTab === 'facturas' && <AdminInvoicesSection />}
-
-            {/* ── PROFESIONALES ── */}
-            {activeTab === 'profesionales' && <AdminProfessionalsSection />}
 
             {/* ── CLIENTES ── */}
             {activeTab === 'clientes' && <AdminClientsSection />}
@@ -1188,6 +1206,31 @@ function AdminBudgetsSection() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="text-lg font-bold text-gray-900">Presupuestos</h2>
         <div className="flex items-center gap-2 flex-wrap">
+          {filtered.length > 0 && (
+            <button onClick={() => {
+              const headers = ['Número', 'Cliente', 'Email', 'Tipo', 'Precio', 'Estado', 'Fecha']
+              const rows = filtered.map(b => [
+                b.budget_number ?? b.id?.slice(0,8).toUpperCase(),
+                b.customer_name ?? '',
+                b.customer_email ?? '',
+                BUDGET_TYPE_LABELS[b.blind_type] ?? b.blind_type ?? '',
+                ((b.admin_price != null ? b.admin_price : b.total_with_iva) ?? 0).toFixed(2).replace('.', ','),
+                BUDGET_STATUS_MAP[b.budget_status ?? 'pending']?.label ?? '',
+                b.created_at ? new Date(b.created_at).toLocaleDateString('es-ES') : '',
+              ])
+              const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(';')).join('\n')
+              const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a'); a.href = url
+              a.download = `presupuestos_${new Date().toISOString().slice(0,10)}.csv`; a.click()
+              URL.revokeObjectURL(url)
+            }} className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Exportar CSV
+            </button>
+          )}
           <select
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
@@ -1273,275 +1316,6 @@ function AdminBudgetsSection() {
           budget={selected}
           onClose={() => setSelected(null)}
           onSaved={() => { setSelected(null); loadBudgets() }}
-        />
-      )}
-    </div>
-  )
-}
-
-// ── SECCIÓN PROYECTOS PROFESIONALES ADMIN ────────────────────────────────
-const PRO_PROJECT_STATUS = {
-  draft:    { label: 'Borrador',  cls: 'bg-gray-100 text-gray-600'    },
-  sent:     { label: 'Enviado',   cls: 'bg-blue-100 text-blue-700'    },
-  accepted: { label: 'Aceptado',  cls: 'bg-green-100 text-green-700'  },
-  rejected: { label: 'Rechazado', cls: 'bg-red-100 text-red-700'      },
-}
-
-function ProProjectModal({ project: initial, onClose, onSaved }) {
-  const [status,     setStatus]     = useState(initial.status ?? 'draft')
-  const [adminNotes, setAdminNotes] = useState(initial.admin_notes ?? '')
-  const [items,      setItems]      = useState(initial.items ?? [])
-  const [saving,     setSaving]     = useState(false)
-  const [saved,      setSaved]      = useState(false)
-
-  const total = items.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
-
-  function updateItemPrice(item_id, val) {
-    setItems(prev => prev.map(it => it.item_id === item_id ? { ...it, client_price: parseFloat(val) || 0 } : it))
-  }
-
-  async function handleSave() {
-    setSaving(true)
-    const { error } = await supabase.from('pro_projects').update({
-      status,
-      admin_notes: adminNotes || null,
-      items,
-      updated_at: new Date().toISOString(),
-    }).eq('id', initial.id)
-    setSaving(false)
-    if (!error) { setSaved(true); setTimeout(() => { setSaved(false); onSaved() }, 1500) }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 bg-black/40 backdrop-blur-sm overflow-y-auto" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl my-6">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <div>
-            <p className="text-xs font-mono text-gray-400">{initial.budget_number ?? `#${initial.id?.slice(0,8).toUpperCase()}`}</p>
-            <h2 className="text-lg font-bold text-gray-900 mt-0.5">{initial.name || initial.client_name || 'Proyecto sin nombre'}</h2>
-          </div>
-          <button onClick={onClose} className="p-2 rounded-xl text-gray-400 hover:bg-gray-100 transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="px-6 py-5 space-y-5">
-          {/* Profesional + Cliente */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="bg-blue-50 rounded-xl p-4">
-              <p className="text-xs font-semibold text-blue-400 uppercase tracking-wide mb-1">Profesional</p>
-              <p className="font-semibold text-blue-900">{initial._empresa ?? '—'}</p>
-              <p className="text-xs text-blue-600 mt-0.5">{initial._email ?? ''}</p>
-            </div>
-            <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Cliente final</p>
-              <p className="font-semibold text-gray-900">{initial.client_name || '—'}</p>
-              {initial.client_phone && <p className="text-xs text-gray-500 mt-0.5">{initial.client_phone}</p>}
-              {initial.client_email && <p className="text-xs text-gray-500">{initial.client_email}</p>}
-              {initial.client_address && <p className="text-xs text-gray-500">{initial.client_address}</p>}
-            </div>
-          </div>
-
-          {/* Items */}
-          {items.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Partidas ({items.length})</p>
-              <div className="space-y-2">
-                {items.map(it => (
-                  <div key={it.item_id} className="flex items-center gap-3 bg-gray-50 rounded-xl px-4 py-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 truncate">{it.description || (BUDGET_TYPE_LABELS[it.blind_type] ?? it.blind_type)}</p>
-                      <p className="text-xs text-gray-400">{it.width} × {it.height} mm · {it.mechanism}</p>
-                    </div>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <input
-                        type="number" min="0" step="0.01"
-                        value={it.client_price ?? ''}
-                        onChange={e => updateItemPrice(it.item_id, e.target.value)}
-                        className="w-24 px-2.5 py-1.5 text-sm font-bold text-right border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400"
-                      />
-                      <span className="text-xs text-gray-400">€</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex justify-end mt-3">
-                <p className="text-sm font-bold text-gray-900">Total: <span className="text-red-700">{fmt(total)}</span> <span className="font-normal text-gray-400 text-xs">(con IVA)</span></p>
-              </div>
-            </div>
-          )}
-
-          {/* Notas del profesional */}
-          {initial.notes && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Notas del profesional</p>
-              <p className="text-sm text-amber-800 whitespace-pre-wrap">{initial.notes}</p>
-            </div>
-          )}
-
-          {/* Estado */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Estado</label>
-            <div className="flex gap-2 flex-wrap">
-              {Object.entries(PRO_PROJECT_STATUS).map(([key, { label, cls }]) => (
-                <button key={key} onClick={() => setStatus(key)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold border-2 transition-all ${
-                    status === key ? `${cls} border-current` : 'border-transparent bg-gray-100 text-gray-500 hover:bg-gray-200'
-                  }`}>
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Notas admin */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Notas internas (solo admin)</label>
-            <textarea rows={3} value={adminNotes} onChange={e => setAdminNotes(e.target.value)}
-              placeholder="Observaciones internas sobre este proyecto…"
-              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 resize-none" />
-          </div>
-
-          {/* Acciones */}
-          <div className="flex gap-3 pt-1">
-            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
-              Cancelar
-            </button>
-            <button onClick={handleSave} disabled={saving || saved}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors ${saved ? 'bg-green-600 text-white' : 'bg-red-700 hover:bg-red-800 text-white disabled:opacity-60'}`}>
-              {saving ? '…' : saved ? '✓ Guardado' : 'Guardar cambios'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function AdminProProjectsSection() {
-  const [projects, setProjects] = useState([])
-  const [loading,  setLoading]  = useState(true)
-  const [search,   setSearch]   = useState('')
-  const [statusF,  setStatusF]  = useState('all')
-  const [selected, setSelected] = useState(null)
-
-  useEffect(() => { loadProjects() }, [])
-
-  async function loadProjects() {
-    setLoading(true)
-    const { data: projects } = await supabase
-      .from('pro_projects')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (!projects) { setProjects([]); setLoading(false); return }
-
-    // Enriquecer con datos del profesional
-    const userIds = [...new Set(projects.map(p => p.user_id).filter(Boolean))]
-    const { data: empData } = await supabase
-      .from('professional_data')
-      .select('user_id, razon_social, email_facturacion')
-      .in('user_id', userIds)
-
-    const empMap = Object.fromEntries((empData ?? []).map(e => [e.user_id, e]))
-
-    setProjects(projects.map(p => ({
-      ...p,
-      _empresa: empMap[p.user_id]?.razon_social ?? null,
-      _email:   empMap[p.user_id]?.email_facturacion ?? null,
-    })))
-    setLoading(false)
-  }
-
-  const filtered = projects.filter(p => {
-    const q = search.toLowerCase()
-    const matchSearch = !search ||
-      (p.name ?? '').toLowerCase().includes(q) ||
-      (p.client_name ?? '').toLowerCase().includes(q) ||
-      (p._empresa ?? '').toLowerCase().includes(q) ||
-      (p.budget_number ?? '').toLowerCase().includes(q)
-    const matchStatus = statusF === 'all' || p.status === statusF
-    return matchSearch && matchStatus
-  })
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h2 className="text-lg font-bold text-gray-900">Proyectos profesionales</h2>
-        <div className="flex items-center gap-2 flex-wrap">
-          <select value={statusF} onChange={e => setStatusF(e.target.value)}
-            className="px-3 py-2 rounded-xl border border-gray-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 bg-white">
-            <option value="all">Todos</option>
-            {Object.entries(PRO_PROJECT_STATUS).map(([k, { label }]) => (
-              <option key={k} value={k}>{label}</option>
-            ))}
-          </select>
-          <input type="text" placeholder="Buscar empresa, cliente o nº…" value={search} onChange={e => setSearch(e.target.value)}
-            className="px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 w-56" />
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-10">
-            <div className="w-6 h-6 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-10 text-gray-400 text-sm">No hay proyectos profesionales</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  {['Nº Presupuesto', 'Profesional', 'Cliente final', 'Partidas', 'Total', 'Estado', 'Fecha', ''].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filtered.map(p => {
-                  const total = (p.items ?? []).reduce((s, it) => s + (Number(it.client_price) || 0), 0)
-                  const st = PRO_PROJECT_STATUS[p.status] ?? PRO_PROJECT_STATUS.draft
-                  return (
-                    <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{p.budget_number ?? `#${p.id?.slice(0,8).toUpperCase()}`}</td>
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-gray-900">{p._empresa ?? '—'}</p>
-                        <p className="text-xs text-gray-400">{p._email ?? ''}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-medium text-gray-700">{p.client_name || '—'}</p>
-                        <p className="text-xs text-gray-400">{p.client_phone ?? ''}</p>
-                      </td>
-                      <td className="px-4 py-3 text-center text-gray-600">{(p.items ?? []).length}</td>
-                      <td className="px-4 py-3 font-bold text-red-700">{fmt(total)}</td>
-                      <td className="px-4 py-3">
-                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
-                      </td>
-                      <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(p.created_at)}</td>
-                      <td className="px-4 py-3 text-right">
-                        <button onClick={() => setSelected(p)}
-                          className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
-                          Gestionar
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {selected && (
-        <ProProjectModal
-          project={selected}
-          onClose={() => setSelected(null)}
-          onSaved={() => { setSelected(null); loadProjects() }}
         />
       )}
     </div>
@@ -1969,22 +1743,31 @@ function DiscountCell({ userId, initial }) {
   )
 }
 
-// ── SECCIÓN PROFESIONALES ADMIN ───────────────────────────────────────────
+// ── SECCIÓN CLIENTES ADMIN (particulares + profesionales unificados) ──────
 function AdminClientsSection() {
   const [clients,   setClients]   = useState([])
+  const [proData,   setProData]   = useState({}) // user_id → professional_data
   const [loading,   setLoading]   = useState(true)
   const [search,    setSearch]    = useState('')
+  const [typeFilter,setTypeFilter]= useState('all')
+  const [expanded,  setExpanded]  = useState(null)
   const [deleting,  setDeleting]  = useState(null)
   const [confirm,   setConfirm]   = useState(null)
   const [deleteErr, setDeleteErr] = useState('')
 
-  useEffect(() => { loadClients() }, [])
+  useEffect(() => { loadAll() }, [])
 
-  async function loadClients() {
+  async function loadAll() {
     setLoading(true)
-    const { data, error } = await supabase.rpc('admin_get_all_users')
+    const [{ data: users, error }, { data: pros }] = await Promise.all([
+      supabase.rpc('admin_get_all_users'),
+      supabase.from('professional_data').select('*, profiles(email)').order('created_at', { ascending: false }),
+    ])
     if (error) console.error('Error cargando usuarios:', error)
-    setClients(data ?? [])
+    setClients(users ?? [])
+    const map = {}
+    ;(pros ?? []).forEach(p => { map[p.user_id] = p })
+    setProData(map)
     setLoading(false)
   }
 
@@ -1992,31 +1775,67 @@ function AdminClientsSection() {
     setDeleting(userId)
     setDeleteErr('')
     const { error } = await supabase.rpc('admin_delete_user', { target_user_id: userId })
-    if (error) {
-      console.error('Error eliminando usuario:', error)
-      setDeleteErr(error.message)
-    } else {
-      setClients(prev => prev.filter(c => c.id !== userId))
-      setConfirm(null)
-    }
+    if (error) { setDeleteErr(error.message) }
+    else { setClients(prev => prev.filter(c => c.id !== userId)); setConfirm(null) }
     setDeleting(null)
   }
 
-  const filtered = clients.filter(c =>
-    !search ||
-    c.email?.toLowerCase().includes(search.toLowerCase()) ||
-    c.user_type?.toLowerCase().includes(search.toLowerCase())
-  )
+  function exportCSV() {
+    const headers = ['Email', 'Tipo', 'Registro', 'Razón social', 'CIF/NIF', 'Teléfono', 'Ciudad', 'Email facturación', 'Descuento %']
+    const rows = filtered.map(c => {
+      const p = proData[c.id] ?? {}
+      return [
+        c.email ?? '',
+        c.user_type === 'professional' ? 'Profesional' : c.user_type === 'admin' ? 'Admin' : 'Particular',
+        c.created_at ? new Date(c.created_at).toLocaleDateString('es-ES') : '',
+        p.razon_social ?? '',
+        p.cif_nif ?? '',
+        p.telefono ?? '',
+        p.ciudad ?? '',
+        p.email_facturacion ?? '',
+        p.discount_percent ?? '',
+      ]
+    })
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(';')).join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url
+    a.download = `clientes_${new Date().toISOString().slice(0,10)}.csv`; a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const filtered = clients.filter(c => {
+    const matchSearch = !search ||
+      c.email?.toLowerCase().includes(search.toLowerCase()) ||
+      (proData[c.id]?.razon_social ?? '').toLowerCase().includes(search.toLowerCase())
+    const matchType = typeFilter === 'all' || c.user_type === typeFilter
+    return matchSearch && matchType
+  })
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h2 className="text-lg font-bold text-gray-900">Todos los clientes</h2>
-        <input
-          type="text" placeholder="Buscar por email o tipo…" value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 w-64"
-        />
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h2 className="text-lg font-bold text-gray-900">Clientes</h2>
+        <div className="flex items-center gap-2 flex-wrap">
+          {filtered.length > 0 && (
+            <button onClick={exportCSV}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Exportar CSV
+            </button>
+          )}
+          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-gray-300 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 bg-white">
+            <option value="all">Todos</option>
+            <option value="user">Particulares</option>
+            <option value="professional">Profesionales</option>
+          </select>
+          <input type="text" placeholder="Buscar por email o empresa…" value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 w-56" />
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
@@ -2027,163 +1846,94 @@ function AdminClientsSection() {
         ) : filtered.length === 0 ? (
           <div className="text-center py-10 text-gray-400 text-sm">No hay clientes registrados</div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  {['Email', 'Tipo', 'Registro', 'Acciones'].map(h => (
-                    <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap ${h === 'Acciones' ? 'text-right' : 'text-left'}`}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {filtered.map(c => (
-                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-900 font-medium">{c.email ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        c.user_type === 'professional' ? 'bg-blue-100 text-blue-700' :
+          <div className="divide-y divide-gray-100">
+            {filtered.map(c => {
+              const p   = proData[c.id]
+              const isPro = c.user_type === 'professional'
+              const isExpanded = expanded === c.id
+              return (
+                <div key={c.id}>
+                  {/* Fila principal */}
+                  <div className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                    <button onClick={() => setExpanded(isExpanded ? null : c.id)} className="flex-1 flex items-center gap-3 text-left min-w-0">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold ${
+                        isPro ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {(c.email?.[0] ?? '?').toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{c.email ?? '—'}</p>
+                        {isPro && p?.razon_social && (
+                          <p className="text-xs text-gray-400 truncate">{p.razon_social}</p>
+                        )}
+                      </div>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                        isPro ? 'bg-blue-100 text-blue-700' :
                         c.user_type === 'admin' ? 'bg-red-100 text-red-700' :
                         'bg-gray-100 text-gray-600'
                       }`}>
-                        {c.user_type === 'admin' ? 'Admin' : c.user_type === 'professional' ? 'Profesional' : 'Cliente'}
+                        {c.user_type === 'admin' ? 'Admin' : isPro ? 'Profesional' : 'Particular'}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-400 text-xs">{fmtDate(c.created_at)}</td>
-                    <td className="px-4 py-3 text-right">
-                      {c.user_type === 'admin' ? (
-                        <span className="text-xs text-gray-300">—</span>
-                      ) : confirm === c.id ? (
-                        <div className="inline-flex items-center gap-2">
-                          <span className="text-xs text-red-600 font-semibold">¿Eliminar definitivamente?</span>
-                          <button
-                            onClick={() => handleDelete(c.id)}
-                            disabled={deleting === c.id}
-                            className="text-xs font-bold bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded-lg transition-colors disabled:opacity-60">
-                            {deleting === c.id ? '…' : 'Sí, eliminar'}
+                      <span className="text-xs text-gray-400 flex-shrink-0 hidden sm:inline">{fmtDate(c.created_at)}</span>
+                      {(isPro || c.user_type === 'user') && (
+                        <svg className={`w-4 h-4 text-gray-400 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      )}
+                    </button>
+                    {c.user_type !== 'admin' && (
+                      confirm === c.id ? (
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button onClick={() => handleDelete(c.id)} disabled={deleting === c.id}
+                            className="text-xs font-bold bg-red-600 hover:bg-red-700 text-white px-2.5 py-1 rounded-lg disabled:opacity-60">
+                            {deleting === c.id ? '…' : 'Confirmar'}
                           </button>
-                          <button onClick={() => setConfirm(null)}
-                            className="text-xs font-semibold text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors">
+                          <button onClick={() => setConfirm(null)} className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded-lg hover:bg-gray-100">
                             Cancelar
                           </button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => setConfirm(c.id)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition-colors">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        <button onClick={() => setConfirm(c.id)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
-                          Eliminar
                         </button>
+                      )
+                    )}
+                  </div>
+
+                  {/* Detalle expandido */}
+                  {isExpanded && (
+                    <div className="px-4 pb-4 pt-2 bg-gray-50 border-t border-gray-100">
+                      {isPro && p ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+                          {p.cif_nif       && <div><span className="text-xs text-gray-400 block">CIF/NIF</span><span className="font-mono font-semibold">{p.cif_nif}</span></div>}
+                          {p.telefono      && <div><span className="text-xs text-gray-400 block">Teléfono</span>{p.telefono}</div>}
+                          {p.ciudad        && <div><span className="text-xs text-gray-400 block">Ciudad</span>{p.ciudad}</div>}
+                          {p.direccion_fiscal && <div className="sm:col-span-2"><span className="text-xs text-gray-400 block">Dirección fiscal</span>{p.direccion_fiscal}</div>}
+                          {p.email_facturacion && <div><span className="text-xs text-gray-400 block">Email facturación</span>{p.email_facturacion}</div>}
+                          <div>
+                            <span className="text-xs text-gray-400 block">Descuento</span>
+                            <DiscountCell userId={p.user_id} initial={p.discount_percent ?? ''} />
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-gray-400">Registro: {fmtDate(c.created_at)}</p>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
       {deleteErr && (
-        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
-          Error al eliminar: {deleteErr}
-        </div>
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">Error al eliminar: {deleteErr}</div>
       )}
-      <p className="text-xs text-gray-400">{filtered.length} usuario{filtered.length !== 1 ? 's' : ''} · Los admins no se pueden eliminar desde aquí</p>
-    </div>
-  )
-}
-
-function AdminProfessionalsSection() {
-  const [professionals, setProfessionals] = useState([])
-  const [loading,       setLoading]       = useState(true)
-
-  useEffect(() => { loadProfessionals() }, [])
-
-  async function loadProfessionals() {
-    setLoading(true)
-    const { data } = await supabase
-      .from('professional_data')
-      .select('*, profiles(email)')
-      .order('created_at', { ascending: false })
-    setProfessionals(data ?? [])
-    setLoading(false)
-  }
-
-  function exportToExcel() {
-    const headers = ['Razón social', 'CIF/NIF', 'Teléfono', 'Dirección fiscal', 'CP', 'Ciudad', 'Provincia', 'Email facturación', 'Email cuenta']
-    const rows = professionals.map(p => [
-      p.razon_social ?? '',
-      p.cif_nif ?? '',
-      p.telefono ?? '',
-      p.direccion_fiscal ?? '',
-      p.codigo_postal ?? '',
-      p.ciudad ?? '',
-      p.provincia ?? '',
-      p.email_facturacion ?? '',
-      p.profiles?.email ?? '',
-    ])
-
-    const csv = [headers, ...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n')
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href     = url
-    a.download = `profesionales_${new Date().toISOString().slice(0,10)}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-gray-900">Clientes profesionales</h2>
-        <button onClick={exportToExcel}
-          className="flex items-center gap-2 text-sm font-semibold bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl transition-colors">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          Exportar CSV
-        </button>
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-10">
-            <div className="w-6 h-6 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : professionals.length === 0 ? (
-          <div className="text-center py-10 text-gray-400 text-sm">No hay profesionales registrados todavía</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  {['Razón social', 'CIF/NIF', 'Teléfono', 'Ciudad', 'Email cuenta', 'Email facturación', 'Descuento'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {professionals.map(p => (
-                  <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-semibold text-gray-900">{p.razon_social ?? '—'}</td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{p.cif_nif ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-600">{p.telefono ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-600">{p.ciudad ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{p.profiles?.email ?? '—'}</td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{p.email_facturacion ?? '—'}</td>
-                    <td className="px-4 py-3"><DiscountCell userId={p.user_id} initial={p.discount_percent ?? ''} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      <p className="text-xs text-gray-400">{filtered.length} usuario{filtered.length !== 1 ? 's' : ''} · Los admins no se pueden eliminar</p>
     </div>
   )
 }
