@@ -168,6 +168,7 @@ const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => 
   const { addToCart, items: cartItems } = useCart()
   const navigate = useNavigate()
   const [addingCart, setAddingCart] = useState(false)
+  const [expanded,   setExpanded]   = useState(false)
 
   const allInCart = cartItems.some(ci => ci.configuration_id === config.id)
 
@@ -178,155 +179,101 @@ const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => 
     if (!error) setTimeout(() => navigate('/cesta'), 600)
   }
 
-  const price = new Intl.NumberFormat('es-ES', {
-    style: 'currency', currency: 'EUR', minimumFractionDigits: 2,
-  }).format(config.estimated_price || 0)
+  const price    = fmtEUR(config.estimated_price || 0)
+  const date     = new Intl.DateTimeFormat('es-ES', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(config.created_at))
+  const tipo      = config.blind_type
+  const label     = blindLabel(tipo)
+  const mechLabel = { muelle: 'Muelle', cinta: 'Cinta', motor: 'Motor' }[config.mechanism] ?? config.mechanism ?? '—'
 
-  const date = new Intl.DateTimeFormat('es-ES', {
-    year: 'numeric', month: 'short', day: 'numeric',
-  }).format(new Date(config.created_at))
-
-  const tipo       = config.blind_type
-  const label      = blindLabel(tipo)
-  const esIndiv    = isProductoIndividual(tipo)
-  const esSistema  = isSistema(tipo)
-  const mechLabel  = { muelle: 'Muelle', cinta: 'Cinta', motor: 'Motor' }[config.mechanism] ?? config.mechanism ?? '—'
+  const borderCls = allInCart
+    ? 'bg-green-50 border-green-200'
+    : 'bg-white border-gray-200 hover:border-red-200 hover:shadow-md'
 
   return (
-    <article className="bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-red-200 hover:shadow-md transition-all group">
+    <article className={`border rounded-xl overflow-hidden transition-all ${borderCls}`}>
+      {/* ── Cabecera colapsable ── */}
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full px-4 py-3 flex items-center justify-between text-left"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          {allInCart ? (
+            <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          )}
+          <span className={`text-xs font-bold truncate ${allInCart ? 'text-green-700' : 'text-gray-800'}`}>
+            {allInCart ? 'En cesta · ' : ''}{label}
+          </span>
+          {!allInCart && (
+            <span className="text-xs text-gray-400 truncate hidden sm:inline">
+              · {config.width && config.height ? `${config.width}×${config.height}` : mechLabel}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+          <span className={`text-sm font-black ${allInCart ? 'text-green-700' : 'text-red-700'}`}>{price}</span>
+          <span className="text-xs text-gray-400">{date}</span>
+          <svg className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
 
-      {/* Preview */}
-      <div className="relative h-36 bg-gray-50 overflow-hidden flex items-center justify-center">
-        {esIndiv ? (
-          /* Icono para productos sin persiana */
-          <div className="flex flex-col items-center gap-2 text-gray-300">
-            {tipo === 'solo_guias' ? (
-              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2}
-                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-              </svg>
-            ) : (
-              <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+      {/* ── Detalle expandido ── */}
+      {expanded && (
+        <div className={`px-4 pb-4 pt-3 border-t space-y-3 ${allInCart ? 'border-green-100' : 'border-gray-100'}`}>
+          {/* Detalles */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+            {config.width && config.height && <span>{config.width} × {config.height} mm</span>}
+            {config.mechanism && <span>{mechLabel}</span>}
+            {config.slat_color_name && (
+              <span className="flex items-center gap-1">
+                <span className="w-2.5 h-2.5 rounded-full border border-gray-200 flex-shrink-0" style={{ backgroundColor: config.slat_color || '#ccc' }} />
+                {config.slat_color_name}
+              </span>
             )}
           </div>
-        ) : (
-          <BlindSVGPreview
-            boxColor={config.box_color || '#dc2626'}
-            slatColor={config.slat_color || '#ffffff'}
-          />
-        )}
-        {/* Badge tipo */}
-        <div className={`absolute top-2 left-2 text-xs font-bold px-2 py-0.5 rounded-full ${
-          tipo === 'blocking'
-            ? 'bg-gray-900 text-white'
-            : esIndiv
-            ? 'bg-blue-100 text-blue-700 border border-blue-200'
-            : esSistema
-            ? 'bg-red-100 text-red-700 border border-red-200'
-            : 'bg-white text-gray-700 border border-gray-200'
-        }`}>
-          {label}
-        </div>
-        {/* Badge fecha */}
-        <div className="absolute top-2 right-2 text-xs text-gray-500 bg-white/90 px-2 py-0.5 rounded-full border border-gray-100">
-          {date}
-        </div>
-      </div>
 
-      {/* Contenido */}
-      <div className="p-4">
-        <div className="mb-3">
-          <h3 className="font-bold text-gray-900 text-sm">{label}</h3>
-          <p className="text-xs text-gray-400 mt-0.5">{mechLabel}</p>
-        </div>
-
-        <dl className="grid grid-cols-2 gap-2 text-xs mb-4">
-          {!esIndiv || tipo === 'solo_guias' ? (
-            <div>
-              <dt className="text-gray-400 uppercase tracking-wide mb-0.5">
-                {tipo === 'solo_guias' ? 'Altura guías' : 'Medidas'}
-              </dt>
-              <dd className="text-gray-700 font-semibold">
-                {tipo === 'solo_guias'
-                  ? `${config.height} mm`
-                  : `${config.width} × ${config.height} mm`}
-              </dd>
-            </div>
-          ) : <div />}
-          {!esIndiv ? (
-            <div>
-              <dt className="text-gray-400 uppercase tracking-wide mb-0.5">Colores</dt>
-              <dd className="text-gray-700 font-semibold truncate">
-                <span className="inline-flex items-center gap-1">
-                  <span className="inline-block w-3 h-3 rounded-full border border-gray-200 flex-shrink-0"
-                    style={{ backgroundColor: config.box_color || '#ccc' }} />
-                  {config.box_color_name || '—'}
-                </span>
-                {' / '}
-                <span className="inline-flex items-center gap-1">
-                  <span className="inline-block w-3 h-3 rounded-full border border-gray-200 flex-shrink-0"
-                    style={{ backgroundColor: config.slat_color || '#ccc' }} />
-                  {config.slat_color_name || '—'}
-                </span>
-              </dd>
-            </div>
+          {/* Acciones */}
+          {allInCart ? (
+            <button onClick={() => navigate('/cesta')}
+              className="w-full py-2 px-3 rounded-lg text-xs font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors">
+              Ir a la cesta →
+            </button>
           ) : (
-            <div>
-              <dt className="text-gray-400 uppercase tracking-wide mb-0.5">Tipo motor</dt>
-              <dd className="text-gray-700 font-semibold capitalize">
-                {config.motor_type === 'mando_distancia' ? 'Mando a distancia' : config.motor_type === 'mecanico' ? 'Mecánico' : '—'}
-              </dd>
-            </div>
+            <button
+              onClick={handleAddToCart}
+              disabled={addingCart}
+              className="w-full py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-60 transition-colors"
+            >
+              {addingCart ? (
+                <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  Añadir a la cesta
+                </>
+              )}
+            </button>
           )}
-        </dl>
-
-        <footer className="pt-3 border-t border-gray-100 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-lg font-black text-red-700">{price}</span>
-            <div className="flex items-center gap-1">
+          <div className="flex items-center justify-between pt-1">
+            <div className="flex gap-1">
               <ActionButton onClick={() => onView(config)} label="Ver" />
               <ActionButton onClick={() => onDuplicate(config)} label="Duplicar" />
-              <ActionButton
-                onClick={() => onDelete(config.id)}
-                label="Eliminar"
-                variant="danger"
-                disabled={isProcessing}
-              />
             </div>
+            <ActionButton onClick={() => onDelete(config.id)} label="Eliminar" variant="danger" disabled={isProcessing} />
           </div>
-          <button
-            onClick={handleAddToCart}
-            disabled={addingCart || allInCart}
-            className={`w-full py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors ${
-              allInCart
-                ? 'bg-green-100 text-green-700 cursor-default'
-                : 'bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-60'
-            }`}
-          >
-            {addingCart ? (
-              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : allInCart ? (
-              <>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Añadido a la cesta
-              </>
-            ) : (
-              <>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                Añadir a la cesta
-              </>
-            )}
-          </button>
-        </footer>
-      </div>
+        </div>
+      )}
     </article>
   )
 }
