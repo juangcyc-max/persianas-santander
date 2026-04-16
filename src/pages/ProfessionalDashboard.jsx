@@ -1006,27 +1006,28 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {displayEntries.map(entry =>
-            entry.type === 'group' ? (
+          {displayEntries.map((entry, idx) => {
+            const cardKey = entry.type === 'group' ? (entry.id ?? `group-${idx}`) : (entry.item?.id ?? `single-${idx}`)
+            return entry.type === 'group' ? (
               <ProGroupCard
-                key={entry.id}
+                key={cardKey}
                 items={entry.items}
                 onDeleteGroup={() => handleDeleteGroup(entry.id, entry.items.map(c => c.id))}
                 deleting={deleting === entry.id ? entry.id : null}
-                isExpanded={expandedId === entry.id}
-                onToggle={() => toggleExpanded(entry.id)}
+                isExpanded={expandedId === cardKey}
+                onToggle={() => setExpandedId(prev => prev === cardKey ? null : cardKey)}
               />
             ) : (
               <ProConfigCard
-                key={entry.item.id}
+                key={cardKey}
                 c={entry.item}
                 onDelete={handleDelete}
                 deleting={deleting}
-                isExpanded={expandedId === entry.item.id}
-                onToggle={() => toggleExpanded(entry.item.id)}
+                isExpanded={expandedId === cardKey}
+                onToggle={() => setExpandedId(prev => prev === cardKey ? null : cardKey)}
               />
             )
-          )}
+          })}
         </div>
       )}
     </div>
