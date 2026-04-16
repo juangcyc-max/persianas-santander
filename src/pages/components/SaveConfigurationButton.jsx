@@ -16,6 +16,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
 
   useEffect(() => {
     if (!destUrl) return
+    window.scrollTo({ top: 0, behavior: 'instant' })
     navigate(destUrl, { replace: true })
   }, [destUrl])
 

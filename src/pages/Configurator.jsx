@@ -395,7 +395,10 @@ function Configurator() {
     }
     setSavingAll(false)
     setSavedAll(true)
-    setTimeout(() => navigate('/mis-configuraciones', { replace: true }), 800)
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'instant' })
+      navigate('/mis-configuraciones', { replace: true })
+    }, 800)
   }
 
   // Flags de visibilidad
@@ -442,7 +445,7 @@ function Configurator() {
 
         {/* Panel izquierdo — resumen (en móvil va abajo) */}
         <div className="order-2 lg:order-1 lg:w-1/2 lg:h-full lg:overflow-y-auto lg:border-r lg:border-gray-100 bg-white">
-          <div className="p-6 space-y-6">
+          <div className="p-6 flex flex-col gap-6">
 
             {/* Cabecera roja — solo en desktop */}
             <div className="hidden lg:block bg-red-700 text-white rounded-xl px-6 py-5">
@@ -452,7 +455,7 @@ function Configurator() {
 
             {/* Lista de persianas configuradas */}
             {items.length > 0 && (
-              <div className="rounded-lg border border-gray-200 overflow-hidden">
+              <div className="order-1 lg:order-none rounded-lg border border-gray-200 overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
                   <h3 className="text-sm font-bold text-gray-900">
                     Lista · {items.length} {items.length === 1 ? 'persiana' : 'persianas'}
@@ -491,12 +494,12 @@ function Configurator() {
             )}
 
             {showPreview && (
-              <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+              <div className="order-3 lg:order-none bg-gray-50 p-6 rounded-lg border border-gray-200">
                 <BlindPreview boxColor={effectiveBoxColor} slatColor={slatColor} width={width} blindType={productType} />
               </div>
             )}
 
-            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+            <div className="order-4 lg:order-none bg-gray-50 p-6 rounded-lg border border-gray-200">
               <PriceDisplay
                 priceBreakdown={priceBreakdown}
                 userType={userType}
@@ -504,7 +507,7 @@ function Configurator() {
               />
             </div>
 
-            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+            <div className="order-5 lg:order-none bg-gray-50 p-6 rounded-lg border border-gray-200">
               <ConfigurationSummary
                 productType={productType}
                 guideType={guideType}
@@ -520,7 +523,7 @@ function Configurator() {
               />
             </div>
 
-            <div className="space-y-3">
+            <div className="order-2 lg:order-none space-y-3">
               {/* Añadir configuración actual a la lista */}
               <button
                 onClick={handleAddToList}
