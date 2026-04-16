@@ -615,11 +615,12 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
 }
 
 // ── Tarjeta de configuración con carrito ──────────────────────────────────
-function ProConfigCard({ c, onDelete, deleting, confirmDel, setConfirmDel }) {
+function ProConfigCard({ c, onDelete, deleting }) {
   const navigate               = useNavigate()
   const { addToCart, items: cartItems } = useCart()
-  const [adding,   setAdding]  = useState(false)
-  const [expanded, setExpanded] = useState(false)
+  const [adding,    setAdding]   = useState(false)
+  const [expanded,  setExpanded] = useState(false)
+  const [confirmDel, setConfirmDel] = useState(false)
 
   const added = cartItems.some(ci => ci.configuration_id === c.id)
 
@@ -696,9 +697,9 @@ function ProConfigCard({ c, onDelete, deleting, confirmDel, setConfirmDel }) {
               className="flex-1 text-xs font-semibold py-2 px-3 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors">
               Nueva similar
             </button>
-            {confirmDel === c.id ? (
+            {confirmDel ? (
               <div className="flex gap-1.5">
-                <button onClick={() => setConfirmDel(null)}
+                <button onClick={() => setConfirmDel(false)}
                   className="text-xs font-semibold py-2 px-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
                   Cancelar
                 </button>
@@ -708,7 +709,7 @@ function ProConfigCard({ c, onDelete, deleting, confirmDel, setConfirmDel }) {
                 </button>
               </div>
             ) : (
-              <button onClick={() => setConfirmDel(c.id)}
+              <button onClick={() => setConfirmDel(true)}
                 className="text-xs font-semibold py-2 px-3 rounded-lg border border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-600 hover:bg-red-50 transition-colors">
                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -840,10 +841,9 @@ function ProGroupCard({ items, onDeleteGroup, deleting }) {
 
 // ── Tab Configuraciones ───────────────────────────────────────────────────
 function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
-  const [search,     setSearch]     = useState('')
-  const [deleting,   setDeleting]   = useState(null)
-  const [confirmDel, setConfirmDel] = useState(null)
-  const [sortOrder,  setSortOrder]  = useState('desc')
+  const [search,    setSearch]   = useState('')
+  const [deleting,  setDeleting] = useState(null)
+  const [sortOrder, setSortOrder] = useState('desc')
 
   const filtered = configuraciones.filter(c => {
     if (!search) return true
@@ -941,8 +941,6 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
                 c={entry.item}
                 onDelete={handleDelete}
                 deleting={deleting}
-                confirmDel={confirmDel}
-                setConfirmDel={setConfirmDel}
               />
             )
           )}
