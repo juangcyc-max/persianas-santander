@@ -166,12 +166,14 @@ const ActionButton = ({ onClick, label, variant = 'default', disabled, children 
 
 // ─── Tarjeta de configuración ────────────────────────────────────────────────
 const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => {
-  const { addToCart, items: cartItems } = useCart()
+  const { addToCart, items: cartItems, orderedConfigIds } = useCart()
   const navigate = useNavigate()
   const [addingCart, setAddingCart] = useState(false)
   const [expanded,   setExpanded]   = useState(false)
 
-  const allInCart = cartItems.some(ci => ci.configuration_id === config.id)
+  const inCart    = cartItems.some(ci => ci.configuration_id === config.id)
+  const isOrdered = !inCart && orderedConfigIds.has(config.id)
+  const allInCart = inCart || isOrdered
 
   async function handleAddToCart() {
     setAddingCart(true)
@@ -242,7 +244,14 @@ const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => 
           </div>
 
           {/* Acciones */}
-          {allInCart ? (
+          {isOrdered ? (
+            <button disabled className="w-full py-2 px-3 rounded-lg text-xs font-semibold bg-green-100 text-green-700 cursor-default flex items-center justify-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Ya pedida
+            </button>
+          ) : allInCart ? (
             <button onClick={() => navigate('/cesta')}
               className="w-full py-2 px-3 rounded-lg text-xs font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors">
               Ir a la cesta →
@@ -281,15 +290,17 @@ const ConfigCard = ({ config, onDelete, onView, onDuplicate, isProcessing }) => 
 
 // ─── Tarjeta de grupo ────────────────────────────────────────────────────────
 const GroupCard = ({ items, onDeleteGroup, isProcessing }) => {
-  const { addToCart, items: cartItems } = useCart()
+  const { addToCart, items: cartItems, orderedConfigIds } = useCart()
   const navigate = useNavigate()
   const [addingCart, setAddingCart] = useState(false)
   const [expanded,   setExpanded]   = useState(false)
 
-  const total      = items.reduce((sum, c) => sum + (c.estimated_price || 0), 0)
-  const date       = new Intl.DateTimeFormat('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
+  const total       = items.reduce((sum, c) => sum + (c.estimated_price || 0), 0)
+  const date        = new Intl.DateTimeFormat('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
     .format(new Date(items[0].created_at))
-  const allInCart  = cartItems.length > 0 && items.every(c => cartItems.some(ci => ci.configuration_id === c.id))
+  const inCart      = cartItems.length > 0 && items.every(c => cartItems.some(ci => ci.configuration_id === c.id))
+  const isOrdered   = !inCart && items.every(c => orderedConfigIds.has(c.id))
+  const allInCart   = inCart || isOrdered
 
   async function handleAddAllToCart() {
     setAddingCart(true)
@@ -357,7 +368,14 @@ const GroupCard = ({ items, onDeleteGroup, isProcessing }) => {
           </div>
 
           {/* Acciones */}
-          {allInCart ? (
+          {isOrdered ? (
+            <button disabled className="w-full py-2 px-3 rounded-lg text-xs font-semibold bg-green-100 text-green-700 cursor-default flex items-center justify-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Ya pedido
+            </button>
+          ) : allInCart ? (
             <button onClick={() => navigate('/cesta')}
               className="w-full py-2 px-3 rounded-lg text-xs font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors">
               Ir a la cesta →

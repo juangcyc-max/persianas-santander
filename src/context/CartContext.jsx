@@ -4,22 +4,32 @@ import { supabase } from '../services/supabase/client'
 const CartContext = createContext(null)
 
 export function CartProvider({ children }) {
-  const [items,   setItems]   = useState([])
-  const [loading, setLoading] = useState(false)
-  const [user,    setUser]    = useState(null)
+  const [items,            setItems]            = useState([])
+  const [loading,          setLoading]          = useState(false)
+  const [user,             setUser]             = useState(null)
+  const [orderedConfigIds, setOrderedConfigIds] = useState(new Set())
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user)
-      if (user) loadCart(user.id)
+      if (user) { loadCart(user.id); loadOrderedIds(user.id) }
     })
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null)
-      if (session?.user) loadCart(session.user.id)
-      else setItems([])
+      if (session?.user) { loadCart(session.user.id); loadOrderedIds(session.user.id) }
+      else { setItems([]); setOrderedConfigIds(new Set()) }
     })
     return () => subscription.unsubscribe()
   }, [])
+
+  async function loadOrderedIds(userId) {
+    const { data } = await supabase.from('orders').select('items').eq('user_id', userId)
+    const ids = new Set()
+    ;(data ?? []).forEach(order =>
+      (order.items ?? []).forEach(item => { if (item.configuration_id) ids.add(item.configuration_id) })
+    )
+    setOrderedConfigIds(ids)
+  }
 
   async function loadCart(userId) {
     const { data } = await supabase
@@ -62,7 +72,7 @@ export function CartProvider({ children }) {
   const itemCount     = items.reduce((acc, i) => acc + i.quantity, 0)
 
   return (
-    <CartContext.Provider value={{ items, loading, user, itemCount, totalPrice, totalWithIva, addToCart, removeFromCart, clearCart, loadCart }}>
+    <CartContext.Provider value={{ items, loading, user, itemCount, totalPrice, totalWithIva, orderedConfigIds, addToCart, removeFromCart, clearCart, loadCart }}>
       {children}
     </CartContext.Provider>
   )

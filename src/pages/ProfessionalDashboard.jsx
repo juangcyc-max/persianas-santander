@@ -71,7 +71,7 @@ const ORDER_STATUS = {
 
 const TABS = [
   { id: 'overview',         label: 'Resumen',          icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
-  { id: 'proyectos',        label: 'Proyectos',        icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
+  { id: 'proyectos',        label: 'Presupuestos',     icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
   { id: 'configuraciones',  label: 'Configuraciones',  icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
   { id: 'pedidos',          label: 'Pedidos',          icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
   { id: 'empresa',          label: 'Mi empresa',       icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
@@ -141,7 +141,7 @@ function AddItemModal({ configuraciones, onAdd, onClose }) {
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h3 className="font-bold text-gray-900">Añadir persiana al proyecto</h3>
+          <h3 className="font-bold text-gray-900">Añadir persiana al presupuesto</h3>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
             <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -268,8 +268,8 @@ function ProjectModal({ project: initial, configuraciones, empresa, logoUrl, onS
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
           <div>
-            <p className="text-xs text-gray-400 font-mono">{project.budget_number ?? (isNew ? 'Nuevo proyecto' : `#${project.id?.slice(0,8).toUpperCase()}`)}</p>
-            <h2 className="text-lg font-bold text-gray-900 mt-0.5">{isNew ? 'Crear proyecto' : (project.name || 'Proyecto sin nombre')}</h2>
+            <p className="text-xs text-gray-400 font-mono">{project.budget_number ?? (isNew ? 'Nuevo presupuesto' : `#${project.id?.slice(0,8).toUpperCase()}`)}</p>
+            <h2 className="text-lg font-bold text-gray-900 mt-0.5">{isNew ? 'Crear presupuesto' : (project.name || 'Presupuesto sin nombre')}</h2>
           </div>
           <div className="flex items-center gap-2">
             {!isNew && <Badge status={project.status} />}
@@ -392,7 +392,7 @@ function ProjectModal({ project: initial, configuraciones, empresa, logoUrl, onS
           <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-gray-100">
             {/* Eliminar */}
             {!isNew && (
-              <button onClick={() => { if (window.confirm('¿Eliminar este proyecto?')) { onDelete(project.id); onClose() } }}
+              <button onClick={() => { if (window.confirm('¿Eliminar este presupuesto?')) { onDelete(project.id); onClose() } }}
                 className="sm:mr-auto px-4 py-2.5 rounded-xl border border-red-200 text-red-600 text-sm font-semibold hover:bg-red-50 transition-colors">
                 Eliminar
               </button>
@@ -401,7 +401,7 @@ function ProjectModal({ project: initial, configuraciones, empresa, logoUrl, onS
             {/* Guardar */}
             <button onClick={handleSave} disabled={saving || !project.client_name?.trim()}
               className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-colors ${saved ? 'bg-green-600 text-white' : 'bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-40'}`}>
-              {saving ? <Spinner small /> : saved ? '✓ Guardado' : 'Guardar proyecto'}
+              {saving ? <Spinner small /> : saved ? '✓ Guardado' : 'Guardar presupuesto'}
             </button>
 
             {/* Presupuesto PDF */}
@@ -458,6 +458,80 @@ function ProjectModal({ project: initial, configuraciones, empresa, logoUrl, onS
   )
 }
 
+// ── Tarjeta de presupuesto colapsable ─────────────────────────────────────
+function ProyectoCard({ p, pitems, total, st, onEdit }) {
+  const [expanded, setExpanded] = useState(false)
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-gray-300 hover:shadow-sm transition-all">
+      {/* Cabecera siempre visible */}
+      <button
+        onClick={() => setExpanded(e => !e)}
+        className="w-full px-4 py-3 flex items-center justify-between text-left"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-8 h-8 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0">
+            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-gray-900 truncate">{p.name || 'Presupuesto sin nombre'}</p>
+            {p.client_name && <p className="text-xs text-gray-400 truncate">{p.client_name}</p>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
+          <Badge status={p.status} />
+          <span className="text-sm font-black text-red-700">{fmt(total)}</span>
+          <span className="text-xs text-gray-400 hidden sm:inline">{fmtDate(p.updated_at ?? p.created_at)}</span>
+          <svg className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+      </button>
+
+      {/* Detalle expandido */}
+      {expanded && (
+        <div className="px-4 pb-4 pt-3 border-t border-gray-100 space-y-3">
+          {/* Info cliente + número */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+            {p.budget_number && <span className="font-mono font-semibold text-gray-700">{p.budget_number}</span>}
+            {p.client_phone  && <span>{p.client_phone}</span>}
+            {p.client_email  && <span>{p.client_email}</span>}
+            {p.client_address && <span>{p.client_address}</span>}
+          </div>
+
+          {/* Chips de persianas */}
+          {pitems.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {pitems.map((it, i) => (
+                <span key={it.item_id ?? i}
+                  className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">
+                  <span className="font-bold">{i + 1}.</span>
+                  {it.description || blindLabel(it.blind_type)}
+                  {it.client_price ? <span className="font-semibold text-gray-800">· {fmt(it.client_price)}</span> : null}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Notas */}
+          {p.notes && (
+            <p className="text-xs text-gray-400 italic">{p.notes}</p>
+          )}
+
+          {/* Botón editar */}
+          <button onClick={onEdit}
+            className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-gray-900 hover:bg-gray-800 text-white transition-colors">
+            Editar presupuesto
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Tab Proyectos ─────────────────────────────────────────────────────────
 function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoUrl, user }) {
   const [modal,    setModal]    = useState(null) // null | project object | 'new'
@@ -505,14 +579,14 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
   return (
     <div className="space-y-4">
       <SectionHeader
-        title="Proyectos"
+        title="Presupuestos"
         action={
           <button onClick={() => setModal(EMPTY_PROJECT)}
             className="flex items-center gap-2 text-sm font-bold bg-red-700 text-white px-4 py-2 rounded-xl hover:bg-red-800 transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Nuevo proyecto
+            Nuevo presupuesto
           </button>
         }
       />
@@ -540,59 +614,32 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
           </div>
-          <p className="font-semibold text-gray-700 mb-1">{search || statusF !== 'all' ? 'Sin resultados' : 'Todavía no hay proyectos'}</p>
+          <p className="font-semibold text-gray-700 mb-1">{search || statusF !== 'all' ? 'Sin resultados' : 'Todavía no hay presupuestos'}</p>
           <p className="text-sm text-gray-400 mb-5">
-            {search || statusF !== 'all' ? 'Prueba con otros filtros' : 'Crea tu primer proyecto para agrupar persianas de un cliente y generar el presupuesto de una vez.'}
+            {search || statusF !== 'all' ? 'Prueba con otros filtros' : 'Crea tu primer presupuesto para agrupar persianas de un cliente.'}
           </p>
           {!search && statusF === 'all' && (
             <button onClick={() => setModal(EMPTY_PROJECT)}
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-700 text-white text-sm font-bold rounded-xl hover:bg-red-800 transition-colors">
-              + Nuevo proyecto
+              + Nuevo presupuesto
             </button>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3">
+        <div className="space-y-3">
           {filtered.map(p => {
-            const items = p.items ?? []
-            const total = items.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
-            const st    = PROJECT_STATUS[p.status] ?? PROJECT_STATUS.draft
+            const pitems    = p.items ?? []
+            const total     = pitems.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
+            const st        = PROJECT_STATUS[p.status] ?? PROJECT_STATUS.draft
             return (
-              <button key={p.id} onClick={() => setModal(p)}
-                className="w-full bg-white border border-gray-200 rounded-2xl px-5 py-4 text-left hover:border-red-200 hover:shadow-md transition-all group">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-bold text-gray-900 truncate">{p.name || p.client_name || 'Proyecto sin nombre'}</p>
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${st.cls}`}>{st.label}</span>
-                    </div>
-                    {p.name && p.client_name && (
-                      <p className="text-sm text-gray-500 truncate mb-1">{p.client_name}</p>
-                    )}
-                    <div className="flex items-center gap-3 text-xs text-gray-400">
-                      <span>{items.length} persiana{items.length !== 1 ? 's' : ''}</span>
-                      {p.budget_number && <span className="font-mono">{p.budget_number}</span>}
-                      <span>{fmtDate(p.created_at)}</span>
-                    </div>
-                  </div>
-                  <div className="flex-shrink-0 text-right">
-                    <p className="text-xl font-black text-red-700">{fmt(total)}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">con IVA</p>
-                  </div>
-                </div>
-                {items.length > 0 && (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {items.slice(0, 4).map(it => (
-                      <span key={it.item_id} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                        {it.description || blindLabel(it.blind_type)}
-                      </span>
-                    ))}
-                    {items.length > 4 && (
-                      <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">+{items.length - 4} más</span>
-                    )}
-                  </div>
-                )}
-              </button>
+              <ProyectoCard
+                key={p.id}
+                p={p}
+                pitems={pitems}
+                total={total}
+                st={st}
+                onEdit={() => setModal(p)}
+              />
             )
           })}
         </div>
@@ -616,12 +663,14 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
 // ── Tarjeta de configuración con carrito ──────────────────────────────────
 function ProConfigCard({ c, onDelete, deleting }) {
   const navigate               = useNavigate()
-  const { addToCart, items: cartItems } = useCart()
+  const { addToCart, items: cartItems, orderedConfigIds } = useCart()
   const [adding,    setAdding]   = useState(false)
   const [expanded,  setExpanded] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
 
-  const added = cartItems.some(ci => ci.configuration_id === c.id)
+  const inCart    = cartItems.some(ci => ci.configuration_id === c.id)
+  const isOrdered = !inCart && orderedConfigIds.has(c.id)
+  const added     = inCart || isOrdered
 
   async function handleAddToCart() {
     setAdding(true)
@@ -677,7 +726,14 @@ function ProConfigCard({ c, onDelete, deleting }) {
             {c.slat_color_name && <span>{c.slat_color_name}</span>}
           </div>
 
-          {added ? (
+          {isOrdered ? (
+            <button disabled className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-green-100 text-green-700 cursor-default flex items-center justify-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Ya pedida
+            </button>
+          ) : added ? (
             <button onClick={() => navigate('/cesta')}
               className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-green-600 text-white hover:bg-green-700 transition-colors">
               Ir a la cesta →
@@ -724,14 +780,16 @@ function ProConfigCard({ c, onDelete, deleting }) {
 
 // ── Tarjeta de grupo (varias persianas de una sesión) ────────────────────
 function ProGroupCard({ items, onDeleteGroup, deleting }) {
-  const { addToCart, items: cartItems } = useCart()
+  const { addToCart, items: cartItems, orderedConfigIds } = useCart()
   const navigate = useNavigate()
   const [adding,   setAdding]   = useState(false)
-  const [expanded, setExpanded] = useState(false)  // collapsed by default
+  const [expanded, setExpanded] = useState(false)
   const [confirm,  setConfirm]  = useState(false)
 
-  const total    = items.reduce((s, c) => s + (c.estimated_price ?? 0), 0)
-  const allInCart = cartItems.length > 0 && items.every(c => cartItems.some(ci => ci.configuration_id === c.id))
+  const total      = items.reduce((s, c) => s + (c.estimated_price ?? 0), 0)
+  const inCart     = cartItems.length > 0 && items.every(c => cartItems.some(ci => ci.configuration_id === c.id))
+  const isOrdered  = !inCart && items.every(c => orderedConfigIds.has(c.id))
+  const allInCart  = inCart || isOrdered
 
   async function handleAddAllToCart() {
     setAdding(true)
@@ -793,7 +851,14 @@ function ProGroupCard({ items, onDeleteGroup, deleting }) {
           </div>
 
           {/* Acciones */}
-          {allInCart ? (
+          {isOrdered ? (
+            <button disabled className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-green-100 text-green-700 cursor-default flex items-center justify-center gap-1.5">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              Ya pedido
+            </button>
+          ) : allInCart ? (
             <button onClick={() => navigate('/cesta')}
               className="w-full py-2 px-3 rounded-xl text-xs font-bold bg-green-600 text-white hover:bg-green-700 transition-colors">
               Ir a la cesta →
@@ -1411,7 +1476,7 @@ export default function ProfessionalDashboard() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     { label: 'Descuento activo', value: `−${empresa?.discount_percent ?? globalDiscount}%`, sub: 'Tarifa profesional', accent: true },
-                    { label: 'Proyectos', value: proyectos.length, sub: `${proyectos.filter(p => p.status === 'accepted').length} aceptados` },
+                    { label: 'Presupuestos', value: proyectos.length, sub: `${proyectos.filter(p => p.status === 'accepted').length} aceptados` },
                     { label: 'Pedidos', value: pedidos.length, sub: `${pedidos.filter(p => p.status === 'completed').length} completados` },
                     { label: 'Total facturado', value: fmt(totalFacturado), sub: 'pedidos completados' },
                   ].map(({ label, value, sub, accent }) => (
@@ -1455,11 +1520,11 @@ export default function ProfessionalDashboard() {
                   </Link>
                 )}
 
-                {/* Últimos proyectos */}
+                {/* Últimos presupuestos */}
                 {proyectos.length > 0 && (
                   <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                      <h3 className="font-bold text-gray-900 text-sm">Últimos proyectos</h3>
+                      <h3 className="font-bold text-gray-900 text-sm">Últimos presupuestos</h3>
                       <button onClick={() => setActiveTab('proyectos')} className="text-xs font-semibold text-red-700 hover:underline">Ver todos</button>
                     </div>
                     <div className="divide-y divide-gray-100">
