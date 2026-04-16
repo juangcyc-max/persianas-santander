@@ -508,37 +508,41 @@ function PedidosSection({ newOrderId }) {
               <div key={p.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
                 <button
                   onClick={() => setExpandedId(isExpanded ? null : p.id)}
-                  className="w-full px-4 py-3 flex items-center justify-between text-left"
+                  className="w-full px-4 py-3 text-left space-y-1.5"
                 >
-                  <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                    <span className="font-mono text-xs text-gray-500 flex-shrink-0">#{p.id.slice(0,8).toUpperCase()}</span>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${st.cls}`}>{st.label}</span>
+                  {/* Fila 1: ID (izq) + importe + iconos (der) */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs text-gray-500">#{p.id.slice(0,8).toUpperCase()}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-sm font-bold text-gray-900">{fmt(p.total_with_iva)}</span>
+                      {invoice && (
+                        <button
+                          onClick={e => { e.stopPropagation(); handleDownload(p, invoice) }}
+                          disabled={downloadingId === p.id}
+                          title="Descargar factura"
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-700 hover:bg-red-50 transition-colors disabled:opacity-60"
+                        >
+                          {downloadingId === p.id
+                            ? <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                            : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                          }
+                        </button>
+                      )}
+                      <svg className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                  {/* Fila 2: badges (izq) + fecha (der) */}
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
                     {invoice && (
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${invoice.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${invoice.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                         {invoice.payment_status === 'paid' ? 'Pagada' : 'Pago pendiente'}
                       </span>
                     )}
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                    <span className="text-xs text-gray-400 hidden sm:inline">{fmtDate(p.created_at)}</span>
-                    <span className="text-sm font-bold text-gray-900">{fmt(p.total_with_iva)}</span>
-                    {invoice && (
-                      <button
-                        onClick={e => { e.stopPropagation(); handleDownload(p, invoice) }}
-                        disabled={downloadingId === p.id}
-                        title="Descargar factura"
-                        className="p-1.5 rounded-lg text-gray-400 hover:text-red-700 hover:bg-red-50 transition-colors disabled:opacity-60"
-                      >
-                        {downloadingId === p.id
-                          ? <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
-                          : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-                        }
-                      </button>
-                    )}
-                    <svg className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
+                    <span className="text-xs text-gray-400 ml-auto">{fmtDate(p.created_at)}</span>
                   </div>
                 </button>
 
