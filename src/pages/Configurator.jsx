@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { getProfessionalDiscount, getProfessionalDiscountForUser } from '../services/settings'
 import BlindPreview from './components/BlindPreview'
@@ -128,6 +128,7 @@ function Configurator() {
   const [boxColor,     setBoxColor]     = useState(() => loadCart().boxColor     ?? '#F2ECCA')
   const [slatColor,    setSlatColor]    = useState(() => loadCart().slatColor    ?? '#F2ECCA')
   const [customerData, setCustomerData] = useState({ name: '', phone: '', email: '', address: '' })
+  const navigate = useNavigate()
   const [items,     setItems]     = useState([])
   const [savingAll, setSavingAll] = useState(false)
   const [savedAll,  setSavedAll]  = useState(false)
@@ -394,6 +395,7 @@ function Configurator() {
     }
     setSavingAll(false)
     setSavedAll(true)
+    setTimeout(() => navigate('/mis-configuraciones', { replace: true }), 800)
   }
 
   // Flags de visibilidad
