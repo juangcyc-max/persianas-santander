@@ -54,19 +54,19 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
           style={{ mixBlendMode: 'multiply' }}
         />
 
-        {/* Capa 4: color guías — encima de la persiana, debajo del imagen de guías */}
-        <div
-          className="absolute inset-0 transition-colors duration-500"
-          style={{ backgroundColor: boxColor, ...maskStyle('/guias.png') }}
-        />
-
-        {/* Capa 5: guías encima con multiply para texturas */}
+        {/* Capa 4: guías con multiply para texturas — encima de la persiana */}
         <img
           src="/guias.png"
           alt=""
           className="absolute inset-0 w-full h-full object-contain pointer-events-none"
           draggable={false}
           style={{ mixBlendMode: 'multiply' }}
+        />
+
+        {/* Capa 5: color guías — encima de todas las imágenes */}
+        <div
+          className="absolute inset-0 transition-colors duration-500"
+          style={{ backgroundColor: boxColor, ...maskStyle('/guias.png') }}
         />
       </div>
 
