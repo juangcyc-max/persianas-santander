@@ -12,6 +12,7 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
   })
 
   const isSistema = ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante'].includes(blindType)
+  const isPano = ['laminada', 'autoblocante', 'blocking', 'mosquitera_enrollable'].includes(blindType)
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
@@ -40,13 +41,13 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
         <div
           className="absolute inset-0 transition-colors duration-500"
           style={{
-            backgroundColor: (blindType === 'laminada' || blindType === 'solo_guias') ? '#c8c2b8' : boxColor,
+            backgroundColor: (isPano || blindType === 'solo_guias') ? '#c8c2b8' : boxColor,
             ...mask('/persianacompleta.png'),
           }}
         />
 
-        {/* Capa 2: cajón en su propio color (no aplica para solo_guias ni laminada) */}
-        {blindType !== 'solo_guias' && blindType !== 'laminada' && (
+        {/* Capa 2: cajón en su propio color (no aplica para solo_guias ni paños) */}
+        {blindType !== 'solo_guias' && !isPano && (
           <div
             className="absolute inset-0 transition-colors duration-500"
             style={{ backgroundColor: boxColor, ...mask('/caja.png') }}
@@ -81,13 +82,13 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
 
       {/* Chips de color */}
       <div className="flex gap-2 mt-4">
-        {blindType !== 'laminada' && (
+        {!isPano && (
           <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
             <div className="w-4 h-4 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: boxColor }} />
             <span className="text-xs text-gray-500 truncate">{blindType === 'solo_guias' ? 'Guías' : 'Caja'}</span>
           </div>
         )}
-        {(isSistema || blindType === 'laminada') && (
+        {(isSistema || isPano) && (
           <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
             <div className="w-4 h-4 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: slatColor }} />
             <span className="text-xs text-gray-500 truncate">Lamas</span>
