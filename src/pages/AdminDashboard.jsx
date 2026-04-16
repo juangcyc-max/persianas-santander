@@ -1009,7 +1009,6 @@ function BudgetModal({ budget, onClose, onSaved }) {
   }
 
   const typeLabel = BUDGET_TYPE_LABELS[budget.blind_type] ?? budget.blind_type ?? '—'
-  const statusInfo = BUDGET_STATUS_MAP[status] ?? BUDGET_STATUS_MAP.pending
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -1613,11 +1612,28 @@ function AdminInvoicesSection() {
 
   async function loadInvoices() {
     setLoading(true)
-    const { data } = await supabase
+    const { data: invData } = await supabase
       .from('invoices')
-      .select('*, orders(user_id, items, address, phone, profiles(email))')
+      .select('*, orders(user_id, items, address, phone)')
       .order('created_at', { ascending: false })
-    setInvoices(data ?? [])
+
+    const invoiceList = invData ?? []
+
+    // Enriquecer con email desde profiles (join manual para evitar FK no declarada)
+    const userIds = [...new Set(invoiceList.map(i => i.orders?.user_id).filter(Boolean))]
+    let emailMap = {}
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .in('id', userIds)
+      ;(profiles ?? []).forEach(p => { emailMap[p.id] = p.email })
+    }
+
+    setInvoices(invoiceList.map(inv => ({
+      ...inv,
+      orders: inv.orders ? { ...inv.orders, profiles: { email: emailMap[inv.orders.user_id] ?? null } } : null,
+    })))
     setLoading(false)
   }
 
