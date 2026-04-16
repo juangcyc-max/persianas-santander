@@ -124,6 +124,7 @@ export default function Cart() {
   const [loading,   setLoading]   = useState(false)
   const [error,     setError]     = useState('')
   const [showItems, setShowItems] = useState(false)
+  const [showList,  setShowList]  = useState(false)
 
   // Datos checkout particular
   const [address,  setAddress]  = useState('')
@@ -350,7 +351,7 @@ export default function Cart() {
           </h1>
           <p className="text-gray-500 text-sm mt-1">
             {step === 'cart'
-              ? `${items.length} ${items.length === 1 ? 'producto' : 'productos'}`
+              ? ''
               : sinInstalacion
               ? 'Solo material — recibirás las persianas fabricadas a medida'
               : isProfessional
@@ -366,9 +367,31 @@ export default function Cart() {
           <div className="lg:col-span-2 space-y-4">
             {step === 'cart' && (
               <>
-                {items.map(item => (
-                  <CartItem key={item.id} item={item} onRemove={removeFromCart} />
-                ))}
+                {/* Cabecera colapsable de la lista */}
+                <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                  <button
+                    onClick={() => setShowList(s => !s)}
+                    className="w-full px-4 py-3 flex items-center justify-between text-left"
+                  >
+                    <span className="text-sm font-semibold text-gray-700">
+                      {items.length} {items.length === 1 ? 'producto' : 'productos'}
+                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-bold text-gray-900">{fmt(totalWithIva)}</span>
+                      <svg className={`w-4 h-4 text-gray-400 transition-transform ${showList ? 'rotate-180' : ''}`}
+                        fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </button>
+                  {showList && (
+                    <div className="border-t border-gray-100 divide-y divide-gray-100">
+                      {items.map(item => (
+                        <CartItem key={item.id} item={item} onRemove={removeFromCart} />
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <Link to="/configurador"
                   className="flex items-center gap-2 text-sm text-red-700 hover:underline font-semibold mt-2">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
