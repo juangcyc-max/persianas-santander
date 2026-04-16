@@ -706,9 +706,11 @@ function ProConfigCard({ c, onDelete, deleting, confirmDel, setConfirmDel }) {
 // ── Tarjeta de grupo (varias persianas de una sesión) ────────────────────
 function ProGroupCard({ items, onDeleteGroup, deleting }) {
   const { addToCart } = useCart()
-  const [adding,  setAdding]  = useState(false)
-  const [added,   setAdded]   = useState(false)
-  const [confirm, setConfirm] = useState(false)
+  const navigate = useNavigate()
+  const [adding,   setAdding]   = useState(false)
+  const [added,    setAdded]    = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const [confirm,  setConfirm]  = useState(false)
 
   const total = items.reduce((s, c) => s + (c.estimated_price ?? 0), 0)
 
@@ -717,7 +719,55 @@ function ProGroupCard({ items, onDeleteGroup, deleting }) {
     for (const c of items) await addToCart(c.id)
     setAdding(false)
     setAdded(true)
-    setTimeout(() => setAdded(false), 3000)
+    setTimeout(() => navigate('/cesta'), 600)
+  }
+
+  // ── Vista colapsada (ya en cesta) ────────────────────────────────────────
+  if (added) {
+    return (
+      <div className="bg-green-50 border-2 border-green-200 rounded-2xl overflow-hidden">
+        <button
+          onClick={() => setExpanded(e => !e)}
+          className="w-full px-4 py-3 flex items-center justify-between text-left"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            <span className="text-xs font-bold text-green-700 truncate">
+              En cesta · Grupo · {items.length} persianas
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+            <span className="text-sm font-black text-green-700">{fmt(total)}</span>
+            <svg className={`w-4 h-4 text-green-500 transition-transform ${expanded ? 'rotate-180' : ''}`}
+              fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </button>
+        {expanded && (
+          <div className="px-4 pb-4 border-t border-green-100 space-y-2 pt-3">
+            {items.map((c, i) => (
+              <div key={c.id} className="flex items-center gap-2 text-xs">
+                <span className="w-5 h-5 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold flex-shrink-0 text-[10px]">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-gray-800 truncate">{blindLabel(c.blind_type)}</p>
+                  {c.width && c.height && <p className="text-gray-400">{c.width} × {c.height} mm{c.mechanism ? ` · ${c.mechanism}` : ''}</p>}
+                </div>
+                <span className="font-bold text-gray-700 flex-shrink-0">{fmt(c.estimated_price)}</span>
+              </div>
+            ))}
+            <button
+              onClick={() => navigate('/cesta')}
+              className="w-full mt-1 py-2 px-3 rounded-xl text-xs font-bold bg-green-600 text-white hover:bg-green-700 transition-colors"
+            >
+              Ir a la cesta →
+            </button>
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -754,14 +804,10 @@ function ProGroupCard({ items, onDeleteGroup, deleting }) {
       </div>
 
       {/* Añadir todo a la cesta */}
-      <button onClick={handleAddAllToCart} disabled={adding || added}
-        className={`w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors ${
-          added ? 'bg-green-100 text-green-700' : 'bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-60'
-        }`}
+      <button onClick={handleAddAllToCart} disabled={adding}
+        className="w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-colors bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-60"
       >
-        {adding ? <Spinner small /> : added ? (
-          <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>Añadido a la cesta</>
-        ) : (
+        {adding ? <Spinner small /> : (
           <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>Añadir todo a la cesta</>
         )}
       </button>
@@ -800,6 +846,7 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
   const [search,     setSearch]     = useState('')
   const [deleting,   setDeleting]   = useState(null)
   const [confirmDel, setConfirmDel] = useState(null)
+  const [sortOrder,  setSortOrder]  = useState('desc')
 
   const filtered = configuraciones.filter(c => {
     if (!search) return true
@@ -812,7 +859,10 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
     )
   })
 
-  const displayEntries = processConfigurations(filtered)
+  const displayEntries = (() => {
+    const entries = processConfigurations(filtered)
+    return sortOrder === 'asc' ? [...entries].reverse() : entries
+  })()
 
   async function handleDelete(id) {
     setDeleting(id)
@@ -839,12 +889,24 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
       } />
 
       {configuraciones.length > 0 && (
-        <div className="relative">
-          <svg className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por tipo, mecanismo…"
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <svg className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar por tipo, mecanismo…"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+          </div>
+          <button
+            onClick={() => setSortOrder(o => o === 'desc' ? 'asc' : 'desc')}
+            className="px-3 py-2.5 text-sm font-semibold rounded-xl border bg-white text-gray-600 border-gray-300 hover:bg-gray-50 flex items-center gap-1.5 flex-shrink-0 transition-colors"
+            title={sortOrder === 'desc' ? 'Más recientes primero' : 'Más antiguas primero'}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+            {sortOrder === 'desc' ? 'Recientes' : 'Antiguas'}
+          </button>
         </div>
       )}
 
