@@ -66,11 +66,13 @@ function BlindPreview({ boxColor, slatColor, width, blindType }) {
 
       {/* Chips de color */}
       <div className="flex gap-2 mt-4">
-        <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
-          <div className="w-4 h-4 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: boxColor }} />
-          <span className="text-xs text-gray-500 truncate">{blindType === 'solo_guias' ? 'Guías' : 'Caja'}</span>
-        </div>
-        {isSistema && (
+        {blindType !== 'laminada' && (
+          <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
+            <div className="w-4 h-4 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: boxColor }} />
+            <span className="text-xs text-gray-500 truncate">{blindType === 'solo_guias' ? 'Guías' : 'Caja'}</span>
+          </div>
+        )}
+        {(isSistema || blindType === 'laminada') && (
           <div className="flex-1 flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100">
             <div className="w-4 h-4 rounded border border-gray-200 flex-shrink-0" style={{ backgroundColor: slatColor }} />
             <span className="text-xs text-gray-500 truncate">Lamas</span>
