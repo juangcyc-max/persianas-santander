@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useNavigate, Navigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../services/supabase/client'
 import { useCart } from '../../context/CartContext'
 
@@ -13,6 +13,11 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
   const [destUrl,      setDestUrl]      = useState(null)
   const navigate = useNavigate()
   const { addToCart } = useCart()
+
+  useEffect(() => {
+    if (!destUrl) return
+    navigate(destUrl, { replace: true })
+  }, [destUrl])
 
   async function handleSave() {
     setLoading(true)
@@ -83,8 +88,6 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
     setAddingCart(false)
     if (!error) setAddedToCart(true)
   }
-
-  if (destUrl) return <Navigate to={destUrl} replace />
 
   return (
     <div className="space-y-2">
