@@ -239,7 +239,9 @@ function ProjectModal({ project: initial, configuraciones, empresa, logoUrl, onS
   async function handleSave() {
     setSaving(true)
     const updated = { ...project, updated_at: new Date().toISOString() }
-    await onSave(updated)
+    const saved = await onSave(updated)
+    // Si era nuevo, actualizar el id local para que handleBudget no inserte un duplicado
+    if (saved?.id && !project.id) setProject(p => ({ ...p, id: saved.id }))
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -570,10 +572,12 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
       // Crear
       const { data, error } = await supabase.from('pro_projects').insert({ ...updated, user_id: user.id }).select().single()
       if (!error && data) setProyectos(prev => [data, ...prev])
+      return data ?? null
     } else {
       // Actualizar
       const { data, error } = await supabase.from('pro_projects').update(updated).eq('id', updated.id).select().single()
       if (!error && data) setProyectos(prev => prev.map(p => p.id === data.id ? data : p))
+      return data ?? null
     }
   }
 
@@ -670,11 +674,10 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
 }
 
 // ── Tarjeta de configuración con carrito ──────────────────────────────────
-function ProConfigCard({ c, onDelete, deleting }) {
+function ProConfigCard({ c, onDelete, deleting, isExpanded, onToggle }) {
   const navigate               = useNavigate()
   const { addToCart, items: cartItems, orderedConfigIds } = useCart()
-  const [adding,    setAdding]   = useState(false)
-  const [expanded,  setExpanded] = useState(false)
+  const [adding,     setAdding]    = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
 
   const inCart    = cartItems.some(ci => ci.configuration_id === c.id)
@@ -696,7 +699,7 @@ function ProConfigCard({ c, onDelete, deleting }) {
     <div className={`border rounded-2xl overflow-hidden transition-all ${borderCls}`}>
       {/* ── Cabecera colapsable ── */}
       <button
-        onClick={() => setExpanded(e => !e)}
+        onClick={onToggle}
         className="w-full px-4 py-3 flex items-center justify-between text-left"
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -719,7 +722,7 @@ function ProConfigCard({ c, onDelete, deleting }) {
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
           <span className={`text-sm font-black ${added ? 'text-green-700' : 'text-red-700'}`}>{fmt(c.estimated_price)}</span>
           <span className="text-xs text-gray-400">{fmtDate(c.created_at)}</span>
-          <svg className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          <svg className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
             fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
@@ -727,7 +730,7 @@ function ProConfigCard({ c, onDelete, deleting }) {
       </button>
 
       {/* ── Detalle expandido ── */}
-      {expanded && (
+      {isExpanded && (
         <div className={`px-4 pb-4 pt-3 border-t space-y-3 ${added ? 'border-green-100' : 'border-gray-100'}`}>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
             {c.width && c.height && <span>{c.width} × {c.height} mm</span>}
@@ -788,12 +791,11 @@ function ProConfigCard({ c, onDelete, deleting }) {
 }
 
 // ── Tarjeta de grupo (varias persianas de una sesión) ────────────────────
-function ProGroupCard({ items, onDeleteGroup, deleting }) {
+function ProGroupCard({ items, onDeleteGroup, deleting, isExpanded, onToggle }) {
   const { addToCart, items: cartItems, orderedConfigIds } = useCart()
   const navigate = useNavigate()
-  const [adding,   setAdding]   = useState(false)
-  const [expanded, setExpanded] = useState(false)
-  const [confirm,  setConfirm]  = useState(false)
+  const [adding,  setAdding] = useState(false)
+  const [confirm, setConfirm] = useState(false)
 
   const total      = items.reduce((s, c) => s + (c.estimated_price ?? 0), 0)
   const inCart     = cartItems.length > 0 && items.every(c => cartItems.some(ci => ci.configuration_id === c.id))
@@ -815,7 +817,7 @@ function ProGroupCard({ items, onDeleteGroup, deleting }) {
     <div className={`border-2 rounded-2xl overflow-hidden transition-all ${borderCls}`}>
       {/* ── Cabecera siempre visible (toggle) ── */}
       <button
-        onClick={() => setExpanded(e => !e)}
+        onClick={onToggle}
         className="w-full px-4 py-3 flex items-center justify-between text-left"
       >
         <div className="flex items-center gap-2 min-w-0">
@@ -835,7 +837,7 @@ function ProGroupCard({ items, onDeleteGroup, deleting }) {
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
           <span className={`text-sm font-black ${allInCart ? 'text-green-700' : 'text-red-700'}`}>{fmt(total)}</span>
           <span className="text-xs text-gray-400">{fmtDate(items[0].created_at)}</span>
-          <svg className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          <svg className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
             fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
@@ -843,7 +845,7 @@ function ProGroupCard({ items, onDeleteGroup, deleting }) {
       </button>
 
       {/* ── Detalle expandido ── */}
-      {expanded && (
+      {isExpanded && (
         <div className={`px-4 pb-4 pt-3 border-t space-y-3 ${allInCart ? 'border-green-100' : 'border-gray-100'}`}>
           {/* Lista */}
           <div className="space-y-2">
@@ -914,9 +916,14 @@ function ProGroupCard({ items, onDeleteGroup, deleting }) {
 
 // ── Tab Configuraciones ───────────────────────────────────────────────────
 function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
-  const [search,    setSearch]   = useState('')
-  const [deleting,  setDeleting] = useState(null)
-  const [sortOrder, setSortOrder] = useState('desc')
+  const [search,     setSearch]    = useState('')
+  const [deleting,   setDeleting]  = useState(null)
+  const [sortOrder,  setSortOrder] = useState('desc')
+  const [expandedId, setExpandedId] = useState(null)
+
+  function toggleExpanded(id) {
+    setExpandedId(prev => prev === id ? null : id)
+  }
 
   const filtered = configuraciones.filter(c => {
     if (!search) return true
@@ -1006,6 +1013,8 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
                 items={entry.items}
                 onDeleteGroup={() => handleDeleteGroup(entry.id, entry.items.map(c => c.id))}
                 deleting={deleting === entry.id ? entry.id : null}
+                isExpanded={expandedId === entry.id}
+                onToggle={() => toggleExpanded(entry.id)}
               />
             ) : (
               <ProConfigCard
@@ -1013,6 +1022,8 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
                 c={entry.item}
                 onDelete={handleDelete}
                 deleting={deleting}
+                isExpanded={expandedId === entry.item.id}
+                onToggle={() => toggleExpanded(entry.item.id)}
               />
             )
           )}
