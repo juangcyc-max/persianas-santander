@@ -403,8 +403,9 @@ function Configurator() {
 
   // Flags de visibilidad
   const showPreview      = !['solo_motor'].includes(productType)
-  const showMechanism    = !isMotorOnly(productType) && !['solo_motor', 'solo_guias', 'mosquitera_enrollable'].includes(productType)
-  const showMotorType    = mechanism === 'motor' || isMotorOnly(productType) || productType === 'solo_motor'
+  const isPanoType       = ['laminada', 'autoblocante', 'blocking', 'mosquitera_enrollable'].includes(productType)
+  const showMechanism    = !isPanoType && !['solo_motor', 'solo_guias'].includes(productType)
+  const showMotorType    = !isPanoType && (mechanism === 'motor' || isMotorOnly(productType) || productType === 'solo_motor')
   const showMeasurements = productType !== 'solo_motor'
   const showGuides       = productType !== 'mosquitera_enrollable' && productType !== 'solo_motor'
   const showInstallation = true
