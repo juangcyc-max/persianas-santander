@@ -1200,21 +1200,21 @@ function FacturasTab({ facturas }) {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   {['Nº Factura', 'Fecha', 'Estado pago', 'Total'].map((h, i) => (
-                    <th key={h} className={`px-5 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide ${i === 3 ? 'text-right' : 'text-left'}`}>{h}</th>
+                    <th key={h} className={`px-2 py-2 sm:px-5 sm:py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide ${i === 3 ? 'text-right' : 'text-left'}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {facturas.map(f => (
                   <tr key={f.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3 font-mono text-xs text-gray-600">{f.invoice_number}</td>
-                    <td className="px-5 py-3 text-gray-400">{fmtDate(f.created_at)}</td>
-                    <td className="px-5 py-3">
+                    <td className="px-2 py-2 sm:px-5 sm:py-3 font-mono text-xs text-gray-600">{f.invoice_number}</td>
+                    <td className="px-2 py-2 sm:px-5 sm:py-3 text-gray-400">{fmtDate(f.created_at)}</td>
+                    <td className="px-2 py-2 sm:px-5 sm:py-3">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${f.payment_status === 'paid' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                         {f.payment_status === 'paid' ? 'Pagada' : 'Pendiente'}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-right font-bold text-gray-900">{fmt(f.total_with_iva)}</td>
+                    <td className="px-2 py-2 sm:px-5 sm:py-3 text-right font-bold text-gray-900">{fmt(f.total_with_iva)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1415,7 +1415,7 @@ export default function ProfessionalDashboard() {
                 <div className="w-6 h-6 rounded-full bg-red-100 text-red-700 flex items-center justify-center text-xs font-bold">
                   {empresa?.razon_social?.[0] ?? user?.email?.[0]?.toUpperCase() ?? 'P'}
                 </div>
-                <span className="text-sm text-gray-600 max-w-[160px] truncate">{empresa?.razon_social ?? user?.email}</span>
+                <span className="text-sm text-gray-600 max-w-[120px] sm:max-w-[160px] truncate">{empresa?.razon_social ?? user?.email}</span>
               </div>
               <Link to="/configurador" className="text-sm font-bold bg-red-700 text-white px-4 py-2 rounded-xl hover:bg-red-800 transition-colors">
                 <span className="hidden sm:inline">+ Nueva</span>

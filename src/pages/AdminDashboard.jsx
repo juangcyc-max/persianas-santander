@@ -242,7 +242,7 @@ function OrderModal({ order, onClose, onUpdate }) {
           {/* Datos cliente */}
           <div className="bg-gray-50 rounded-xl p-4">
             <p className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Datos del cliente</p>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-400">Email:</span> <span className="text-gray-900 font-medium">{order.profiles?.email ?? '—'}</span></div>
               <div><span className="text-gray-400">Tipo:</span> <span className={`font-bold ${order.user_type === 'professional' ? 'text-blue-600' : 'text-gray-900'}`}>{order.user_type === 'professional' ? 'Profesional' : 'Particular'}</span></div>
               {isParticular && <>
@@ -305,7 +305,7 @@ function OrderModal({ order, onClose, onUpdate }) {
 
             {/* Fecha y hora confirmada (solo particulares con instalación) */}
             {isParticular && tieneInstalacion && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha confirmada</label>
                   <input type="date" value={confirmedDate} onChange={e => setConfirmedDate(e.target.value)}
@@ -704,7 +704,7 @@ export default function AdminDashboard() {
                   <h1 className="text-2xl font-bold text-gray-900">Resumen</h1>
                   <p className="text-sm text-gray-500 mt-1">Vista general del negocio.</p>
                 </div>
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
                     { label: 'Total pedidos',   value: stats.total,        color: 'text-gray-900',  bg: 'bg-white'     },
                     { label: 'Pendientes',       value: stats.pending,      color: 'text-amber-600', bg: 'bg-amber-50'  },
@@ -808,29 +808,29 @@ export default function AdminDashboard() {
                         <thead className="bg-gray-50 border-b border-gray-200">
                           <tr>
                             {['ID','Cliente','Tipo','Fecha','Cita','Total','Estado',''].map(h => (
-                              <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                              <th key={h} className="text-left px-2 py-2 sm:px-4 sm:py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                             ))}
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                           {paginated.map(order => (
                             <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                              <td className="px-4 py-3 font-mono text-xs text-gray-500">#{order.id.slice(0,8).toUpperCase()}</td>
-                              <td className="px-4 py-3 font-medium text-gray-900 max-w-[160px] truncate">{order.profiles?.email ?? '—'}</td>
-                              <td className="px-4 py-3">
+                              <td className="px-2 py-2 sm:px-4 sm:py-3 font-mono text-xs text-gray-500">#{order.id.slice(0,8).toUpperCase()}</td>
+                              <td className="px-2 py-2 sm:px-4 sm:py-3 font-medium text-gray-900 max-w-[100px] sm:max-w-[160px] truncate">{order.profiles?.email ?? '—'}</td>
+                              <td className="px-2 py-2 sm:px-4 sm:py-3">
                                 <span className={'text-xs font-bold px-2 py-0.5 rounded-full ' + (order.user_type === 'professional' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600')}>
                                   {order.user_type === 'professional' ? 'Pro' : 'Particular'}
                                 </span>
                               </td>
-                              <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(order.created_at)}</td>
-                              <td className="px-4 py-3 whitespace-nowrap">
+                              <td className="px-2 py-2 sm:px-4 sm:py-3 text-gray-500 whitespace-nowrap">{fmtDate(order.created_at)}</td>
+                              <td className="px-2 py-2 sm:px-4 sm:py-3 whitespace-nowrap">
                                 {order.preferred_date
                                   ? <span className="text-gray-900">{fmtDate(order.preferred_date)} {order.preferred_time}</span>
                                   : <span className="text-gray-300">—</span>}
                               </td>
-                              <td className="px-4 py-3 font-bold text-gray-900 whitespace-nowrap">{fmt(order.total_with_iva)}</td>
-                              <td className="px-4 py-3"><StatusBadge status={order.status} /></td>
-                              <td className="px-4 py-3">
+                              <td className="px-2 py-2 sm:px-4 sm:py-3 font-bold text-gray-900 whitespace-nowrap">{fmt(order.total_with_iva)}</td>
+                              <td className="px-2 py-2 sm:px-4 sm:py-3"><StatusBadge status={order.status} /></td>
+                              <td className="px-2 py-2 sm:px-4 sm:py-3">
                                 <div className="flex items-center gap-2">
                                   <button onClick={() => setSelectedOrder(order)}
                                     className="text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap">
@@ -1054,7 +1054,7 @@ function BudgetModal({ budget, onClose, onSaved }) {
           </div>
 
           {/* Configuración */}
-          <div className="grid grid-cols-2 gap-3 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div>
               <p className="text-xs text-gray-400 mb-0.5">Tipo</p>
               <p className="font-medium text-gray-800">{typeLabel}</p>
@@ -1084,7 +1084,7 @@ function BudgetModal({ budget, onClose, onSaved }) {
           {/* Estado */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Estado</label>
-            <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
               {Object.entries(BUDGET_STATUS_MAP).map(([key, { label, cls }]) => (
                 <button
                   key={key}
@@ -1246,7 +1246,7 @@ function AdminBudgetsSection() {
             placeholder="Buscar cliente o número…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 w-56"
+            className="px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 w-full sm:w-56"
           />
         </div>
       </div>
@@ -1264,7 +1264,7 @@ function AdminBudgetsSection() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   {['Número', 'Cliente', 'Tipo', 'Precio', 'Estado', 'Comentarios', 'Fecha', ''].map(h => (
-                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    <th key={h} className="px-2 py-2 sm:px-4 sm:py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -1274,27 +1274,27 @@ function AdminBudgetsSection() {
                   const effectivePrice = b.admin_price != null ? b.admin_price : b.total_with_iva
                   return (
                     <tr key={b.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 font-mono text-xs text-gray-500">{b.budget_number ?? `#${b.id?.slice(0,8).toUpperCase()}`}</td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2 sm:px-4 sm:py-3 font-mono text-xs text-gray-500">{b.budget_number ?? `#${b.id?.slice(0,8).toUpperCase()}`}</td>
+                      <td className="px-2 py-2 sm:px-4 sm:py-3">
                         <p className="font-medium text-gray-900">{b.customer_name ?? '—'}</p>
                         <p className="text-xs text-gray-400">{b.customer_email ?? ''}</p>
                       </td>
-                      <td className="px-4 py-3 text-gray-600 text-xs">{BUDGET_TYPE_LABELS[b.blind_type] ?? b.blind_type ?? '—'}</td>
-                      <td className="px-4 py-3 font-bold text-red-700">
+                      <td className="px-2 py-2 sm:px-4 sm:py-3 text-gray-600 text-xs">{BUDGET_TYPE_LABELS[b.blind_type] ?? b.blind_type ?? '—'}</td>
+                      <td className="px-2 py-2 sm:px-4 sm:py-3 font-bold text-red-700">
                         {fmt(effectivePrice)}
                         {b.admin_price != null && <span className="ml-1 text-xs font-normal text-blue-600">(ajust.)</span>}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-2 sm:px-4 sm:py-3">
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
                       </td>
-                      <td className="px-4 py-3 max-w-[180px]">
+                      <td className="px-2 py-2 sm:px-4 sm:py-3 max-w-[120px] sm:max-w-[180px]">
                         {b.client_notes
                           ? <p className="text-xs text-gray-500 truncate" title={b.client_notes}>{b.client_notes}</p>
                           : <span className="text-xs text-gray-300">—</span>
                         }
                       </td>
-                      <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(b.created_at)}</td>
-                      <td className="px-4 py-3 text-right">
+                      <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs text-gray-400">{fmtDate(b.created_at)}</td>
+                      <td className="px-2 py-2 sm:px-4 sm:py-3 text-right">
                         <button
                           onClick={() => setSelected(b)}
                           className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
@@ -1479,17 +1479,17 @@ function AdminInvoicesSection() {
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   {['Nº Factura', 'Fecha', 'Total', 'Estado pago', 'Cambiar estado', 'PDF', 'Email'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    <th key={h} className="text-left px-2 py-2 sm:px-4 sm:py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {filteredInvoices.map(inv => (
                   <tr key={inv.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-mono text-xs text-gray-600">{inv.invoice_number}</td>
-                    <td className="px-4 py-3 text-gray-500 whitespace-nowrap">{fmtDate(inv.created_at)}</td>
-                    <td className="px-4 py-3 font-bold text-gray-900">{fmt(inv.total_with_iva)}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 py-2 sm:px-4 sm:py-3 font-mono text-xs text-gray-600">{inv.invoice_number}</td>
+                    <td className="px-2 py-2 sm:px-4 sm:py-3 text-gray-500 whitespace-nowrap">{fmtDate(inv.created_at)}</td>
+                    <td className="px-2 py-2 sm:px-4 sm:py-3 font-bold text-gray-900">{fmt(inv.total_with_iva)}</td>
+                    <td className="px-2 py-2 sm:px-4 sm:py-3">
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
                         inv.payment_status === 'paid'
                           ? 'bg-green-100 text-green-700'
@@ -1498,8 +1498,8 @@ function AdminInvoicesSection() {
                         {inv.payment_status === 'paid' ? 'Pagada' : 'Pendiente de pago'}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
+                    <td className="px-2 py-2 sm:px-4 sm:py-3">
+                      <div className="flex flex-wrap gap-1">
                         <button
                           onClick={() => handlePaymentStatus(inv.id, 'pending_payment')}
                           disabled={inv.payment_status === 'pending_payment'}
@@ -1522,7 +1522,7 @@ function AdminInvoicesSection() {
                         </button>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 py-2 sm:px-4 sm:py-3">
                       <button
                         onClick={() => { import('../services/invoicePDF').then(m => m.generateInvoicePDF(inv, inv.orders ?? {})) }}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 hover:text-red-800">
@@ -1533,7 +1533,7 @@ function AdminInvoicesSection() {
                         PDF
                       </button>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-2 py-2 sm:px-4 sm:py-3">
                       <SendInvoiceRowButton inv={inv} />
                     </td>
                   </tr>
@@ -1653,7 +1653,7 @@ function AdminAnalyticsSection() {
       </div>
 
       {/* KPI grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {kpis.map(({ label, value, sub, color, bg }) => (
           <div key={label} className={`rounded-xl border border-gray-200 p-4 ${bg}`}>
             <p className={`text-2xl font-black ${color}`}>{value}</p>
@@ -1816,7 +1816,7 @@ function AdminClientsSection() {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="text-lg font-bold text-gray-900">Clientes</h2>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
           {filtered.length > 0 && (
             <button onClick={exportCSV}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors">
@@ -1834,7 +1834,7 @@ function AdminClientsSection() {
           </select>
           <input type="text" placeholder="Buscar por email o empresa…" value={search}
             onChange={e => setSearch(e.target.value)}
-            className="px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 w-56" />
+            className="px-3.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 w-full sm:w-56" />
         </div>
       </div>
 
@@ -1908,7 +1908,7 @@ function AdminClientsSection() {
                   {isExpanded && (
                     <div className="px-4 pb-4 pt-2 bg-gray-50 border-t border-gray-100">
                       {isPro && p ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-2 text-sm">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 sm:gap-x-6 gap-y-2 text-sm">
                           {p.cif_nif       && <div><span className="text-xs text-gray-400 block">CIF/NIF</span><span className="font-mono font-semibold">{p.cif_nif}</span></div>}
                           {p.telefono      && <div><span className="text-xs text-gray-400 block">Teléfono</span>{p.telefono}</div>}
                           {p.ciudad        && <div><span className="text-xs text-gray-400 block">Ciudad</span>{p.ciudad}</div>}
