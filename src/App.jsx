@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import { supabase } from './services/supabase/client'
 import { CartProvider } from './context/CartContext'
@@ -20,6 +20,16 @@ import { PoliticaPrivacidad, PoliticaCookies, TerminosCondiciones } from './page
 import { ForgotPassword, ResetPassword } from './pages/PasswordPages'
 import CookieBanner from './shared/CookieBanner'
 import WAButton from './shared/WAButton'
+
+// ── Google Analytics: registra cada cambio de página ─────────────────────
+function GATracker() {
+  const location = useLocation()
+  useEffect(() => {
+    if (typeof window.gtag !== 'function') return
+    window.gtag('event', 'page_view', { page_path: location.pathname + location.search })
+  }, [location])
+  return null
+}
 
 // ── Detecta PASSWORD_RECOVERY y redirige a /reset-password ───────────────
 function AuthEventHandler() {
@@ -84,6 +94,7 @@ function App() {
   return (
     <HelmetProvider>
       <Router>
+        <GATracker />
         <AuthEventHandler />
         <ToastProvider>
           <CartProvider>
