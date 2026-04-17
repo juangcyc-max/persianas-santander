@@ -11,11 +11,22 @@ export default function CookieBanner() {
 
   function accept() {
     localStorage.setItem('cookie_consent', 'accepted')
+    if (typeof window.gtag === 'function') {
+      window.gtag('consent', 'update', { analytics_storage: 'granted' })
+    }
     setVisible(false)
   }
 
   function reject() {
     localStorage.setItem('cookie_consent', 'rejected')
+    if (typeof window.gtag === 'function') {
+      window.gtag('consent', 'update', {
+        analytics_storage:  'denied',
+        ad_storage:         'denied',
+        ad_user_data:       'denied',
+        ad_personalization: 'denied',
+      })
+    }
     setVisible(false)
   }
 
