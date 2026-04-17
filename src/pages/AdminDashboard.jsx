@@ -1705,6 +1705,139 @@ function AdminAnalyticsSection() {
           </div>
         </div>
       </div>
+
+      {/* Web analytics GA4 */}
+      <GAWebAnalytics />
+    </div>
+  )
+}
+
+function GAWebAnalytics() {
+  const [data,    setData]    = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(null)
+
+  useEffect(() => { fetchGA() }, [])
+
+  async function fetchGA() {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/analytics')
+      if (!res.ok) throw new Error(`Error ${res.status}`)
+      setData(await res.json())
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const fmtSec = (s) => {
+    const m = Math.floor(s / 60), sec = Math.round(s % 60)
+    return `${m}:${String(sec).padStart(2, '0')} min`
+  }
+
+  const channelLabel = (c) => ({
+    'Organic Search': 'Búsqueda orgánica', 'Direct': 'Directo',
+    'Referral': 'Referencia', 'Organic Social': 'Redes sociales',
+    'Email': 'Email', 'Paid Search': 'Búsqueda de pago',
+    'Unassigned': 'Sin asignar',
+  })[c] ?? c
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold text-gray-900">Tráfico web <span className="text-xs font-normal text-gray-400 ml-1">(últimos 30 días)</span></h2>
+        <button onClick={fetchGA} className="text-xs text-red-600 hover:underline">Actualizar</button>
+      </div>
+
+      {loading && (
+        <div className="bg-white rounded-xl border border-gray-200 p-8 flex items-center justify-center">
+          <div className="w-6 h-6 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+          No se pudieron cargar los datos de Analytics: {error}
+        </div>
+      )}
+
+      {data && (
+        <div className="space-y-4">
+          {/* KPIs web */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: 'Usuarios activos',   value: data.overview.activeUsers.toLocaleString('es-ES'),      color: 'text-blue-700',   bg: 'bg-blue-50'   },
+              { label: 'Sesiones',           value: data.overview.sessions.toLocaleString('es-ES'),         color: 'text-purple-700', bg: 'bg-purple-50' },
+              { label: 'Páginas vistas',     value: data.overview.pageViews.toLocaleString('es-ES'),        color: 'text-green-700',  bg: 'bg-green-50'  },
+              { label: 'Duración media',     value: fmtSec(data.overview.avgSessionDuration),              color: 'text-amber-700',  bg: 'bg-amber-50'  },
+            ].map(({ label, value, color, bg }) => (
+              <div key={label} className={`rounded-xl border border-gray-200 p-4 ${bg}`}>
+                <p className={`text-2xl font-black ${color}`}>{value}</p>
+                <p className="text-xs font-semibold text-gray-600 mt-0.5">{label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Fuentes de tráfico */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <p className="text-sm font-bold text-gray-700 mb-3">Fuentes de tráfico</p>
+              <div className="space-y-2">
+                {data.sources.slice(0, 6).map(({ channel, sessions }) => {
+                  const total = data.sources.reduce((a, s) => a + s.sessions, 0)
+                  const pct   = total > 0 ? Math.round((sessions / total) * 100) : 0
+                  return (
+                    <div key={channel}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="font-medium text-gray-700">{channelLabel(channel)}</span>
+                        <span className="text-gray-500">{sessions.toLocaleString('es-ES')} ({pct}%)</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5">
+                        <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Top páginas */}
+            <div className="bg-white rounded-xl border border-gray-200 p-5">
+              <p className="text-sm font-bold text-gray-700 mb-3">Páginas más visitadas</p>
+              <div className="space-y-1.5">
+                {data.topPages.slice(0, 8).map(({ path, views }) => (
+                  <div key={path} className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-gray-600 truncate font-mono">{path}</span>
+                    <span className="font-bold text-gray-800 flex-shrink-0">{views.toLocaleString('es-ES')}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Dispositivos */}
+          <div className="bg-white rounded-xl border border-gray-200 p-5">
+            <p className="text-sm font-bold text-gray-700 mb-3">Dispositivos</p>
+            <div className="flex gap-4 flex-wrap">
+              {data.devices.map(({ device, sessions }) => {
+                const total = data.devices.reduce((a, d) => a + d.sessions, 0)
+                const pct   = total > 0 ? Math.round((sessions / total) * 100) : 0
+                const label = { mobile: 'Móvil', desktop: 'Escritorio', tablet: 'Tablet' }[device] ?? device
+                return (
+                  <div key={device} className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-600" />
+                    <span className="text-sm font-semibold text-gray-700">{label}</span>
+                    <span className="text-xs text-gray-400">{pct}%</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
