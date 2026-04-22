@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { getProfessionalDiscount, getProfessionalDiscountForUser } from '../services/settings'
+import { getProductPrices, DEFAULT_PRICES, DEFAULT_MOTOR_PRICES, DEFAULT_GUIDE_PRICE_PER_ML, DEFAULT_INSTALACION_PRICE, DEFAULT_INSTALACION_FIJA } from '../services/prices'
 import BlindPreview from './components/BlindPreview'
 import BlindTypeSelector from './components/BlindTypeSelector'
 import MeasurementsForm from './components/MeasurementsForm'
@@ -14,53 +15,12 @@ import ConfigurationSummary from './components/ConfigurationSummary'
 import SaveConfigurationButton from './components/SaveConfigurationButton'
 import CustomerForm from './components/CustomerForm'
 
-// ─── Tablas de precios por m² ──────────────────────────────────────────────
-const PRICES = {
-  laminada: {
-    'Grupo Base': 43,
-    'Grupo 1':    44.24,
-    'Grupo 2':    46.02,
-    'Grupo 3':    47.61,
-  },
-  autoblocante: {
-    'Grupo Base': 134.4,
-    'Grupo 1':    166.6,
-    'Grupo 2':    176.4,
-    'Grupo 3':    238,
-  },
-  blocking: {
-    'Grupo Base': 134.4,
-    'Grupo 1':    166.6,
-    'Grupo 2':    176.4,
-    'Grupo 3':    238,
-  },
-  sistema_mini_cajon_pvc: {
-    'Grupo Base': 100,
-    'Grupo 1':    102,
-    'Grupo 2':    106,
-    'Grupo 3':    124.6,
-  },
-  sistema_mini_cajon_aluminio: {
-    'Grupo Base': 105,
-    'Grupo 1':    110,
-    'Grupo 2':    114,
-    'Grupo 3':    133,
-  },
-  sistema_mini_autoblocante: {
-    'Grupo Base': 197.8,
-    'Grupo 1':    234.18,
-    'Grupo 2':    244.58,
-    'Grupo 3':    323.80,
-  },
-  mosquitera_enrollable: {
-    'Grupo Base': 80,
-  },
-}
-
-const MOTOR_PRICES = { mecanico: 120, mando_distancia: 260 }
-const GUIDE_PRICE_PER_ML = { v25: 5, h25: 7 }
-const INSTALACION_PRICE = 100   // €/m² para paños y sistemas
-const INSTALACION_FIJA  = 150   // precio fijo para solo_motor, solo_guias
+// Precios por defecto (usados hasta que se carguen los de BD)
+let PRICES            = DEFAULT_PRICES
+let MOTOR_PRICES      = DEFAULT_MOTOR_PRICES
+let GUIDE_PRICE_PER_ML = DEFAULT_GUIDE_PRICE_PER_ML
+let INSTALACION_PRICE  = DEFAULT_INSTALACION_PRICE
+let INSTALACION_FIJA   = DEFAULT_INSTALACION_FIJA
 const MIN_SQM = 1.5
 const CART_KEY = 'ps_cart'
 
@@ -114,6 +74,13 @@ function Configurator() {
         if (user?.id) getProfessionalDiscountForUser(user.id).then(setProDiscount)
         else getProfessionalDiscount().then(setProDiscount)
       }
+    })
+    getProductPrices().then(cfg => {
+      PRICES             = cfg.prices
+      MOTOR_PRICES       = cfg.motorPrices
+      GUIDE_PRICE_PER_ML = cfg.guidePricePerMl
+      INSTALACION_PRICE  = cfg.instalacionPrice
+      INSTALACION_FIJA   = cfg.instalacionFija
     })
   }, [])
 
