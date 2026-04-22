@@ -1339,7 +1339,8 @@ function SendInvoiceRowButton({ inv }) {
     if (!clientEmail) return
     setSending(true); setErr(false)
     try {
-      const pdfBase64 = await generateInvoicePDF(inv, inv.orders ?? {}, null, { returnBase64: true })
+      const empresa   = await fetchEmpresa(inv)
+      const pdfBase64 = await generateInvoicePDF(inv, inv.orders ?? {}, empresa, { returnBase64: true })
       await sendInvoiceEmail({
         userEmail: clientEmail,
         invoice:   inv,
@@ -1443,6 +1444,13 @@ function AdminInvoicesSection() {
   async function handlePaymentStatus(invoiceId, newStatus) {
     await supabase.from('invoices').update({ payment_status: newStatus }).eq('id', invoiceId)
     setInvoices(prev => prev.map(i => i.id === invoiceId ? { ...i, payment_status: newStatus } : i))
+  }
+
+  async function fetchEmpresa(inv) {
+    const userId = inv.orders?.user_id ?? inv.user_id
+    if (!userId) return null
+    const { data } = await supabase.from('professional_data').select('*').eq('user_id', userId).maybeSingle()
+    return data ?? null
   }
 
   const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
@@ -1584,7 +1592,7 @@ function AdminInvoicesSection() {
                     </td>
                     <td className="px-2 py-2 sm:px-4 sm:py-3">
                       <button
-                        onClick={() => { import('../services/invoicePDF').then(m => m.generateInvoicePDF(inv, inv.orders ?? {})) }}
+                        onClick={async () => { const empresa = await fetchEmpresa(inv); generateInvoicePDF(inv, inv.orders ?? {}, empresa) }}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 hover:text-red-800">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
