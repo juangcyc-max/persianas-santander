@@ -363,6 +363,101 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
   }
 }
 
+// ── PRESUPUESTO MULTI-ÍTEM (CREADO DESDE EL PANEL ADMIN) ─────────────────
+export async function generateAdminMultiBudgetPDF(customerData = {}, items = [], { returnBase64 = false, budgetNumberOverride = null } = {}) {
+  try {
+    const doc = new jsPDF()
+    const W = doc.internal.pageSize.width
+    const budgetNumber = budgetNumberOverride ?? `PRE-${Date.now().toString().slice(-8)}`
+    const today = formatDate(new Date())
+    const logoImg = await loadImage("/persianassantanderlogo.png")
+    let y = 38
+
+    // Bloque cliente
+    doc.setFillColor(...COLORS.grayBg)
+    doc.roundedRect(14, y, W - 28, 36, 3, 3, "F")
+    doc.setTextColor(...COLORS.red)
+    doc.setFontSize(8)
+    doc.setFont("helvetica", "bold")
+    doc.text("DATOS DEL CLIENTE", 20, y + 7)
+    doc.setTextColor(...COLORS.dark)
+    doc.setFontSize(10)
+    doc.text(customerData.name || "Cliente no especificado", 20, y + 15)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.setTextColor(...COLORS.mid)
+    const contactInfo = [customerData.phone, customerData.email].filter(Boolean).join("  ·  ")
+    doc.text(contactInfo || "Sin datos de contacto", 20, y + 22)
+    doc.text(customerData.address || "Dirección no especificada", 20, y + 29)
+    y += 44
+
+    // Tabla de ítems
+    const tableRows = items.map((item, idx) => {
+      const dims = item.blindType === 'solo_motor' ? '—'
+        : item.blindType === 'solo_guias' ? `${item.height} mm alt.`
+        : `${item.width} × ${item.height} mm`
+      const MOTOR_ONLY = ['autoblocante', 'blocking', 'sistema_mini_autoblocante']
+      const mech = (item.blindType === 'solo_motor' || MOTOR_ONLY.includes(item.blindType))
+        ? (LABELS.motorType[item.motorType] ?? '—')
+        : (LABELS.mechanism[item.mechanism] ?? '—')
+      const guides = item.guideType === 'none' ? 'Sin guías' : (LABELS.guideType[item.guideType] ?? '—')
+      return [
+        String(idx + 1),
+        item.label,
+        dims,
+        item.colorGroup ?? '—',
+        mech,
+        guides,
+        item.installacion ? 'Sí' : 'No',
+        formatCurrency(item.priceBreakdown?.subtotalSinIva ?? 0),
+      ]
+    })
+
+    autoTable(doc, {
+      startY: y,
+      head: [['#', 'Tipo', 'Medidas', 'Color', 'Mecanismo', 'Guías', 'Inst.', 'Precio s/IVA']],
+      body: tableRows,
+      headStyles: { fillColor: COLORS.red, textColor: COLORS.white, fontStyle: 'bold', fontSize: 8, cellPadding: 4 },
+      bodyStyles: { fontSize: 8, cellPadding: 3.5, textColor: COLORS.dark },
+      alternateRowStyles: { fillColor: COLORS.grayBg },
+      columnStyles: {
+        0: { cellWidth: 8 },
+        1: { cellWidth: 38 },
+        2: { cellWidth: 28 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 22 },
+        5: { cellWidth: 18 },
+        6: { cellWidth: 10 },
+        7: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
+      },
+      margin: { left: 14, right: 14, top: 38, bottom: 20 },
+    })
+    y = doc.lastAutoTable.finalY + 12
+
+    // Bloque de precio total
+    const totalSinIva = items.reduce((sum, i) => sum + (i.priceBreakdown?.subtotalSinIva ?? 0), 0)
+    const iva = totalSinIva * 0.21
+    const totalConIva = totalSinIva * 1.21
+    addPriceBlock(doc, y, { subtotalSinIva: totalSinIva, iva, finalPrice: totalConIva, discount: 0, lines: [] }, false, 0)
+
+    // Cabeceras y pies
+    const pageCount = doc.internal.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      addPageHeader(doc, logoImg, "PRESUPUESTO", budgetNumber, today)
+      addPageFooter(doc, [
+        "Persianas Santander S.L.  ·  NIF: B39476726  ·  C/ Isla Oleo, Nave 9 - Pol. Nueva Montaña, 39011 Santander",
+        "942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com",
+      ], i, pageCount)
+    }
+
+    if (returnBase64) return doc.output('datauristring').split(',')[1]
+    doc.save(`Presupuesto_${budgetNumber}.pdf`)
+  } catch (err) {
+    console.error("Error generando PDF multi-ítem:", err)
+  }
+}
+
 // ── PRESUPUESTO DEL PROFESIONAL PARA SU CLIENTE ───────────────────────────
 // Este PDF lleva el logo y datos de la empresa del profesional, NO de Persianas Santander.
 // El precio mostrado es el precio que el profesional cobra a su cliente (sin descuento PS).
