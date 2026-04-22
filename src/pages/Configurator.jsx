@@ -102,7 +102,7 @@ function getPricePerSqm(table, gama) {
 function Configurator() {
 
   const [isProfessional, setIsProfessional] = useState(false)
-  const [proDiscount, setProDiscount] = useState(20)
+  const [proDiscount, setProDiscount] = useState(0)
   const [userType, setUserType] = useState('public')
 
   useEffect(() => {

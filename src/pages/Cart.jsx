@@ -108,7 +108,7 @@ export default function Cart() {
   const { items, totalPrice, totalWithIva, removeFromCart, clearCart, user } = useCart()
   const navigate = useNavigate()
   const isProfessional = user?.user_metadata?.user_type === 'professional'
-  const [proDiscount, setProDiscount] = useState(20)
+  const [proDiscount, setProDiscount] = useState(0)
 
   useEffect(() => {
     if (isProfessional && user?.id) {

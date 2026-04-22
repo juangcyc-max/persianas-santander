@@ -1335,7 +1335,7 @@ export default function ProfessionalDashboard() {
   const [facturas,       setFacturas]       = useState([])
   const [logoUrl,        setLogoUrl]        = useState(null)
   const [loading,        setLoading]        = useState(true)
-  const [globalDiscount, setGlobalDiscount] = useState(20)
+  const [globalDiscount, setGlobalDiscount] = useState(0)
   const [showEmpresaModal, setShowEmpresaModal] = useState(false)
 
   const empresaCompleta = useCallback((e) => e && REQUIRED_EMPRESA.every(f => e[f]?.toString().trim()), [])
@@ -1399,7 +1399,7 @@ export default function ProfessionalDashboard() {
               <div className="hidden sm:block h-6 w-px bg-gray-200" />
               <span className="hidden sm:block text-sm font-semibold text-gray-700">Panel profesional</span>
               <span className="hidden sm:inline-flex bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
-                −{empresa?.discount_percent ?? globalDiscount}%
+                −{globalDiscount}%
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -1500,7 +1500,7 @@ export default function ProfessionalDashboard() {
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
-                    { label: 'Descuento activo', value: `−${empresa?.discount_percent ?? globalDiscount}%`, sub: 'Tarifa profesional', accent: true },
+                    { label: 'Descuento activo', value: `−${globalDiscount}%`, sub: 'Tarifa profesional', accent: true },
                     { label: 'Presupuestos', value: proyectos.length, sub: `${proyectos.filter(p => p.status === 'accepted').length} aceptados` },
                     { label: 'Pedidos', value: pedidos.length, sub: `${pedidos.filter(p => p.status === 'completed').length} completados` },
                     { label: 'Total facturado', value: fmt(totalFacturado), sub: 'pedidos completados' },
