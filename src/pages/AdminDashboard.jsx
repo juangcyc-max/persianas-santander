@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase/client'
 import { generateInvoicePDF } from '../services/invoicePDF'
 import { generateBudgetPDF } from '../services/pdf'
 import { notifyStatusChange, confirmAppointment, sendInvoiceEmail, sendBudgetResend } from '../services/email'
+import { getProfessionalDiscount, setProfessionalDiscount } from '../services/settings'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
@@ -460,6 +461,7 @@ const ADMIN_TABS = [
   { id: 'presupuestos', label: 'Presupuestos',   icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
   { id: 'facturas',     label: 'Facturas',       icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
   { id: 'clientes',     label: 'Clientes',       icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
+  { id: 'configuracion', label: 'Configuración', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
 ]
 
 // ── PANEL ADMIN ───────────────────────────────────────────────────────────
@@ -892,6 +894,9 @@ export default function AdminDashboard() {
 
             {/* ── CLIENTES ── */}
             {activeTab === 'clientes' && <AdminClientsSection />}
+
+            {/* ── CONFIGURACIÓN ── */}
+            {activeTab === 'configuracion' && <AdminConfigSection />}
 
           </main>
         </div>
@@ -2083,6 +2088,66 @@ function AdminClientsSection() {
         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">Error al eliminar: {deleteErr}</div>
       )}
       <p className="text-xs text-gray-400">{filtered.length} usuario{filtered.length !== 1 ? 's' : ''} · Los admins no se pueden eliminar</p>
+    </div>
+  )
+}
+
+// ── SECCIÓN CONFIGURACIÓN ADMIN ───────────────────────────────────────────
+function AdminConfigSection() {
+  const [discount,  setDiscount]  = useState('')
+  const [saving,    setSaving]    = useState(false)
+  const [saved,     setSaved]     = useState(false)
+  const [error,     setError]     = useState('')
+
+  useEffect(() => {
+    getProfessionalDiscount().then(v => setDiscount(String(v)))
+  }, [])
+
+  async function handleSave() {
+    const n = parseFloat(discount)
+    if (isNaN(n) || n < 0 || n > 100) { setError('Introduce un valor entre 0 y 100'); return }
+    setError('')
+    setSaving(true)
+    const ok = await setProfessionalDiscount(n)
+    setSaving(false)
+    if (ok) { setSaved(true); setTimeout(() => setSaved(false), 2500) }
+    else setError('Error al guardar. Inténtalo de nuevo.')
+  }
+
+  return (
+    <div className="space-y-6 max-w-lg">
+      <h2 className="text-lg font-bold text-gray-900">Configuración</h2>
+
+      <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-800 mb-1">Descuento para profesionales</h3>
+          <p className="text-xs text-gray-400">Se aplica a todos los profesionales que no tengan un descuento específico en su factura. Los nuevos perfiles heredan automáticamente este valor.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="1"
+              value={discount}
+              onChange={e => { setDiscount(e.target.value); setSaved(false); setError('') }}
+              className="w-24 px-3 py-2 pr-7 rounded-xl border border-gray-300 text-sm font-bold text-center focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400"
+            />
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-gray-400">%</span>
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className={`px-4 py-2 text-sm font-bold rounded-xl transition-colors disabled:opacity-50 ${
+              saved ? 'bg-green-600 text-white' : 'bg-red-700 hover:bg-red-800 text-white'
+            }`}
+          >
+            {saving ? 'Guardando…' : saved ? '✓ Guardado' : 'Guardar'}
+          </button>
+        </div>
+        {error && <p className="text-xs text-red-600">{error}</p>}
+      </div>
     </div>
   )
 }

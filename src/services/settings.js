@@ -31,7 +31,7 @@ export async function setProfessionalDiscount(percent) {
 // Descuento individual por profesional (professional_data.discount_percent)
 // Si no tiene row o columna, cae al descuento global
 export async function getProfessionalDiscountForUser(userId) {
-  if (!userId) return 0
+  if (!userId) return getProfessionalDiscount()
   try {
     const { data } = await supabase
       .from('professional_data')
@@ -40,7 +40,7 @@ export async function getProfessionalDiscountForUser(userId) {
       .maybeSingle()
     if (data?.discount_percent != null) return parseFloat(data.discount_percent)
   } catch {}
-  return 0
+  return getProfessionalDiscount()
 }
 
 export async function setProfessionalDiscountForUser(userId, percent) {
