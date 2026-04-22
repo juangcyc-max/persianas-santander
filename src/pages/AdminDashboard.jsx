@@ -1182,12 +1182,415 @@ function BudgetModal({ budget, onClose, onSaved }) {
   )
 }
 
+// ── MODAL NUEVO PRESUPUESTO (ADMIN) ──────────────────────────────────────
+const ADMIN_BUDGET_BLIND_TYPES = [
+  { value: 'laminada',                    label: 'Paño Laminado' },
+  { value: 'autoblocante',                label: 'Paño Autoblocante' },
+  { value: 'blocking',                    label: 'Bloqueante' },
+  { value: 'sistema_mini_cajon_pvc',      label: 'Sistema Mini Cajón PVC' },
+  { value: 'sistema_mini_cajon_aluminio', label: 'Sistema Mini Cajón Aluminio' },
+  { value: 'sistema_mini_autoblocante',   label: 'Sistema Mini Autoblocante' },
+  { value: 'mosquitera_enrollable',       label: 'Mosquitera Enrollable' },
+  { value: 'solo_guias',                  label: 'Solo Guías' },
+  { value: 'solo_motor',                  label: 'Solo Motor' },
+]
+
+const ADMIN_BUDGET_COLOR_GROUPS = ['Grupo Base', 'Grupo 1', 'Grupo 2', 'Grupo 3']
+const ADMIN_MIN_SQM = 1.5
+const ADMIN_MOTOR_ONLY = ['autoblocante', 'blocking', 'sistema_mini_autoblocante']
+const ADMIN_NO_MOTOR   = ['mosquitera_enrollable']
+const ADMIN_PANO_TYPES = ['laminada', 'autoblocante', 'blocking', 'mosquitera_enrollable']
+const ADMIN_SISTEMAS   = ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante']
+
+function calcAdminBudgetPrice({ prices, motorPrices, guidePricePerMl, instalacionPrice, instalacionFija,
+  blindType, width, height, mechanism, motorType, guideType, colorGroup, installacion }) {
+  if (!prices) return null
+
+  if (blindType === 'solo_motor') {
+    const motorCost       = motorPrices[motorType] ?? 0
+    const installacionCost = installacion ? instalacionFija : 0
+    const subtotalSinIva  = motorCost + installacionCost
+    return { subtotalSinIva, iva: subtotalSinIva * 0.21, totalConIva: subtotalSinIva * 1.21 }
+  }
+
+  if (blindType === 'solo_guias') {
+    const pricePerMl      = guidePricePerMl[guideType] ?? guidePricePerMl.v25
+    const guidesCost      = 2 * (height / 1000) * pricePerMl
+    const installacionCost = installacion ? instalacionFija : 0
+    const subtotalSinIva  = guidesCost + installacionCost
+    return { subtotalSinIva, iva: subtotalSinIva * 0.21, totalConIva: subtotalSinIva * 1.21 }
+  }
+
+  const areaSqm         = (width / 1000) * (height / 1000)
+  const billableSqm     = Math.max(areaSqm, ADMIN_MIN_SQM)
+  const productTable    = prices[blindType]
+  const pricePerSqm     = productTable?.[colorGroup] ?? productTable?.['Grupo Base'] ?? 0
+  let guidesCost = 0
+  if (guideType !== 'none' && blindType !== 'mosquitera_enrollable') {
+    guidesCost = 2 * (height / 1000) * (guidePricePerMl[guideType] ?? 0)
+  }
+  const isPano = ADMIN_PANO_TYPES.includes(blindType)
+  const motorCost = !isPano && mechanism === 'motor' ? (motorPrices[motorType] ?? 0) : 0
+  const installacionCost = installacion ? instalacionPrice * billableSqm : 0
+  const subtotalSinIva = pricePerSqm * billableSqm + guidesCost + motorCost + installacionCost
+  return { billableSqm, pricePerSqm, guidesCost, motorCost, installacionCost, subtotalSinIva, iva: subtotalSinIva * 0.21, totalConIva: subtotalSinIva * 1.21 }
+}
+
+function AdminNewBudgetModal({ onClose, onSaved }) {
+  const [cfgPrices,      setCfgPrices]      = useState(null)
+  const [motorPrices,    setMotorPrices]    = useState(DEFAULT_MOTOR_PRICES)
+  const [guidePricePerMl, setGuidePricePerMl] = useState(DEFAULT_GUIDE_PRICE_PER_ML)
+  const [instalacionPrice, setInstalacionPrice] = useState(DEFAULT_INSTALACION_PRICE)
+  const [instalacionFija,  setInstalacionFija]  = useState(DEFAULT_INSTALACION_FIJA)
+
+  const [customerName,    setCustomerName]    = useState('')
+  const [customerPhone,   setCustomerPhone]   = useState('')
+  const [customerEmail,   setCustomerEmail]   = useState('')
+  const [customerAddress, setCustomerAddress] = useState('')
+  const [clientNotes,     setClientNotes]     = useState('')
+
+  const [blindType,   setBlindType]   = useState('laminada')
+  const [width,       setWidth]       = useState(1000)
+  const [height,      setHeight]      = useState(1200)
+  const [mechanism,   setMechanism]   = useState('muelle')
+  const [motorType,   setMotorType]   = useState('mecanico')
+  const [guideType,   setGuideType]   = useState('none')
+  const [colorGroup,  setColorGroup]  = useState('Grupo Base')
+  const [installacion, setInstallacion] = useState(false)
+
+  const [saving,        setSaving]        = useState(false)
+  const [saveFeedback,  setSaveFeedback]  = useState(null)
+  const [pdfLoading,    setPdfLoading]    = useState(false)
+  const [emailLoading,  setEmailLoading]  = useState(false)
+  const [emailFeedback, setEmailFeedback] = useState(null)
+
+  useEffect(() => {
+    getProductPrices().then(cfg => {
+      setCfgPrices(cfg.prices)
+      setMotorPrices(cfg.motorPrices)
+      setGuidePricePerMl(cfg.guidePricePerMl)
+      setInstalacionPrice(cfg.instalacionPrice)
+      setInstalacionFija(cfg.instalacionFija)
+    })
+  }, [])
+
+  useEffect(() => {
+    if (ADMIN_MOTOR_ONLY.includes(blindType)) setMechanism('motor')
+    if (ADMIN_NO_MOTOR.includes(blindType) && mechanism === 'motor') setMechanism('muelle')
+    if (blindType === 'solo_motor') setMechanism('motor')
+    if (ADMIN_SISTEMAS.includes(blindType) && guideType === 'none') setGuideType('h25')
+    if (blindType === 'mosquitera_enrollable') { setGuideType('none'); setColorGroup('Grupo Base') }
+    if (blindType === 'solo_guias' && guideType === 'none') setGuideType('v25')
+  }, [blindType]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const priceBreakdown = calcAdminBudgetPrice({
+    prices: cfgPrices, motorPrices, guidePricePerMl, instalacionPrice, instalacionFija,
+    blindType, width: Number(width), height: Number(height), mechanism, motorType, guideType, colorGroup, installacion,
+  })
+
+  function buildCustomer() {
+    return { name: customerName, phone: customerPhone, email: customerEmail, address: customerAddress }
+  }
+  function buildConfig() {
+    return {
+      productType: blindType, blindType, mechanism, motorType, guideType, installacion,
+      width: Number(width), height: Number(height),
+      slatColorGama: colorGroup,
+      estimatedPrice: priceBreakdown?.totalConIva ?? 0,
+      userType: 'public', proDiscount: 0,
+    }
+  }
+
+  async function handleSave() {
+    setSaving(true)
+    const budgetNumber = `PRE-${Date.now().toString().slice(-8)}`
+    const { error } = await supabase.from('budgets').insert([{
+      budget_number:    budgetNumber,
+      customer_name:    customerName   || null,
+      customer_phone:   customerPhone  || null,
+      customer_email:   customerEmail  || null,
+      customer_address: customerAddress || null,
+      client_notes:     clientNotes    || null,
+      blind_type:       blindType,
+      width:            Number(width),
+      height:           Number(height),
+      mechanism,
+      motor_type:       motorType,
+      guide_type:       guideType,
+      installacion,
+      total_with_iva:   priceBreakdown?.totalConIva ?? 0,
+      budget_status:    'pending',
+      user_type:        'public',
+      user_id:          null,
+    }])
+    setSaving(false)
+    if (!error) {
+      setSaveFeedback('ok')
+      setTimeout(() => { onSaved() }, 1200)
+    } else {
+      setSaveFeedback('error')
+      setTimeout(() => setSaveFeedback(null), 3000)
+    }
+  }
+
+  async function handleDownloadPDF() {
+    setPdfLoading(true)
+    try { await generateBudgetPDF(buildCustomer(), buildConfig(), { skipSave: true }) } catch { }
+    setPdfLoading(false)
+  }
+
+  async function handleSendEmail() {
+    if (!customerEmail) return
+    setEmailLoading(true)
+    setEmailFeedback(null)
+    try {
+      const pdfBase64 = await generateBudgetPDF(buildCustomer(), buildConfig(), { skipSave: true, returnBase64: true })
+      await sendBudgetResend(buildCustomer(), buildConfig(), pdfBase64)
+      setEmailFeedback('ok')
+      setTimeout(() => setEmailFeedback(null), 3000)
+    } catch {
+      setEmailFeedback('error')
+      setTimeout(() => setEmailFeedback(null), 3000)
+    }
+    setEmailLoading(false)
+  }
+
+  const isSoloMotor  = blindType === 'solo_motor'
+  const isSoloGuias  = blindType === 'solo_guias'
+  const isSistema    = ADMIN_SISTEMAS.includes(blindType)
+  const isPano       = ADMIN_PANO_TYPES.includes(blindType)
+  const isMotorOnly  = ADMIN_MOTOR_ONLY.includes(blindType)
+  const showMotor    = mechanism === 'motor' && !isPano
+  const showGuides   = !isSoloMotor && blindType !== 'mosquitera_enrollable'
+  const showColorGroup = !isSoloMotor && !isSoloGuias
+  const showDimensions = !isSoloMotor
+  const showMechanism  = !isMotorOnly && !isSoloMotor && !isSoloGuias
+  const showInstallacion = true
+
+  const inputCls = 'w-full px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400'
+
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center overflow-y-auto py-6 px-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <h2 className="text-base font-bold text-gray-900">Nuevo presupuesto manual</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Datos del cliente */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Datos del cliente</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-500">Nombre</label>
+                <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Nombre completo" className={inputCls} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-500">Teléfono</label>
+                <input value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="600 000 000" className={inputCls} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-500">Email</label>
+                <input type="email" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} placeholder="cliente@email.com" className={inputCls} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs text-gray-500">Dirección</label>
+                <input value={customerAddress} onChange={e => setCustomerAddress(e.target.value)} placeholder="Calle, número, ciudad" className={inputCls} />
+              </div>
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-xs text-gray-500">Comentarios</label>
+                <textarea value={clientNotes} onChange={e => setClientNotes(e.target.value)} placeholder="Notas adicionales…" rows={2} className={`${inputCls} resize-none`} />
+              </div>
+            </div>
+          </div>
+
+          {/* Configuración del producto */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Configuración del producto</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Tipo de persiana */}
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <label className="text-xs text-gray-500">Tipo de persiana</label>
+                <select value={blindType} onChange={e => setBlindType(e.target.value)} className={inputCls}>
+                  {ADMIN_BUDGET_BLIND_TYPES.map(t => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Dimensiones */}
+              {showDimensions && (
+                <>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-500">Ancho (mm)</label>
+                    <input type="number" min="200" max="6000" step="10" value={width} onChange={e => setWidth(e.target.value)} className={inputCls} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs text-gray-500">Alto (mm)</label>
+                    <input type="number" min="200" max="6000" step="10" value={height} onChange={e => setHeight(e.target.value)} className={inputCls} />
+                  </div>
+                </>
+              )}
+
+              {/* Mecanismo */}
+              {showMechanism && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-500">Mecanismo</label>
+                  <select value={mechanism} onChange={e => setMechanism(e.target.value)} className={inputCls}>
+                    <option value="muelle">Muelle</option>
+                    <option value="cinta">Cinta</option>
+                    <option value="motor">Motor</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Motor */}
+              {(showMotor || isSoloMotor || isMotorOnly) && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-500">Tipo de motor</label>
+                  <select value={motorType} onChange={e => setMotorType(e.target.value)} className={inputCls}>
+                    <option value="mecanico">Mecánico</option>
+                    <option value="mando_distancia">Mando a distancia</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Guías */}
+              {showGuides && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-500">Guías</label>
+                  <select value={guideType} onChange={e => setGuideType(e.target.value)} className={inputCls}>
+                    {!isSistema && <option value="none">Sin guías</option>}
+                    <option value="v25">Guías V25</option>
+                    <option value="h25">Guías H25</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Grupo de color */}
+              {showColorGroup && (
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs text-gray-500">Grupo de color</label>
+                  <select value={colorGroup} onChange={e => setColorGroup(e.target.value)} className={inputCls} disabled={blindType === 'mosquitera_enrollable'}>
+                    {ADMIN_BUDGET_COLOR_GROUPS.map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Instalación */}
+              <div className="flex items-center gap-3 py-2">
+                <input type="checkbox" id="adm_inst" checked={installacion} onChange={e => setInstallacion(e.target.checked)}
+                  className="w-4 h-4 text-red-700 rounded border-gray-300 focus:ring-red-500" />
+                <label htmlFor="adm_inst" className="text-sm text-gray-700 cursor-pointer">Incluir instalación</label>
+              </div>
+            </div>
+          </div>
+
+          {/* Resumen de precio */}
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Resumen de precio</p>
+            {!cfgPrices ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />
+                Cargando precios…
+              </div>
+            ) : priceBreakdown ? (
+              <div className="space-y-1 text-sm">
+                {priceBreakdown.pricePerSqm !== undefined && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>{fmt(priceBreakdown.pricePerSqm)} €/m² × {priceBreakdown.billableSqm?.toFixed(2)} m²</span>
+                    <span>{fmt(priceBreakdown.pricePerSqm * priceBreakdown.billableSqm)}</span>
+                  </div>
+                )}
+                {priceBreakdown.guidesCost > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Guías</span>
+                    <span>{fmt(priceBreakdown.guidesCost)}</span>
+                  </div>
+                )}
+                {priceBreakdown.motorCost > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Motor</span>
+                    <span>{fmt(priceBreakdown.motorCost)}</span>
+                  </div>
+                )}
+                {priceBreakdown.installacionCost > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Instalación</span>
+                    <span>{fmt(priceBreakdown.installacionCost)}</span>
+                  </div>
+                )}
+                <div className="border-t border-gray-200 pt-1 mt-1">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Subtotal (sin IVA)</span>
+                    <span>{fmt(priceBreakdown.subtotalSinIva)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>IVA (21%)</span>
+                    <span>{fmt(priceBreakdown.iva)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-red-700 text-base pt-1">
+                    <span>Total con IVA</span>
+                    <span>{fmt(priceBreakdown.totalConIva)}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">Sin datos</p>
+            )}
+          </div>
+
+          {/* Acciones */}
+          <div className="space-y-3">
+            <div className="flex gap-3">
+              <button onClick={handleDownloadPDF} disabled={pdfLoading || !cfgPrices}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 transition-colors flex items-center justify-center gap-1.5">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                </svg>
+                {pdfLoading ? 'Generando…' : 'Descargar PDF'}
+              </button>
+              <button onClick={handleSendEmail} disabled={emailLoading || !customerEmail || !cfgPrices}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50
+                  ${emailFeedback === 'ok' ? 'bg-green-600 text-white' : emailFeedback === 'error' ? 'bg-red-100 text-red-700' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                {emailLoading ? 'Enviando…' : emailFeedback === 'ok' ? '✓ Enviado' : emailFeedback === 'error' ? 'Error al enviar' : 'Enviar al cliente'}
+              </button>
+            </div>
+            <div className="flex gap-3">
+              <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                Cancelar
+              </button>
+              <button onClick={handleSave} disabled={saving || saveFeedback === 'ok' || !cfgPrices}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-50
+                  ${saveFeedback === 'ok' ? 'bg-green-600 text-white' : saveFeedback === 'error' ? 'bg-red-100 text-red-800' : 'bg-red-700 hover:bg-red-800 text-white'}`}>
+                {saving ? 'Guardando…' : saveFeedback === 'ok' ? '✓ Guardado' : saveFeedback === 'error' ? 'Error al guardar' : 'Guardar presupuesto'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function AdminBudgetsSection() {
   const [budgets,  setBudgets]  = useState([])
   const [loading,  setLoading]  = useState(true)
   const [search,   setSearch]   = useState('')
   const [selected, setSelected] = useState(null)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [showNewModal, setShowNewModal] = useState(false)
 
   useEffect(() => { loadBudgets() }, [])
 
@@ -1215,6 +1618,15 @@ function AdminBudgetsSection() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h2 className="text-lg font-bold text-gray-900">Presupuestos</h2>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={() => setShowNewModal(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-white bg-red-700 hover:bg-red-800 px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Nuevo presupuesto
+          </button>
           {filtered.length > 0 && (
             <button onClick={() => {
               const headers = ['Número', 'Cliente', 'Email', 'Tipo', 'Precio', 'Estado', 'Fecha']
@@ -1325,6 +1737,13 @@ function AdminBudgetsSection() {
           budget={selected}
           onClose={() => setSelected(null)}
           onSaved={() => { setSelected(null); loadBudgets() }}
+        />
+      )}
+
+      {showNewModal && (
+        <AdminNewBudgetModal
+          onClose={() => setShowNewModal(false)}
+          onSaved={() => { setShowNewModal(false); loadBudgets() }}
         />
       )}
     </div>
