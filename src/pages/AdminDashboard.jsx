@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { generateInvoicePDF } from '../services/invoicePDF'
 import { generateBudgetPDF } from '../services/pdf'
-import { setProfessionalDiscountForUser } from '../services/settings'
 import { notifyStatusChange, confirmAppointment, sendInvoiceEmail, sendBudgetResend } from '../services/email'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -1377,10 +1376,13 @@ function SendInvoiceRowButton({ inv }) {
 }
 
 function AdminInvoicesSection() {
-  const [invoices,    setInvoices]    = useState([])
-  const [loading,     setLoading]     = useState(true)
-  const [invDateFrom, setInvDateFrom] = useState('')
-  const [invDateTo,   setInvDateTo]   = useState('')
+  const [invoices,        setInvoices]        = useState([])
+  const [loading,         setLoading]         = useState(true)
+  const [invDateFrom,     setInvDateFrom]     = useState('')
+  const [invDateTo,       setInvDateTo]       = useState('')
+  const [editDiscount,    setEditDiscount]    = useState({}) // id → string value
+  const [savingDiscount,  setSavingDiscount]  = useState({}) // id → bool
+  const [savedDiscount,   setSavedDiscount]   = useState({}) // id → bool
 
   useEffect(() => { loadInvoices() }, [])
 
@@ -1392,6 +1394,39 @@ function AdminInvoicesSection() {
       .order('created_at', { ascending: false })
     setInvoices(data ?? [])
     setLoading(false)
+  }
+
+  async function handleDiscountSave(inv) {
+    const raw = editDiscount[inv.id]
+    const discount = raw !== undefined ? parseFloat(raw) : (inv.pro_discount ?? 0)
+    if (isNaN(discount) || discount < 0 || discount > 100) return
+    setSavingDiscount(prev => ({ ...prev, [inv.id]: true }))
+
+    // total_without_iva is already post-discount; recover pre-discount base
+    const prevDiscount = inv.pro_discount ?? 0
+    const originalBase = prevDiscount < 100
+      ? (inv.total_without_iva ?? 0) / (1 - prevDiscount / 100)
+      : inv.total_without_iva ?? 0
+    const newBase = originalBase * (1 - discount / 100)
+    const newIva  = newBase * 0.21
+    const newTotal = newBase + newIva
+
+    const { error } = await supabase.from('invoices').update({
+      pro_discount:      discount,
+      total_without_iva: Math.round(newBase  * 100) / 100,
+      iva:               Math.round(newIva   * 100) / 100,
+      total_with_iva:    Math.round(newTotal * 100) / 100,
+    }).eq('id', inv.id)
+
+    setSavingDiscount(prev => ({ ...prev, [inv.id]: false }))
+    if (!error) {
+      setInvoices(prev => prev.map(i => i.id === inv.id
+        ? { ...i, pro_discount: discount, total_without_iva: Math.round(newBase * 100) / 100, iva: Math.round(newIva * 100) / 100, total_with_iva: Math.round(newTotal * 100) / 100 }
+        : i
+      ))
+      setSavedDiscount(prev => ({ ...prev, [inv.id]: true }))
+      setTimeout(() => setSavedDiscount(prev => ({ ...prev, [inv.id]: false })), 2000)
+    }
   }
 
   const filteredInvoices = invoices.filter(inv => {
@@ -1478,7 +1513,7 @@ function AdminInvoicesSection() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  {['Nº Factura', 'Fecha', 'Total', 'Estado pago', 'Cambiar estado', 'PDF', 'Email'].map(h => (
+                  {['Nº Factura', 'Fecha', 'Total', 'Descuento', 'Estado pago', 'Cambiar estado', 'PDF', 'Email'].map(h => (
                     <th key={h} className="text-left px-2 py-2 sm:px-4 sm:py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -1489,6 +1524,25 @@ function AdminInvoicesSection() {
                     <td className="px-2 py-2 sm:px-4 sm:py-3 font-mono text-xs text-gray-600">{inv.invoice_number}</td>
                     <td className="px-2 py-2 sm:px-4 sm:py-3 text-gray-500 whitespace-nowrap">{fmtDate(inv.created_at)}</td>
                     <td className="px-2 py-2 sm:px-4 sm:py-3 font-bold text-gray-900">{fmt(inv.total_with_iva)}</td>
+                    <td className="px-2 py-2 sm:px-4 sm:py-3">
+                      <div className="flex items-center gap-1">
+                        <div className="relative">
+                          <input
+                            type="number" min="0" max="100" step="1"
+                            value={editDiscount[inv.id] !== undefined ? editDiscount[inv.id] : (inv.pro_discount ?? 0)}
+                            onChange={e => setEditDiscount(prev => ({ ...prev, [inv.id]: e.target.value }))}
+                            className="w-14 px-2 py-1 pr-4 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-red-200"
+                          />
+                          <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                        </div>
+                        <button
+                          onClick={() => handleDiscountSave(inv)}
+                          disabled={savingDiscount[inv.id]}
+                          className={`px-2 py-1 text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${savedDiscount[inv.id] ? 'bg-green-600 text-white' : 'bg-red-700 hover:bg-red-800 text-white'}`}>
+                          {savingDiscount[inv.id] ? '…' : savedDiscount[inv.id] ? '✓' : 'OK'}
+                        </button>
+                      </div>
+                    </td>
                     <td className="px-2 py-2 sm:px-4 sm:py-3">
                       <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
                         inv.payment_status === 'paid'
@@ -1842,40 +1896,6 @@ function GAWebAnalytics() {
   )
 }
 
-// ── CELDA DE DESCUENTO INDIVIDUAL ────────────────────────────────────────
-function DiscountCell({ userId, initial }) {
-  const [value,  setValue]  = useState(String(initial))
-  const [saving, setSaving] = useState(false)
-  const [saved,  setSaved]  = useState(false)
-
-  async function save() {
-    const n = parseFloat(value)
-    if (isNaN(n) || n < 0 || n > 100) return
-    setSaving(true)
-    const ok = await setProfessionalDiscountForUser(userId, n)
-    setSaving(false)
-    if (ok) { setSaved(true); setTimeout(() => setSaved(false), 2000) }
-  }
-
-  return (
-    <div className="flex items-center gap-1">
-      <div className="relative">
-        <input
-          type="number" min="0" max="100" step="1"
-          value={value}
-          onChange={e => setValue(e.target.value)}
-          className="w-16 px-2 py-1 pr-5 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-red-200"
-        />
-        <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
-      </div>
-      <button onClick={save} disabled={saving}
-        className={`px-2 py-1 text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${saved ? 'bg-green-600 text-white' : 'bg-red-700 hover:bg-red-800 text-white'}`}>
-        {saving ? '…' : saved ? '✓' : 'OK'}
-      </button>
-    </div>
-  )
-}
-
 // ── SECCIÓN CLIENTES ADMIN (particulares + profesionales unificados) ──────
 function AdminClientsSection() {
   const [clients,   setClients]   = useState([])
@@ -2047,10 +2067,6 @@ function AdminClientsSection() {
                           {p.ciudad        && <div><span className="text-xs text-gray-400 block">Ciudad</span>{p.ciudad}</div>}
                           {p.direccion_fiscal && <div className="sm:col-span-2"><span className="text-xs text-gray-400 block">Dirección fiscal</span>{p.direccion_fiscal}</div>}
                           {p.email_facturacion && <div><span className="text-xs text-gray-400 block">Email facturación</span>{p.email_facturacion}</div>}
-                          <div>
-                            <span className="text-xs text-gray-400 block">Descuento</span>
-                            <DiscountCell userId={p.user_id} initial={p.discount_percent ?? ''} />
-                          </div>
                         </div>
                       ) : (
                         <p className="text-xs text-gray-400">Registro: {fmtDate(c.created_at)}</p>
