@@ -88,11 +88,6 @@ function CustomerForm({ customerData = {}, onCustomerDataChange, configuration =
   // ── Formulario ──
   return (
     <div className="space-y-5">
-      <div>
-        <h2 className="text-lg font-bold text-gray-900">Solicitar presupuesto</h2>
-        <p className="text-sm text-gray-500 mt-0.5">Te contactamos en menos de 24 h.</p>
-      </div>
-
       {errors._global && (
         <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
           <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
