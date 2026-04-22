@@ -768,15 +768,19 @@ export default function AdminDashboard() {
                         placeholder="Buscar por email, dirección o ID..."
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Desde</label>
-                      <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }}
-                        className="px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
-                      <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Hasta</label>
-                      <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }}
-                        className="px-3 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+                    <div className="flex items-end gap-2">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-gray-500">Desde</label>
+                        <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setPage(1) }}
+                          className="px-2.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white w-full" />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-medium text-gray-500">Hasta</label>
+                        <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setPage(1) }}
+                          className="px-2.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white w-full" />
+                      </div>
                       {(dateFrom || dateTo) && (
-                        <button onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }} className="text-gray-400 hover:text-red-600">
+                        <button onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }} className="text-gray-400 hover:text-red-600 pb-2">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
                       )}
@@ -1480,18 +1484,22 @@ function AdminInvoicesSection() {
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-gray-900">Facturas</h2>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           {invoices.length > 0 && (
             <>
-              <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Desde</label>
-              <input type="date" value={invDateFrom} onChange={e => setInvDateFrom(e.target.value)}
-                className="px-3 py-1.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
-              <label className="text-xs font-medium text-gray-500 whitespace-nowrap">Hasta</label>
-              <input type="date" value={invDateTo} onChange={e => setInvDateTo(e.target.value)}
-                className="px-3 py-1.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-500">Desde</label>
+                <input type="date" value={invDateFrom} onChange={e => setInvDateFrom(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-500">Hasta</label>
+                <input type="date" value={invDateTo} onChange={e => setInvDateTo(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+              </div>
               {(invDateFrom || invDateTo) && (
                 <button onClick={() => { setInvDateFrom(''); setInvDateTo('') }}
-                  className="text-xs text-gray-400 hover:text-red-600 transition-colors" title="Limpiar fechas">
+                  className="text-xs text-gray-400 hover:text-red-600 transition-colors pb-1" title="Limpiar fechas">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
