@@ -293,7 +293,8 @@ function Configurator() {
       guidesCost = 2 * (height / 1000) * (GUIDE_PRICE_PER_ML[guideType] ?? 0)
     }
 
-    const motorCost = mechanism === 'motor' ? (MOTOR_PRICES[motorType] ?? 0) : 0
+    const isPano    = ['laminada', 'autoblocante', 'blocking', 'mosquitera_enrollable'].includes(productType)
+    const motorCost = !isPano && mechanism === 'motor' ? (MOTOR_PRICES[motorType] ?? 0) : 0
     const installacionCost = installacion ? INSTALACION_PRICE * billableSqm : 0
 
     const subtotalSinIva = productPricePerSqm * billableSqm + guidesCost + motorCost + installacionCost
