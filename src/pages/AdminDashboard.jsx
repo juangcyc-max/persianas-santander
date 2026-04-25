@@ -481,9 +481,19 @@ export default function AdminDashboard() {
   const [dateTo,       setDateTo]       = useState('')
   const [activeTab,    setActiveTab]    = useState('pedidos')
   const [menuOpen,     setMenuOpen]     = useState(false)
+  const [proNotif,     setProNotif]     = useState(0)
   const PAGE_SIZE = 15
 
   useEffect(() => { checkAdmin() }, [])
+  useEffect(() => { loadProNotif() }, [activeTab])
+
+  async function loadProNotif() {
+    const [{ count: pendingQuotes }, { count: unreadMsgs }] = await Promise.all([
+      supabase.from('pro_purchase_quotes').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('pro_messages').select('id', { count: 'exact', head: true }).eq('sender_role', 'professional').eq('read_by_admin', false),
+    ])
+    setProNotif((pendingQuotes ?? 0) + (unreadMsgs ?? 0))
+  }
 
   async function checkAdmin() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -498,6 +508,16 @@ export default function AdminDashboard() {
     setUser(user)
     await cleanupCancelledInvoices()
     await loadOrders()
+    loadProNotif()
+
+    // Realtime: actualizar badge cuando llegan nuevas cotizaciones o mensajes
+    supabase.channel('admin-pro-notif')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pro_purchase_quotes' }, loadProNotif)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pro_messages' }, loadProNotif)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pro_purchase_quotes' }, loadProNotif)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'pro_messages' }, loadProNotif)
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pro_purchase_quotes' }, loadProNotif)
+      .subscribe()
   }
 
   async function cleanupCancelledInvoices() {
@@ -673,6 +693,9 @@ export default function AdminDashboard() {
                       {id === 'pedidos' && pendingCount > 0 && (
                         <span className="ml-auto text-xs font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{pendingCount}</span>
                       )}
+                      {id === 'profesionales' && proNotif > 0 && (
+                        <span className="ml-auto text-xs font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{proNotif}</span>
+                      )}
                     </button>
                   ))}
                 </nav>
@@ -691,6 +714,9 @@ export default function AdminDashboard() {
                   {label}
                   {id === 'pedidos' && pendingCount > 0 && (
                     <span className="ml-auto text-xs font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{pendingCount}</span>
+                  )}
+                  {id === 'profesionales' && proNotif > 0 && (
+                    <span className="ml-auto text-xs font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{proNotif}</span>
                   )}
                 </button>
               ))}
