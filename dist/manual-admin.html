@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manual Panel de Administración — Persianas Santander</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      color: #1f2937;
+      background: #fff;
+      line-height: 1.6;
+    }
+    .page {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 40px 48px;
+    }
+
+    /* Portada */
+    .cover {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+      page-break-after: always;
+    }
+    .cover-logo {
+      background: #b91c1c;
+      color: #fff;
+      font-size: 28px;
+      font-weight: 900;
+      padding: 20px 40px;
+      border-radius: 12px;
+      margin-bottom: 32px;
+      letter-spacing: -0.5px;
+    }
+    .cover h1 { font-size: 26px; font-weight: 900; color: #111827; margin-bottom: 12px; }
+    .cover p { font-size: 14px; color: #6b7280; margin-bottom: 8px; }
+    .cover .version { margin-top: 40px; font-size: 11px; color: #9ca3af; }
+
+    /* Índice */
+    .toc { page-break-after: always; }
+    .toc h2 { font-size: 20px; font-weight: 900; color: #111827; margin-bottom: 20px; border-bottom: 2px solid #b91c1c; padding-bottom: 8px; }
+    .toc-list { list-style: none; }
+    .toc-list li { padding: 6px 0; border-bottom: 1px dotted #e5e7eb; display: flex; justify-content: space-between; }
+    .toc-list li a { text-decoration: none; color: #374151; font-weight: 500; }
+    .toc-list li a:hover { color: #b91c1c; }
+    .toc-list .toc-sub { padding-left: 20px; }
+    .toc-list .toc-sub a { font-weight: 400; color: #6b7280; font-size: 12px; }
+
+    /* Secciones */
+    .section { margin-bottom: 40px; }
+    .section-header {
+      background: #b91c1c;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-header .num {
+      background: rgba(255,255,255,0.2);
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 900; flex-shrink: 0;
+    }
+    .section-header h2 { font-size: 16px; font-weight: 900; }
+
+    h3 { font-size: 14px; font-weight: 700; color: #111827; margin: 20px 0 10px; }
+    h4 { font-size: 13px; font-weight: 700; color: #374151; margin: 14px 0 6px; }
+    p { margin-bottom: 10px; color: #374151; }
+
+    /* Info boxes */
+    .info-box { border-radius: 8px; padding: 14px 16px; margin: 12px 0; font-size: 12px; }
+    .info-box.blue  { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+    .info-box.green { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .info-box.amber { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+    .info-box.red   { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .info-box.gray  { background: #f9fafb; border: 1px solid #e5e7eb; color: #374151; }
+    .info-box strong { font-weight: 700; }
+
+    /* Tabla */
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12px; }
+    thead tr { background: #f9fafb; }
+    th { text-align: left; padding: 8px 10px; font-weight: 700; color: #6b7280; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #e5e7eb; }
+    td { padding: 8px 10px; border-bottom: 1px solid #f3f4f6; vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+
+    /* Badges */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge.amber  { background: #fef3c7; color: #92400e; }
+    .badge.blue   { background: #dbeafe; color: #1e40af; }
+    .badge.green  { background: #dcfce7; color: #166534; }
+    .badge.red    { background: #fee2e2; color: #991b1b; }
+    .badge.gray   { background: #f3f4f6; color: #4b5563; }
+
+    /* Steps */
+    .steps { list-style: none; counter-reset: step; }
+    .steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 8px 0 8px 40px;
+      border-left: 2px solid #e5e7eb;
+      margin-left: 16px;
+    }
+    .steps li::before {
+      content: counter(step);
+      position: absolute; left: -13px; top: 8px;
+      background: #b91c1c; color: #fff;
+      width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 900;
+    }
+    .steps li:last-child { border-left: none; }
+
+    /* Bullets */
+    ul.bullets { list-style: none; padding: 0; }
+    ul.bullets li { padding: 4px 0 4px 20px; position: relative; }
+    ul.bullets li::before { content: "›"; position: absolute; left: 0; color: #b91c1c; font-weight: 900; font-size: 16px; line-height: 1.2; }
+
+    /* Screenshot placeholder */
+    .screenshot {
+      border: 2px dashed #d1d5db;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 16px 0;
+      background: #f9fafb;
+    }
+    .screenshot img {
+      width: 100%;
+      display: block;
+      border-radius: 0;
+    }
+    .screenshot-placeholder {
+      padding: 36px 20px;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 12px;
+    }
+    .screenshot-label {
+      font-size: 10px;
+      color: #6b7280;
+      background: #f3f4f6;
+      border-top: 1px solid #e5e7eb;
+      padding: 6px 12px;
+      font-style: italic;
+    }
+
+    /* New tag */
+    .new-tag {
+      display: inline-block;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 10px;
+      font-weight: 800;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+      text-transform: uppercase;
+    }
+
+    .page-break { page-break-before: always; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 12px 0; }
+    .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; }
+    .card h4 { margin-top: 0; }
+    hr { border: none; border-top: 1px solid #e5e7eb; margin: 24px 0; }
+
+    @page { margin: 20mm 15mm; }
+    @media print {
+      .cover { min-height: auto; padding: 80px 0; }
+      body { font-size: 12px; }
+      .no-print { display: none; }
+      .screenshot { break-inside: avoid; }
+    }
+
+    .print-btn {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #b91c1c; color: #fff; border: none;
+      padding: 12px 24px; border-radius: 10px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 4px 12px rgba(185,28,28,0.3);
+    }
+    .print-btn:hover { background: #991b1b; }
+  </style>
+</head>
+<body>
+
+<button class="print-btn no-print" onclick="window.print()">Guardar como PDF</button>
+
+<div class="page">
+
+  <!-- PORTADA -->
+  <div class="cover">
+    <div class="cover-logo">Persianas Santander</div>
+    <h1>Manual del Panel de Administración</h1>
+    <p>Guía completa para la gestión de pedidos, facturas, clientes y configuración</p>
+    <p style="color:#b91c1c; font-weight:700;">persianassantander.es/admin</p>
+    <div class="version">Versión 2.0 · Abril 2025 · Uso interno</div>
+  </div>
+
+  <!-- ÍNDICE -->
+  <div class="toc">
+    <h2>Índice de contenidos</h2>
+    <ul class="toc-list">
+      <li><a href="#acceso">1. Acceso al panel</a></li>
+      <li><a href="#resumen">2. Panel de resumen (estadísticas)</a></li>
+      <li><a href="#pedidos">3. Gestión de pedidos</a></li>
+      <li class="toc-sub"><a href="#tabla">3.1 Tabla de pedidos y filtros</a></li>
+      <li class="toc-sub"><a href="#estados">3.2 Estados del pedido</a></li>
+      <li class="toc-sub"><a href="#gestionar">3.3 Gestionar un pedido</a></li>
+      <li class="toc-sub"><a href="#cita">3.4 Confirmar cita de medición</a></li>
+      <li class="toc-sub"><a href="#factura-pedido">3.5 Generar factura desde un pedido</a></li>
+      <li class="toc-sub"><a href="#emails">3.6 Notificaciones por email</a></li>
+      <li><a href="#presupuestos">4. Presupuestos <span class="new-tag">Nuevo</span></a></li>
+      <li class="toc-sub"><a href="#presupuesto-nuevo">4.1 Crear presupuesto manual</a></li>
+      <li><a href="#analytics">5. Análisis del negocio</a></li>
+      <li><a href="#facturas">6. Sección de facturas</a></li>
+      <li class="toc-sub"><a href="#descuento-factura">6.1 Editar el descuento de una factura</a></li>
+      <li><a href="#clientes">7. Clientes</a></li>
+      <li><a href="#configuracion">8. Configuración</a></li>
+      <li class="toc-sub"><a href="#descuento-global">8.1 Descuento para profesionales</a></li>
+      <li class="toc-sub"><a href="#precios">8.2 Precios de los productos</a></li>
+      <li><a href="#flujo">9. Flujo de trabajo recomendado</a></li>
+    </ul>
+  </div>
+
+  <!-- 1. ACCESO -->
+  <div class="section" id="acceso">
+    <div class="section-header">
+      <div class="num">1</div>
+      <h2>Acceso al panel</h2>
+    </div>
+
+    <p>El panel de administración solo es accesible para usuarios con rol <strong>admin</strong>.</p>
+
+    <ol class="steps">
+      <li>Abre el navegador y ve a <strong>persianassantander.es/login</strong></li>
+      <li>Introduce el email y contraseña del administrador</li>
+      <li>La web redirige automáticamente a <strong>/admin</strong></li>
+    </ol>
+
+    <div class="screenshot">
+      <img src="screenshots/resumen1.png" alt="Vista del panel de administración" />
+      <div class="screenshot-label">Vista del panel de administración con menú lateral y pestañas</div>
+    </div>
+
+    <div class="info-box amber">
+      <strong>Importante:</strong> Si accedes con una cuenta sin rol admin verás "Acceso denegado". Solo las cuentas admin pueden usar este panel.
+    </div>
+
+    <h3>Pestañas de navegación</h3>
+    <table>
+      <thead><tr><th>Pestaña</th><th>Función</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Resumen</strong></td><td>Estadísticas generales del negocio y tráfico web</td></tr>
+        <tr><td><strong>Pedidos</strong></td><td>Lista y gestión de todos los pedidos</td></tr>
+        <tr><td><strong>Presupuestos</strong></td><td>Solicitudes de presupuesto de clientes</td></tr>
+        <tr><td><strong>Facturas</strong></td><td>Todas las facturas generadas</td></tr>
+        <tr><td><strong>Clientes</strong></td><td>Listado de usuarios registrados</td></tr>
+        <tr><td><strong>Configuración</strong></td><td>Descuento global y precios de productos</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Cerrar sesión</h3>
+    <p>Haz clic en <strong>"Salir"</strong> en la esquina superior derecha. En móvil, aparece al final del menú desplegable de navegación.</p>
+  </div>
+
+  <!-- 2. RESUMEN -->
+  <div class="section page-break" id="resumen">
+    <div class="section-header">
+      <div class="num">2</div>
+      <h2>Panel de resumen (estadísticas)</h2>
+    </div>
+
+    <div class="screenshot">
+      <img src="screenshots/resumen1.png" alt="Pestaña Resumen con tarjetas de estadísticas" />
+      <div class="screenshot-label">Panel Resumen — tarjetas de métricas y gráfico de pedidos por mes</div>
+    </div>
+
+    <table>
+      <thead><tr><th>Tarjeta</th><th>Qué muestra</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Total pedidos</strong></td><td>Número total de pedidos registrados</td></tr>
+        <tr><td><strong>Pendientes</strong></td><td>Pedidos sin confirmar aún</td></tr>
+        <tr><td><strong>Confirmados</strong></td><td>Pedidos con cita o entrega asignada</td></tr>
+        <tr><td><strong>Completados</strong></td><td>Pedidos finalizados</td></tr>
+        <tr><td><strong>Facturación est.</strong></td><td>Suma total de pedidos no cancelados (con IVA)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Tráfico web (Google Analytics)</h3>
+    <p>Al final del resumen aparece la sección de tráfico con datos de los últimos 30 días: usuarios activos, sesiones, páginas vistas, tasa de rebote, duración media, fuentes de tráfico y dispositivos.</p>
+
+    <div class="screenshot">
+      <img src="screenshots/resumen2.png" alt="Sección tráfico web con métricas GA4" />
+      <div class="screenshot-label">Sección Tráfico web — métricas GA4 de los últimos 30 días</div>
+    </div>
+
+    <div class="info-box gray">
+      Los datos de tráfico solo se registran si el usuario ha aceptado las cookies de analítica en la web.
+    </div>
+  </div>
+
+  <!-- 3. PEDIDOS -->
+  <div class="section" id="pedidos">
+    <div class="section-header">
+      <div class="num">3</div>
+      <h2>Gestión de pedidos</h2>
+    </div>
+
+    <h3 id="tabla">3.1 Tabla de pedidos y filtros</h3>
+
+    <div class="screenshot">
+      <img src="screenshots/pedidos.png" alt="Tabla de pedidos con filtros" />
+      <div class="screenshot-label">Pestaña Pedidos — tabla con buscador, filtro de fechas y botones de estado</div>
+    </div>
+
+    <table>
+      <thead><tr><th>Columna</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td><strong>ID</strong></td><td>Identificador corto del pedido (8 caracteres)</td></tr>
+        <tr><td><strong>Cliente</strong></td><td>Email del cliente</td></tr>
+        <tr><td><strong>Tipo</strong></td><td><span class="badge blue">Pro</span> para profesionales · <span class="badge gray">Particular</span> para clientes normales</td></tr>
+        <tr><td><strong>Fecha</strong></td><td>Fecha en que se realizó el pedido</td></tr>
+        <tr><td><strong>Cita solicitada</strong></td><td>Fecha y hora preferida (solo particulares con instalación)</td></tr>
+        <tr><td><strong>Total</strong></td><td>Importe total con IVA</td></tr>
+        <tr><td><strong>Estado</strong></td><td>Estado actual del pedido</td></tr>
+      </tbody>
+    </table>
+
+    <h4>Filtros disponibles</h4>
+    <ul class="bullets">
+      <li><strong>Buscador:</strong> filtra por email, dirección o ID del pedido</li>
+      <li><strong>Rango de fechas Desde / Hasta:</strong> acota por fecha de creación</li>
+      <li><strong>Botones de estado:</strong> Todos / Pendientes / Confirmados / Completados / Cancelados</li>
+      <li><strong>Exportar CSV:</strong> descarga la lista filtrada en formato Excel</li>
+    </ul>
+
+    <h3 id="estados">3.2 Estados del pedido</h3>
+
+    <div class="two-col">
+      <div class="card">
+        <h4><span class="badge amber">Pendiente</span></h4>
+        <p style="font-size:12px">Pedido recibido. Hay que revisar y contactar con el cliente.</p>
+      </div>
+      <div class="card">
+        <h4><span class="badge blue">Confirmado</span></h4>
+        <p style="font-size:12px">Cita o entrega acordada. El cliente recibe notificación por email.</p>
+      </div>
+      <div class="card">
+        <h4><span class="badge green">Completado</span></h4>
+        <p style="font-size:12px">Instalación o entrega realizada correctamente.</p>
+      </div>
+      <div class="card">
+        <h4><span class="badge red">Cancelado</span></h4>
+        <p style="font-size:12px">Pedido cancelado. La factura asociada se elimina automáticamente.</p>
+      </div>
+    </div>
+
+    <div class="info-box green">
+      <strong>Emails automáticos:</strong> Cada cambio de estado guardado envía al cliente un email con la actualización.
+    </div>
+  </div>
+
+  <div class="section page-break" id="gestionar">
+    <h3>3.3 Gestionar un pedido</h3>
+    <p>Haz clic en <strong>"Gestionar →"</strong> para abrir el panel de detalle de ese pedido.</p>
+
+    <div class="screenshot">
+      <img src="screenshots/pedidos.png" alt="Panel de gestión de un pedido" />
+      <div class="screenshot-label">Panel de gestión — datos del cliente, artículos, estado y factura</div>
+    </div>
+
+    <h4>Qué muestra el panel</h4>
+    <ul class="bullets">
+      <li>Email, teléfono y dirección del cliente</li>
+      <li>Tipo de cliente y si incluye instalación</li>
+      <li>Lista de artículos: tipo de persiana, medidas, mecanismo, colores y precio</li>
+    </ul>
+
+    <h4>Cambiar el estado</h4>
+    <ol class="steps">
+      <li>Selecciona el nuevo estado en el desplegable</li>
+      <li>Si es <strong>Confirmado</strong>, rellena la fecha y hora de la cita</li>
+      <li>Añade una nota interna si es necesario</li>
+      <li>Haz clic en <strong>"Guardar cambios"</strong></li>
+    </ol>
+
+    <h4>Eliminar un pedido cancelado</h4>
+    <p>Los pedidos cancelados muestran un icono de papelera en la tabla. Se pide confirmación antes de eliminar definitivamente.</p>
+  </div>
+
+  <div class="section" id="cita">
+    <h3>3.4 Confirmar cita de medición</h3>
+    <p>Para pedidos de particulares con instalación:</p>
+
+    <ol class="steps">
+      <li>Abre el pedido con "Gestionar →"</li>
+      <li>Cambia el estado a <strong>Confirmado</strong></li>
+      <li>Selecciona <strong>Fecha</strong> y <strong>Hora</strong> de la cita (8:00–19:00)</li>
+      <li>Guarda — el cliente recibe el email de confirmación automáticamente</li>
+      <li>Opcionalmente, usa <strong>"Añadir a Google Calendar"</strong></li>
+    </ol>
+
+    <div class="info-box amber">
+      <strong>Pedidos profesionales:</strong> No requieren cita de medición. Solo hay que coordinar la entrega del material.
+    </div>
+    <div class="info-box gray">
+      <strong>"Enviar email de cita":</strong> Reenvía el email de confirmación sin cambiar el estado del pedido.
+    </div>
+  </div>
+
+  <div class="section page-break" id="factura-pedido">
+    <h3>3.5 Generar factura desde un pedido</h3>
+
+    <ol class="steps">
+      <li>Abre el pedido con "Gestionar →"</li>
+      <li>En la sección de factura, haz clic en <strong>"Generar factura"</strong></li>
+      <li>Se crea con número único (FAC-XXXXXXXX) y se descarga el PDF</li>
+    </ol>
+
+    <div class="screenshot">
+      <img src="screenshots/facturas.png" alt="Sección de factura dentro del pedido" />
+      <div class="screenshot-label">Sección de factura — botón Generar, estado de pago y descarga PDF</div>
+    </div>
+
+    <div class="info-box green">
+      <strong>Profesionales:</strong> La factura incluye automáticamente los datos fiscales de su empresa (razón social, CIF/NIF, dirección fiscal, email de facturación).
+    </div>
+
+    <table>
+      <thead><tr><th>Estado de pago</th><th>Significado</th></tr></thead>
+      <tbody>
+        <tr><td><span class="badge amber">Pendiente de pago</span></td><td>Factura emitida, pago no recibido</td></tr>
+        <tr><td><span class="badge green">Pagada</span></td><td>Pago recibido (Bizum, transferencia o efectivo)</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box red">
+      <strong>Importante:</strong> Si un pedido se cancela, su factura se elimina automáticamente.
+    </div>
+  </div>
+
+  <div class="section" id="emails">
+    <h3>3.6 Notificaciones por email</h3>
+    <table>
+      <thead><tr><th>Evento</th><th>Destinatario</th><th>Cuándo</th></tr></thead>
+      <tbody>
+        <tr><td>Nuevo pedido</td><td>Admin</td><td>Al finalizar un pedido</td></tr>
+        <tr><td>Confirmación de pedido</td><td>Cliente</td><td>Al finalizar un pedido</td></tr>
+        <tr><td>Cambio de estado</td><td>Cliente</td><td>Al guardar un cambio de estado</td></tr>
+        <tr><td>Confirmación de cita</td><td>Cliente</td><td>Al usar "Enviar email de cita"</td></tr>
+        <tr><td>Solicitud de presupuesto</td><td>Admin + Cliente</td><td>Al enviar el formulario web</td></tr>
+        <tr><td>Factura</td><td>Cliente</td><td>Al usar el botón "Email" en Facturas</td></tr>
+      </tbody>
+    </table>
+    <div class="info-box blue">
+      Todos los emails salen desde <strong>noreply@persianassantander.es</strong> con el diseño de Persianas Santander.
+    </div>
+  </div>
+
+  <!-- 4. PRESUPUESTOS -->
+  <div class="section page-break" id="presupuestos">
+    <div class="section-header">
+      <div class="num">4</div>
+      <h2>Presupuestos <span class="new-tag">Nuevo</span></h2>
+    </div>
+
+    <p>La pestaña <strong>Presupuestos</strong> muestra todas las solicitudes de presupuesto recibidas desde el configurador web, y permite crear presupuestos manualmente para clientes que no usen la web.</p>
+
+    <div class="screenshot">
+      <img src="screenshots/presupuestos.png" alt="Pestaña Presupuestos" />
+      <div class="screenshot-label">Pestaña Presupuestos — lista de solicitudes con estado, precio y botón Gestionar</div>
+    </div>
+
+    <table>
+      <thead><tr><th>Columna</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Número</strong></td><td>Identificador único del presupuesto (PRE- o PS-)</td></tr>
+        <tr><td><strong>Cliente</strong></td><td>Nombre y email del cliente</td></tr>
+        <tr><td><strong>Tipo</strong></td><td>Tipo de persiana presupuestada</td></tr>
+        <tr><td><strong>Precio</strong></td><td>Total con IVA (si el admin ha ajustado el precio, aparece la etiqueta <em>ajust.</em>)</td></tr>
+        <tr><td><strong>Estado</strong></td><td>Pendiente / Enviado / Aceptado / Rechazado</td></tr>
+        <tr><td><strong>Comentarios</strong></td><td>Notas del cliente</td></tr>
+        <tr><td><strong>Fecha</strong></td><td>Fecha de la solicitud</td></tr>
+      </tbody>
+    </table>
+
+    <h4>Filtros disponibles</h4>
+    <ul class="bullets">
+      <li><strong>Buscador:</strong> filtra por nombre, email o número de presupuesto</li>
+      <li><strong>Estado:</strong> filtra por estado del presupuesto</li>
+      <li><strong>Exportar CSV:</strong> descarga el listado filtrado</li>
+    </ul>
+
+    <h3 id="presupuesto-nuevo">4.1 Crear presupuesto manual <span class="new-tag">Nuevo</span></h3>
+    <p>Si un cliente llama por teléfono o viene en persona, el admin puede generar el presupuesto directamente sin que el cliente use el configurador web.</p>
+
+    <ol class="steps">
+      <li>Haz clic en <strong>"Nuevo presupuesto"</strong> en la cabecera de la pestaña Presupuestos</li>
+      <li>Rellena los datos del cliente (nombre, teléfono, email, dirección)</li>
+      <li>Selecciona el tipo de persiana y las opciones (medidas, mecanismo, guías, color, instalación)</li>
+      <li>El precio se calcula automáticamente en tiempo real</li>
+      <li>Haz clic en <strong>"Añadir al presupuesto"</strong> para añadir ese ítem a la lista</li>
+      <li>Repite los pasos 3–5 para cada persiana adicional</li>
+      <li>Cuando tengas todos los ítems, usa uno de los botones finales:</li>
+    </ol>
+
+    <div class="two-col">
+      <div class="card">
+        <h4>Descargar PDF</h4>
+        <p style="font-size:12px">Genera y descarga el presupuesto en PDF con todos los ítems, desglose de precios y datos del cliente.</p>
+      </div>
+      <div class="card">
+        <h4>Enviar al cliente</h4>
+        <p style="font-size:12px">Genera el PDF y lo envía por email al cliente (requiere que hayas introducido su email).</p>
+      </div>
+      <div class="card" style="grid-column: span 2">
+        <h4>Guardar presupuesto</h4>
+        <p style="font-size:12px">Guarda todos los ítems en la base de datos con el mismo número de presupuesto. Quedan visibles en la pestaña Presupuestos para su seguimiento.</p>
+      </div>
+    </div>
+
+    <div class="info-box green">
+      <strong>Multi-ítem:</strong> Puedes añadir tantas persianas como necesite el cliente. Todas quedan agrupadas bajo el mismo número de presupuesto y el total acumulado se actualiza en tiempo real.
+    </div>
+  </div>
+
+  <!-- 5. ANALYTICS -->
+  <div class="section page-break" id="analytics">
+    <div class="section-header">
+      <div class="num">5</div>
+      <h2>Análisis del negocio</h2>
+    </div>
+
+    <p>La sección de análisis en la pestaña <strong>Resumen</strong> muestra métricas globales:</p>
+
+    <div class="two-col">
+      <div class="card">
+        <h4>Contactos activos</h4>
+        <p style="font-size:12px">Clientes únicos con presupuesto o pedido realizado.</p>
+      </div>
+      <div class="card">
+        <h4>Presupuestos generados</h4>
+        <p style="font-size:12px">Total de presupuestos calculados desde el configurador.</p>
+      </div>
+      <div class="card">
+        <h4>Pedidos realizados</h4>
+        <p style="font-size:12px">Total de pedidos, indicando cuántos cancelados.</p>
+      </div>
+      <div class="card">
+        <h4>Tasa de conversión</h4>
+        <p style="font-size:12px">% de presupuestos convertidos en pedido real.</p>
+      </div>
+      <div class="card">
+        <h4>Facturación cobrada</h4>
+        <p style="font-size:12px">Importe de facturas pagadas vs. pendientes.</p>
+      </div>
+      <div class="card">
+        <h4>Gráfico mensual</h4>
+        <p style="font-size:12px">Barras con pedidos en los últimos 6 meses.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. FACTURAS -->
+  <div class="section" id="facturas">
+    <div class="section-header">
+      <div class="num">6</div>
+      <h2>Sección de facturas</h2>
+    </div>
+
+    <div class="screenshot">
+      <img src="screenshots/facturas.png" alt="Pestaña Facturas con la tabla completa" />
+      <div class="screenshot-label">Pestaña Facturas — tabla con Nº Factura, Fecha, Total, Descuento, Estado, PDF y Email</div>
+    </div>
+
+    <table>
+      <thead><tr><th>Columna</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Nº Factura</strong></td><td>Número único (FAC-XXXXXXXX)</td></tr>
+        <tr><td><strong>Fecha</strong></td><td>Fecha de generación</td></tr>
+        <tr><td><strong>Total</strong></td><td>Importe total con IVA (se recalcula al cambiar el descuento)</td></tr>
+        <tr><td><strong>Descuento</strong></td><td>Porcentaje aplicado en esta factura — editable individualmente</td></tr>
+        <tr><td><strong>Estado pago</strong></td><td>Pendiente de pago / Pagada</td></tr>
+        <tr><td><strong>Cambiar estado</strong></td><td>Botones Pendiente / Pagada</td></tr>
+        <tr><td><strong>PDF</strong></td><td>Descarga el PDF de la factura</td></tr>
+        <tr><td><strong>Email</strong></td><td>Envía la factura por email al cliente</td></tr>
+      </tbody>
+    </table>
+
+    <h3 id="descuento-factura">6.1 Editar el descuento de una factura</h3>
+    <p>Cada factura tiene un campo de descuento individual que permite aplicar un porcentaje distinto al global para ese pedido concreto.</p>
+
+    <div class="screenshot">
+      <img src="screenshots/facturas.png" alt="Columna Descuento editable en la tabla de facturas" />
+      <div class="screenshot-label">Campo Descuento — introduce el % y pulsa OK para recalcular base, IVA y total</div>
+    </div>
+
+    <ol class="steps">
+      <li>Localiza la factura en la tabla</li>
+      <li>En la columna <strong>Descuento</strong>, cambia el porcentaje</li>
+      <li>Haz clic en <strong>"OK"</strong></li>
+      <li>El sistema recalcula automáticamente base imponible, IVA y total con IVA</li>
+    </ol>
+
+    <div class="info-box blue">
+      <strong>Recálculo automático:</strong> Al guardar, los importes se recalculan partiendo del precio original sin descuento. El PDF reflejará siempre los importes actualizados.
+    </div>
+
+    <h3>Filtrar por fechas y exportar</h3>
+    <ul class="bullets">
+      <li><strong>Filtro Desde / Hasta:</strong> acota las facturas por rango de fechas</li>
+      <li><strong>Exportar CSV:</strong> descarga las facturas filtradas con base imponible, IVA, total y estado. Útil para el gestor o contable.</li>
+    </ul>
+
+    <div class="info-box amber">
+      <strong>Nota contable:</strong> Las facturas incluyen desglose de base imponible e IVA (21%). El CSV usa coma decimal (formato español).
+    </div>
+  </div>
+
+  <!-- 7. CLIENTES -->
+  <div class="section page-break" id="clientes">
+    <div class="section-header">
+      <div class="num">7</div>
+      <h2>Clientes</h2>
+    </div>
+
+    <div class="screenshot">
+      <img src="screenshots/clientes.png" alt="Pestaña Clientes con lista de usuarios" />
+      <div class="screenshot-label">Pestaña Clientes — lista de todos los usuarios con filtro por tipo</div>
+    </div>
+
+    <table>
+      <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Email</strong></td><td>Email de registro</td></tr>
+        <tr><td><strong>Tipo</strong></td><td><span class="badge red">Admin</span> <span class="badge blue">Profesional</span> <span class="badge gray">Particular</span></td></tr>
+        <tr><td><strong>Empresa</strong></td><td>Razón social (solo profesionales)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Datos de profesionales (vista expandida)</h3>
+    <p>Haz clic en la flecha de un cliente profesional para ver su ficha completa:</p>
+
+    <div class="screenshot">
+      <img src="screenshots/clientes.png" alt="Ficha expandida de un cliente profesional" />
+      <div class="screenshot-label">Ficha de profesional expandida — datos fiscales y de contacto</div>
+    </div>
+
+    <table>
+      <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td>Razón social</td><td>Nombre de la empresa o autónomo</td></tr>
+        <tr><td>CIF / NIF</td><td>Identificación fiscal</td></tr>
+        <tr><td>Teléfono</td><td>Teléfono de contacto profesional</td></tr>
+        <tr><td>Ciudad</td><td>Ciudad de la empresa</td></tr>
+        <tr><td>Dirección fiscal</td><td>Dirección para la facturación</td></tr>
+        <tr><td>Email facturación</td><td>Email donde recibir facturas</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box blue">
+      El descuento de los profesionales se gestiona de forma global en la pestaña <strong>Configuración</strong>. Para un descuento puntual diferente, usa la columna <strong>Descuento</strong> en la pestaña Facturas.
+    </div>
+
+    <h3>Acciones</h3>
+    <ul class="bullets">
+      <li>Usa la barra de búsqueda para filtrar por email o nombre de empresa</li>
+      <li>El selector filtra por tipo: Todos / Profesionales / Particulares</li>
+      <li><strong>Exportar CSV</strong> descarga el directorio completo de clientes</li>
+    </ul>
+
+    <h3>Eliminar un usuario</h3>
+    <ol class="steps">
+      <li>Localiza al usuario en la lista</li>
+      <li>Haz clic en el icono de papelera</li>
+      <li>Confirma la acción</li>
+    </ol>
+    <div class="info-box red">
+      <strong>Atención:</strong> Los administradores no se pueden eliminar desde esta pantalla.
+    </div>
+  </div>
+
+  <!-- 8. CONFIGURACIÓN -->
+  <div class="section page-break" id="configuracion">
+    <div class="section-header">
+      <div class="num">8</div>
+      <h2>Configuración <span class="new-tag">Nuevo</span></h2>
+    </div>
+
+    <p>La pestaña <strong>Configuración</strong> centraliza los parámetros comerciales: descuento para profesionales y precios de productos. Los cambios se aplican a todos los presupuestos calculados a partir de ese momento.</p>
+
+    <div class="screenshot">
+      <img src="screenshots/configuracion.png" alt="Pestaña Configuración" />
+      <div class="screenshot-label">Pestaña Configuración — descuento global para profesionales y editor de precios</div>
+    </div>
+
+    <h3 id="descuento-global">8.1 Descuento para profesionales</h3>
+    <p>Porcentaje de descuento que se aplica automáticamente a <strong>todos los clientes profesionales</strong> al calcular sus presupuestos. Es un único valor global para toda la empresa.</p>
+
+    <div class="screenshot">
+      <img src="screenshots/configuracion2.png" alt="Bloque descuento para profesionales" />
+      <div class="screenshot-label">Descuento global — introduce el porcentaje y pulsa Guardar para aplicarlo a todos los profesionales</div>
+    </div>
+
+    <ol class="steps">
+      <li>Introduce el porcentaje en el campo (por ejemplo, <strong>15</strong>)</li>
+      <li>Haz clic en <strong>"Guardar"</strong></li>
+      <li>El botón confirma con <strong>"✓ Guardado"</strong></li>
+    </ol>
+
+    <div class="info-box blue">
+      <strong>¿Cómo funciona?</strong> Los perfiles profesionales nuevos comienzan en 0% hasta que se configure este valor. Una vez guardado, todos los profesionales ven el nuevo porcentaje en sus presupuestos. Para aplicar un descuento distinto en una factura concreta, usa la columna <strong>Descuento</strong> en la pestaña Facturas.
+    </div>
+
+    <h3 id="precios">8.2 Precios de los productos</h3>
+    <p>Permite modificar los precios base por m² de cada tipo de persiana, así como el coste del motor, las guías y la instalación.</p>
+
+    <div class="screenshot">
+      <img src="screenshots/configuracion3.png" alt="Editor de precios por tipo y grupo de color" />
+      <div class="screenshot-label">Editor de precios — precio por m² según tipo de persiana y grupo de color de las lamas</div>
+    </div>
+
+    <h4>Precios por m² según tipo y grupo de color</h4>
+    <table>
+      <thead><tr><th>Tipo de persiana</th><th>Grupos disponibles</th></tr></thead>
+      <tbody>
+        <tr><td>Paño Laminado</td><td>Grupo Base, Grupo 1, Grupo 2, Grupo 3</td></tr>
+        <tr><td>Paño Autoblocante</td><td>Grupo Base, Grupo 1, Grupo 2, Grupo 3</td></tr>
+        <tr><td>Bloqueante</td><td>Grupo Base, Grupo 1, Grupo 2, Grupo 3</td></tr>
+        <tr><td>Sistema Mini Cajón PVC</td><td>Grupo Base, Grupo 1, Grupo 2, Grupo 3</td></tr>
+        <tr><td>Sistema Mini Cajón Aluminio</td><td>Grupo Base, Grupo 1, Grupo 2, Grupo 3</td></tr>
+        <tr><td>Sistema Mini Autoblocante</td><td>Grupo Base, Grupo 1, Grupo 2, Grupo 3</td></tr>
+        <tr><td>Mosquitera Enrollable</td><td>Grupo Base</td></tr>
+      </tbody>
+    </table>
+
+    <div class="info-box gray">
+      <strong>¿Qué es el grupo de color?</strong> Los colores de las lamas se agrupan por coste de fabricación. El cliente elige el color en el configurador y el sistema detecta automáticamente el grupo para aplicar el precio correcto.
+    </div>
+
+    <h4>Otros precios configurables</h4>
+    <table>
+      <thead><tr><th>Parámetro</th><th>Descripción</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Motor mecánico</strong></td><td>Precio fijo del motor mecánico (€)</td></tr>
+        <tr><td><strong>Motor mando a distancia</strong></td><td>Precio fijo del motor con mando (€)</td></tr>
+        <tr><td><strong>Guías V25</strong></td><td>Precio por metro lineal de guías V25 (€/ml)</td></tr>
+        <tr><td><strong>Guías H25</strong></td><td>Precio por metro lineal de guías H25 (€/ml)</td></tr>
+        <tr><td><strong>Instalación €/m²</strong></td><td>Coste de instalación para paños y sistemas</td></tr>
+        <tr><td><strong>Instalación precio fijo</strong></td><td>Coste fijo para motor o guías sueltas</td></tr>
+      </tbody>
+    </table>
+
+    <div class="screenshot">
+      <img src="screenshots/configuracion3.png" alt="Precios de motor, guías e instalación" />
+      <div class="screenshot-label">Precios adicionales — motor, guías por ml e instalación</div>
+    </div>
+
+    <ol class="steps">
+      <li>Modifica los valores en los campos</li>
+      <li>Haz clic en <strong>"Guardar precios"</strong> para aplicar todos los cambios a la vez</li>
+    </ol>
+
+    <div class="info-box amber">
+      <strong>Importante:</strong> Si no se han guardado precios en el sistema, el configurador usa los precios originales por defecto. Los cambios solo afectan a los presupuestos calculados a partir de ese momento — los pedidos existentes no se modifican.
+    </div>
+  </div>
+
+  <!-- 9. FLUJO -->
+  <div class="section page-break" id="flujo">
+    <div class="section-header">
+      <div class="num">9</div>
+      <h2>Flujo de trabajo recomendado</h2>
+    </div>
+
+    <div class="info-box gray" style="margin-bottom:20px">
+      <strong>Al recibir un nuevo pedido</strong> recibirás un email automático en <strong>adminpersianassantander@gmail.com</strong> con todos los detalles.
+    </div>
+
+    <h3>Para pedidos con instalación (clientes particulares)</h3>
+    <ol class="steps">
+      <li><strong>Revisar:</strong> busca el pedido en "Pendiente" y abre el detalle</li>
+      <li><strong>Contactar</strong> al cliente por teléfono para acordar la cita de medición</li>
+      <li><strong>Confirmar cita:</strong> cambia el estado a "Confirmado", selecciona fecha y hora — el cliente recibe el email automáticamente</li>
+      <li><strong>Añadir a calendario</strong> con el botón "Añadir a Google Calendar"</li>
+      <li><strong>Tras la instalación:</strong> cambia el estado a "Completado"</li>
+      <li><strong>Generar factura</strong> desde el pedido completado</li>
+      <li><strong>Marcar como "Pagada"</strong> al recibir el cobro</li>
+    </ol>
+
+    <hr />
+
+    <h3>Para pedidos sin instalación (solo material)</h3>
+    <ol class="steps">
+      <li><strong>Revisar</strong> artículos y verificar disponibilidad</li>
+      <li><strong>Confirmar</strong> cuando el material esté listo</li>
+      <li><strong>Gestionar el pago</strong> — el cliente paga en 24–48 h</li>
+      <li><strong>Generar factura</strong> y marcar como "Pagada" al cobrar</li>
+      <li><strong>Marcar como "Completado"</strong> al entregar el material</li>
+    </ol>
+
+    <hr />
+
+    <h3>Para pedidos de profesionales</h3>
+    <ol class="steps">
+      <li><strong>Revisar</strong> medidas y materiales del pedido</li>
+      <li><strong>Contactar</strong> para coordinar la entrega</li>
+      <li><strong>Confirmar</strong> cuando la entrega esté programada</li>
+      <li><strong>Generar factura</strong> — se incluyen automáticamente los datos fiscales de la empresa</li>
+      <li>Si aplica un descuento especial, ajústalo en la columna <strong>Descuento</strong> de la pestaña Facturas</li>
+      <li><strong>Completar y marcar Pagada</strong> tras entrega y cobro</li>
+    </ol>
+
+    <hr />
+
+    <h3>Tareas de mantenimiento periódico</h3>
+    <ul class="bullets">
+      <li>Revisar pedidos pendientes al inicio de cada jornada</li>
+      <li>Exportar el CSV de facturas mensualmente para el gestor o contable</li>
+      <li>Revisar el descuento global de profesionales en <strong>Configuración</strong> cuando cambien los acuerdos comerciales</li>
+      <li>Actualizar los precios en <strong>Configuración</strong> cuando cambien las tarifas de proveedor</li>
+      <li>Eliminar pedidos cancelados antiguos para mantener el panel limpio</li>
+    </ul>
+
+    <div class="info-box green" style="margin-top:24px">
+      <strong>Consejo:</strong> Filtra por "Pendientes" al empezar el día para ver todo lo que necesita atención de un vistazo.
+    </div>
+  </div>
+
+  <hr />
+  <p style="text-align:center; color:#9ca3af; font-size:11px; margin-top:32px">
+    Manual interno — Persianas Santander · persianassantander.es · Versión 2.0 · Abril 2025
+  </p>
+
+</div>
+</body>
+</html>

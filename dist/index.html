@@ -2,11 +2,38 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/persianassantanderlogo.svg" />
+    <link rel="apple-touch-icon" href="/persianassantanderlogo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>persianas-santander</title>
-    <script type="module" crossorigin src="/assets/index-CCANVTcC.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-D8fVlBJU.css">
+    <title>Persianas Santander</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EX8VJLN34T"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      // Consent Mode v2: denegado por defecto hasta que el usuario elija
+      gtag('consent', 'default', {
+        analytics_storage:   'denied',
+        ad_storage:          'denied',
+        ad_user_data:        'denied',
+        ad_personalization:  'denied',
+        wait_for_update:     500,
+      });
+
+      // Si ya aceptó en una visita anterior, activar inmediatamente
+      if (localStorage.getItem('cookie_consent') === 'accepted') {
+        gtag('consent', 'update', { analytics_storage: 'granted' });
+      }
+
+      gtag('config', 'G-EX8VJLN34T');
+    </script>
+    <script type="module" crossorigin src="/assets/index-B8NKS0tJ.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/react-vendor-B3UU_WTK.js">
+    <link rel="modulepreload" crossorigin href="/assets/supabase-vendor-BfONzQwb.js">
+    <link rel="modulepreload" crossorigin href="/assets/pdf-vendor-D1YVhSyx.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-DZV2yUyo.css">
   </head>
   <body>
     <div id="root"></div>
