@@ -69,6 +69,31 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
       setMessage(configNumber)
       onSuccess?.(saved)
 
+      // Auto-cotización para profesionales
+      if (user.user_metadata?.user_type === 'professional' && saved) {
+        const proPrice = basePrice * (1 - proDiscount / 100)
+        await supabase.from('pro_purchase_quotes').insert({
+          user_id:       user.id,
+          items:         [{
+            config_id:          saved.id,
+            blind_type:         blindType,
+            mechanism:          configuration.mechanism ?? null,
+            motor_type:         configuration.motorType ?? null,
+            guide_type:         configuration.guideType ?? null,
+            width:              configuration.width ?? null,
+            height:             configuration.height ?? null,
+            slat_color_name:    configuration.slatColorName ?? null,
+            installacion:       configuration.installacion !== false,
+            price_public:       basePrice,
+            price_professional: proPrice,
+          }],
+          discount_pct:  proDiscount,
+          total_sin_iva: proPrice,
+          total_con_iva: proPrice * 1.21,
+          status:        'pending',
+        })
+      }
+
       setTimeout(() => setDestUrl('/mis-configuraciones'), 800)
 
     } catch (err) {

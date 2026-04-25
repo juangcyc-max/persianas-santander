@@ -63,6 +63,19 @@ export function sendInvoiceEmail({ userEmail, invoice, orderId, items, pdfBase64
   })
 }
 
+/** Notifica al profesional que su cotización ha sido aceptada/modificada */
+export function sendProQuoteAccepted({ proEmail, proName, quoteId, totalConIva, adminNotes, isModified }) {
+  const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
+  return callSendEmail('pro_quote_accepted', {
+    pro_email:     proEmail,
+    pro_name:      proName || proEmail,
+    quote_id:      quoteId,
+    total_con_iva: fmt(totalConIva),
+    admin_notes:   adminNotes || '',
+    is_modified:   isModified ? 'sí' : 'no',
+  })
+}
+
 /** Envía presupuesto a admin y cliente */
 export function sendBudgetResend(customerData, configuration, pdfBase64 = null) {
   const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)

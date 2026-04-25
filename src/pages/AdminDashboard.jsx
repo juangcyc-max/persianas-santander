@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { generateInvoicePDF } from '../services/invoicePDF'
@@ -461,6 +461,7 @@ const ADMIN_TABS = [
   { id: 'pedidos',      label: 'Pedidos',        icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
   { id: 'presupuestos', label: 'Presupuestos',   icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
   { id: 'facturas',     label: 'Facturas',       icon: 'M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z' },
+  { id: 'profesionales', label: 'Profesionales',  icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
   { id: 'clientes',     label: 'Clientes',       icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
   { id: 'configuracion', label: 'Configuración', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
 ]
@@ -896,6 +897,9 @@ export default function AdminDashboard() {
 
             {/* ── FACTURAS ── */}
             {activeTab === 'facturas' && <AdminInvoicesSection />}
+
+            {/* ── PROFESIONALES ── */}
+            {activeTab === 'profesionales' && <AdminProfesionalesSection adminUser={user} />}
 
             {/* ── CLIENTES ── */}
             {activeTab === 'clientes' && <AdminClientsSection />}
@@ -1614,6 +1618,448 @@ function AdminNewBudgetModal({ onClose, onSaved }) {
 
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── SECCIÓN PROFESIONALES (cotizaciones + chat) ───────────────────────────
+const PRO_QUOTE_STATUS = {
+  pending:  { label: 'Pendiente',  cls: 'bg-amber-100 text-amber-700'  },
+  accepted: { label: 'Aceptado',   cls: 'bg-green-100 text-green-700'  },
+  modified: { label: 'Modificado', cls: 'bg-blue-100 text-blue-700'    },
+  rejected: { label: 'Rechazado',  cls: 'bg-red-100 text-red-700'      },
+}
+const BLIND_LABELS_ADMIN = {
+  laminada: 'Paño Laminado', autoblocante: 'Paño Autoblocante', blocking: 'Bloqueante',
+  sistema_mini_cajon_pvc: 'Mini Cajón PVC', sistema_mini_cajon_aluminio: 'Mini Cajón Aluminio',
+  sistema_mini_autoblocante: 'Mini Autoblocante', solo_motor: 'Solo Motor',
+  solo_guias: 'Solo Guías', mosquitera_enrollable: 'Mosquitera',
+}
+
+function AdminProQuoteModal({ quote, proData, onClose, onUpdated }) {
+  const [status,     setStatus]     = useState(quote.status)
+  const [adminPrice, setAdminPrice] = useState(quote.admin_total_con_iva ?? quote.total_con_iva ?? 0)
+  const [notes,      setNotes]      = useState(quote.admin_notes ?? '')
+  const [saving,     setSaving]     = useState(false)
+  const [emailSent,  setEmailSent]  = useState(false)
+
+  const isModified = parseFloat(adminPrice) !== parseFloat(quote.total_con_iva)
+
+  async function handleSave() {
+    setSaving(true)
+    const updates = {
+      status,
+      admin_notes:         notes.trim() || null,
+      admin_total_con_iva: (status === 'accepted' || status === 'modified') ? parseFloat(adminPrice) : null,
+      updated_at:          new Date().toISOString(),
+    }
+    await supabase.from('pro_purchase_quotes').update(updates).eq('id', quote.id)
+
+    // Si hay modificación de precio, actualizar estimated_price en blind_configurations
+    if ((status === 'accepted' || status === 'modified') && isModified) {
+      const items     = quote.items ?? []
+      const newTotal  = parseFloat(adminPrice) / 1.21
+      const oldTotal  = quote.total_sin_iva || 1
+      for (const it of items) {
+        if (!it.config_id) continue
+        const newPrice = (it.price_professional / oldTotal) * newTotal
+        await supabase.from('blind_configurations')
+          .update({ estimated_price: newPrice * 1.21, price_professional: newPrice })
+          .eq('id', it.config_id)
+      }
+    }
+
+    // Enviar email si se acepta o modifica
+    if ((status === 'accepted' || status === 'modified') && proData?.email) {
+      const { sendProQuoteAccepted } = await import('../services/email')
+      await sendProQuoteAccepted({
+        proEmail:     proData.email,
+        proName:      proData.razon_social || proData.email,
+        quoteId:      quote.id,
+        totalConIva:  parseFloat(adminPrice),
+        adminNotes:   notes.trim(),
+        isModified:   isModified,
+      })
+      setEmailSent(true)
+    }
+
+    setSaving(false)
+    onUpdated()
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/60 z-50 flex items-start justify-center p-4 overflow-y-auto" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl my-6">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+          <div>
+            <p className="text-xs text-gray-400 font-mono">{quote.id?.slice(0,8).toUpperCase()}</p>
+            <h3 className="font-bold text-gray-900 mt-0.5">{proData?.razon_social ?? proData?.email ?? 'Profesional'}</h3>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100 transition-colors">
+            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {/* Items */}
+          <div>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Persianas solicitadas</p>
+            <div className="space-y-2">
+              {(quote.items ?? []).map((it, i) => (
+                <div key={i} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 text-sm">
+                  <div>
+                    <p className="font-semibold text-gray-800">{BLIND_LABELS_ADMIN[it.blind_type] ?? it.blind_type}</p>
+                    <p className="text-xs text-gray-400">
+                      {it.width && it.height ? `${it.width}×${it.height} mm` : ''}
+                      {it.mechanism ? ` · ${it.mechanism}` : ''}
+                      {it.guide_type && it.guide_type !== 'none' ? ` · guía ${it.guide_type}` : ''}
+                      {it.slat_color_name ? ` · ${it.slat_color_name}` : ''}
+                    </p>
+                  </div>
+                  <div className="text-right ml-3 flex-shrink-0">
+                    <p className="text-xs text-gray-400">Público: {fmt(it.price_public * 1.21)}</p>
+                    <p className="font-bold text-red-700">{fmt(it.price_professional * 1.21)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end gap-4 text-sm pt-3 border-t border-gray-100 mt-2">
+              <div className="text-right">
+                <p className="text-xs text-gray-400">Dto. {quote.discount_pct}% aplicado</p>
+                <p className="font-black text-gray-900">Total original: {fmt(quote.total_con_iva)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Estado */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Estado</label>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(PRO_QUOTE_STATUS).map(([k, { label, cls }]) => (
+                <button key={k} type="button" onClick={() => setStatus(k)}
+                  className={`py-2 px-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                    status === k ? 'border-red-600 bg-red-50 text-red-700' : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                  }`}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Precio modificado */}
+          {(status === 'accepted' || status === 'modified') && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                Total con IVA para el profesional (€)
+                {isModified && <span className="ml-2 text-blue-600 normal-case font-normal">precio modificado</span>}
+              </label>
+              <div className="relative">
+                <input type="number" min="0" step="0.01" value={adminPrice}
+                  onChange={e => setAdminPrice(e.target.value)}
+                  className="w-full px-3.5 py-2.5 pr-8 rounded-xl border border-gray-300 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">Sin IVA: {fmt(parseFloat(adminPrice || 0) / 1.21)}</p>
+            </div>
+          )}
+
+          {/* Notas */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Notas para el profesional</label>
+            <textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)}
+              placeholder="Ej: Se ha ajustado el precio por volumen de compra…"
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 resize-none" />
+          </div>
+
+          <div className="flex gap-3 pt-2 border-t border-gray-100">
+            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button onClick={handleSave} disabled={saving}
+              className="flex-1 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white text-sm font-bold disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+              {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : null}
+              {saving ? 'Guardando…' : 'Guardar y notificar'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AdminChatConversation({ proUserId, proName, adminUserId, onBack }) {
+  const [messages, setMessages] = useState([])
+  const [input,    setInput]    = useState('')
+  const [loading,  setLoading]  = useState(true)
+  const [sending,  setSending]  = useState(false)
+  const bottomRef = useRef(null)
+
+  useEffect(() => {
+    loadMessages()
+    const channel = supabase
+      .channel(`admin-chat-${proUserId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pro_messages',
+        filter: `professional_user_id=eq.${proUserId}` },
+        (payload) => setMessages(prev => [...prev, payload.new])
+      )
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [proUserId])
+
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
+
+  async function loadMessages() {
+    const { data } = await supabase.from('pro_messages').select('*')
+      .eq('professional_user_id', proUserId).order('created_at', { ascending: true })
+    setMessages(data ?? [])
+    setLoading(false)
+    await supabase.from('pro_messages').update({ read_by_admin: true })
+      .eq('professional_user_id', proUserId).eq('sender_role', 'professional')
+  }
+
+  async function handleSend(e) {
+    e.preventDefault()
+    if (!input.trim() || sending) return
+    setSending(true)
+    const text = input.trim()
+    setInput('')
+    await supabase.from('pro_messages').insert({
+      professional_user_id: proUserId,
+      sender_id:            adminUserId,
+      sender_role:          'admin',
+      message:              text,
+      read_by_professional: false,
+      read_by_admin:        true,
+    })
+    setSending(false)
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-gray-200 flex flex-col" style={{ height: '65vh' }}>
+      <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3">
+        <button onClick={onBack} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors text-gray-400">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <p className="font-bold text-gray-900 text-sm">{proName}</p>
+      </div>
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="w-6 h-6 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-sm text-gray-400">Sin mensajes todavía.</div>
+        ) : messages.map(m => {
+          const isAdmin = m.sender_role === 'admin'
+          return (
+            <div key={m.id} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
+                isAdmin ? 'bg-red-700 text-white rounded-br-md' : 'bg-gray-100 text-gray-800 rounded-bl-md'
+              }`}>
+                <p className="leading-relaxed">{m.message}</p>
+                <p className={`text-xs mt-1 ${isAdmin ? 'text-red-200' : 'text-gray-400'}`}>
+                  {new Date(m.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            </div>
+          )
+        })}
+        <div ref={bottomRef} />
+      </div>
+      <form onSubmit={handleSend} className="px-4 py-3 border-t border-gray-100 flex items-center gap-3">
+        <input value={input} onChange={e => setInput(e.target.value)} placeholder="Escribe un mensaje…"
+          className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+        <button type="submit" disabled={!input.trim() || sending}
+          className="w-10 h-10 bg-red-700 hover:bg-red-800 text-white rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 transition-colors">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+          </svg>
+        </button>
+      </form>
+    </div>
+  )
+}
+
+function AdminProfesionalesSection({ adminUser }) {
+  const [quotes,      setQuotes]      = useState([])
+  const [proData,     setProData]     = useState({}) // userId → {razon_social, email}
+  const [loading,     setLoading]     = useState(true)
+  const [selected,    setSelected]    = useState(null)
+  const [statusFilter,setStatusFilter]= useState('all')
+  const [chatPro,     setChatPro]     = useState(null) // { userId, name }
+  const [unreadMap,   setUnreadMap]   = useState({})   // userId → count
+
+  useEffect(() => { loadAll() }, [])
+
+  async function loadAll() {
+    setLoading(true)
+    const { data: qs } = await supabase.from('pro_purchase_quotes').select('*').order('created_at', { ascending: false })
+    const quotes = qs ?? []
+    setQuotes(quotes)
+
+    // Cargar datos de los profesionales
+    const userIds = [...new Set(quotes.map(q => q.user_id).filter(Boolean))]
+    if (userIds.length > 0) {
+      const { data: pds } = await supabase.from('professional_data').select('user_id,razon_social').in('user_id', userIds)
+      const { data: prs } = await supabase.from('profiles').select('id,email').in('id', userIds)
+      const map = {}
+      userIds.forEach(id => {
+        const pd = pds?.find(p => p.user_id === id)
+        const pr = prs?.find(p => p.id === id)
+        map[id] = { razon_social: pd?.razon_social ?? null, email: pr?.email ?? id.slice(0, 8) }
+      })
+      setProData(map)
+
+      // Contar mensajes no leídos por profesional
+      const unread = {}
+      await Promise.all(userIds.map(async id => {
+        const { count } = await supabase.from('pro_messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('professional_user_id', id)
+          .eq('sender_role', 'professional')
+          .eq('read_by_admin', false)
+        unread[id] = count ?? 0
+      }))
+      setUnreadMap(unread)
+    }
+    setLoading(false)
+  }
+
+  function getProName(userId) {
+    const d = proData[userId]
+    return d?.razon_social ?? d?.email ?? userId.slice(0, 8).toUpperCase()
+  }
+
+  const filtered = quotes.filter(q => statusFilter === 'all' || q.status === statusFilter)
+
+  // Profesionales únicos con al menos un mensaje
+  const proIds = [...new Set(quotes.map(q => q.user_id).filter(Boolean))]
+
+  return (
+    <div className="space-y-6">
+      <h2 className="text-lg font-bold text-gray-900">Profesionales</h2>
+
+      {/* ── Cotizaciones de compra ── */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-sm font-semibold text-gray-700">Cotizaciones de compra</p>
+          <div className="flex items-center gap-2">
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
+              className="px-3 py-2 rounded-xl border border-gray-300 text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400">
+              <option value="all">Todos</option>
+              {Object.entries(PRO_QUOTE_STATUS).map(([k, { label }]) => <option key={k} value={k}>{label}</option>)}
+            </select>
+            <button onClick={loadAll} className="text-xs text-red-600 hover:underline">Actualizar</button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-10">
+            <div className="w-6 h-6 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center text-sm text-gray-400">
+            No hay cotizaciones {statusFilter !== 'all' ? 'con este estado' : 'todavía'}
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    {['Profesional', 'Persianas', 'Descuento', 'Total', 'Estado', 'Fecha', ''].map(h => (
+                      <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filtered.map(q => {
+                    const st    = PRO_QUOTE_STATUS[q.status] ?? PRO_QUOTE_STATUS.pending
+                    const total = q.admin_total_con_iva ?? q.total_con_iva ?? 0
+                    const name  = getProName(q.user_id)
+                    return (
+                      <tr key={q.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 font-medium text-gray-900">{name}</td>
+                        <td className="px-4 py-3 text-gray-500">{(q.items ?? []).length}</td>
+                        <td className="px-4 py-3 text-gray-500">−{q.discount_pct}%</td>
+                        <td className="px-4 py-3 font-bold text-red-700">{fmt(total)}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                        </td>
+                        <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(q.created_at)}</td>
+                        <td className="px-4 py-3 text-right">
+                          <button onClick={() => setSelected({ quote: q, proInfo: proData[q.user_id] })}
+                            className="px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 rounded-lg transition-colors">
+                            Gestionar
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── Chat con profesionales ── */}
+      <div className="space-y-3">
+        <p className="text-sm font-semibold text-gray-700">Mensajes</p>
+        {chatPro ? (
+          <AdminChatConversation
+            proUserId={chatPro.userId}
+            proName={chatPro.name}
+            adminUserId={adminUser?.id}
+            onBack={() => { setChatPro(null); loadAll() }}
+          />
+        ) : proIds.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center text-sm text-gray-400">
+            Sin conversaciones todavía
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
+            {proIds.map(id => {
+              const name   = getProName(id)
+              const unread = unreadMap[id] ?? 0
+              return (
+                <button key={id} onClick={() => setChatPro({ userId: id, name })}
+                  className="w-full px-5 py-4 flex items-center justify-between gap-4 hover:bg-gray-50 transition-colors text-left">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-bold text-gray-600">
+                      {name[0]?.toUpperCase() ?? 'P'}
+                    </div>
+                    <p className="font-semibold text-gray-800 text-sm">{name}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {unread > 0 && (
+                      <span className="w-5 h-5 bg-red-600 text-white text-xs font-bold rounded-full flex items-center justify-center">{unread}</span>
+                    )}
+                    <svg className="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Modal gestión cotización */}
+      {selected && (
+        <AdminProQuoteModal
+          quote={selected.quote}
+          proData={selected.proInfo ?? {}}
+          onClose={() => setSelected(null)}
+          onUpdated={() => { setSelected(null); loadAll() }}
+        />
+      )}
     </div>
   )
 }

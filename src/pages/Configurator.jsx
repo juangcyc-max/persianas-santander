@@ -336,12 +336,13 @@ function Configurator() {
     if (!user) return
     setSavingAll(true)
     const groupId = `${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+    const savedConfigs = []
     for (let idx = 0; idx < items.length; idx++) {
       const item = items[idx]
       const conf = item.configuration
       const configNumber = `GRUPO-${groupId}-${idx + 1}`
       const basePrice = conf.estimatedPrice / 1.21
-      await supabase.from('blind_configurations').insert([{
+      const { data: saved } = await supabase.from('blind_configurations').insert([{
         user_id:              user.id,
         configuration_number: configNumber,
         blind_type:           conf.productType ?? 'laminada',
@@ -359,8 +360,36 @@ function Configurator() {
         estimated_price:      conf.estimatedPrice,
         guide_type:           conf.guideType ?? null,
         installacion:         conf.installacion !== false,
-      }])
+      }]).select()
+      if (saved?.[0]) savedConfigs.push({ ...saved[0], basePrice, conf })
     }
+
+    // Auto-cotización para profesionales
+    if (isProfessional && savedConfigs.length > 0) {
+      const quoteItems = savedConfigs.map(s => ({
+        config_id:          s.id,
+        blind_type:         s.blind_type,
+        mechanism:          s.mechanism ?? null,
+        motor_type:         s.motor_type ?? null,
+        guide_type:         s.guide_type ?? null,
+        width:              s.width ?? null,
+        height:             s.height ?? null,
+        slat_color_name:    s.slat_color_name ?? null,
+        installacion:       s.installacion,
+        price_public:       s.basePrice,
+        price_professional: s.basePrice * (1 - proDiscount / 100),
+      }))
+      const totalSinIva = quoteItems.reduce((sum, i) => sum + i.price_professional, 0)
+      await supabase.from('pro_purchase_quotes').insert({
+        user_id:       user.id,
+        items:         quoteItems,
+        discount_pct:  proDiscount,
+        total_sin_iva: totalSinIva,
+        total_con_iva: totalSinIva * 1.21,
+        status:        'pending',
+      })
+    }
+
     setSavingAll(false)
     setSavedAll(true)
     setTimeout(() => {

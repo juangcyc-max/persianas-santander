@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
@@ -118,7 +118,9 @@ const ORDER_STATUS = {
 
 const TABS = [
   { id: 'overview',         label: 'Resumen',          icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
-  { id: 'proyectos',        label: 'Presupuestos',     icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
+  { id: 'proyectos',        label: 'Pres. clientes',   icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
+  { id: 'cotizaciones',     label: 'Mis compras',      icon: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
+  { id: 'mensajes',         label: 'Mensajes',         icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
   { id: 'configuraciones',  label: 'Configuraciones',  icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
   { id: 'pedidos',          label: 'Pedidos',          icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
   { id: 'empresa',          label: 'Mi empresa',       icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
@@ -742,6 +744,249 @@ function ProyectoCard({ p, pitems, total, onEdit }) {
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Tab Mis Compras (cotizaciones de Persianas Santander) ─────────────────
+const QUOTE_STATUS = {
+  pending:  { label: 'Pendiente',  cls: 'bg-amber-100 text-amber-700'  },
+  accepted: { label: 'Aceptado',   cls: 'bg-green-100 text-green-700'  },
+  modified: { label: 'Modificado', cls: 'bg-blue-100 text-blue-700'    },
+  rejected: { label: 'Rechazado',  cls: 'bg-red-100 text-red-700'      },
+}
+
+function CotizacionesTab({ cotizaciones }) {
+  const [expandedId, setExpandedId] = useState(null)
+
+  if (cotizaciones.length === 0) return (
+    <div className="space-y-4">
+      <SectionHeader title="Mis compras" />
+      <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+        <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+          </svg>
+        </div>
+        <p className="font-semibold text-gray-700 mb-1">Sin cotizaciones todavía</p>
+        <p className="text-sm text-gray-400">Cuando guardes una configuración, aparecerá aquí tu cotización de compra.</p>
+      </div>
+    </div>
+  )
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader title="Mis compras" />
+      <div className="space-y-3">
+        {cotizaciones.map(q => {
+          const st      = QUOTE_STATUS[q.status] ?? QUOTE_STATUS.pending
+          const total   = q.admin_total_con_iva ?? q.total_con_iva ?? 0
+          const isOpen  = expandedId === q.id
+          return (
+            <div key={q.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+              <button onClick={() => setExpandedId(isOpen ? null : q.id)}
+                className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                    <span className="text-xs text-gray-400 font-mono">{fmtDate(q.created_at)}</span>
+                  </div>
+                  <p className="text-sm text-gray-600">{(q.items ?? []).length} persiana{(q.items ?? []).length !== 1 ? 's' : ''} · Dto. {q.discount_pct}%</p>
+                </div>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className="text-base font-black text-red-700">{fmt(total)}</span>
+                  <svg className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+
+              {isOpen && (
+                <div className="px-5 pb-5 pt-1 border-t border-gray-100 space-y-3">
+                  {/* Items */}
+                  <div className="space-y-2">
+                    {(q.items ?? []).map((it, i) => (
+                      <div key={i} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 text-sm">
+                        <div>
+                          <p className="font-semibold text-gray-800">{blindLabel(it.blind_type)}</p>
+                          <p className="text-xs text-gray-400">
+                            {it.width && it.height ? `${it.width}×${it.height} mm` : ''}
+                            {it.mechanism ? ` · ${it.mechanism}` : ''}
+                            {it.guide_type && it.guide_type !== 'none' ? ` · guía ${it.guide_type}` : ''}
+                          </p>
+                        </div>
+                        <span className="font-bold text-gray-700">{fmt(it.price_professional * 1.21)}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Totales */}
+                  <div className="flex justify-end gap-6 text-sm border-t border-gray-100 pt-3">
+                    <div className="text-right">
+                      <p className="text-xs text-gray-400">Sin IVA</p>
+                      <p className="font-semibold text-gray-700">{fmt(q.admin_total_con_iva ? q.admin_total_con_iva / 1.21 : q.total_sin_iva)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-400">Total con IVA</p>
+                      <p className="font-black text-red-700 text-base">{fmt(total)}</p>
+                    </div>
+                  </div>
+
+                  {/* Nota del admin si hay modificación */}
+                  {q.admin_notes && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
+                      <p className="text-xs font-semibold text-blue-700 mb-1">Nota de Persianas Santander</p>
+                      <p className="text-sm text-blue-800">{q.admin_notes}</p>
+                    </div>
+                  )}
+
+                  {q.status === 'accepted' || q.status === 'modified' ? (
+                    <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <p className="text-sm text-green-700 font-medium">Cotización aceptada. Ya puedes proceder al pedido desde el configurador.</p>
+                    </div>
+                  ) : q.status === 'rejected' ? (
+                    <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                      <p className="text-sm text-red-700">Cotización rechazada. Contacta con nosotros para más información.</p>
+                    </div>
+                  ) : (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                      <p className="text-sm text-amber-700">Cotización en revisión. Te notificaremos por email cuando esté lista.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ── Tab Mensajes (chat en tiempo real con Santander) ──────────────────────
+function MensajesTab({ userId, onRead }) {
+  const [messages,  setMessages]  = useState([])
+  const [input,     setInput]     = useState('')
+  const [loading,   setLoading]   = useState(true)
+  const [sending,   setSending]   = useState(false)
+  const bottomRef = useRef(null)
+
+  useEffect(() => {
+    loadMessages()
+    const channel = supabase
+      .channel(`pro-chat-${userId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pro_messages',
+        filter: `professional_user_id=eq.${userId}` },
+        (payload) => setMessages(prev => [...prev, payload.new])
+      )
+      .subscribe()
+    return () => supabase.removeChannel(channel)
+  }, [userId])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  async function loadMessages() {
+    const { data } = await supabase
+      .from('pro_messages')
+      .select('*')
+      .eq('professional_user_id', userId)
+      .order('created_at', { ascending: true })
+    setMessages(data ?? [])
+    setLoading(false)
+    // Marcar como leídos
+    await supabase.from('pro_messages')
+      .update({ read_by_professional: true })
+      .eq('professional_user_id', userId)
+      .eq('sender_role', 'admin')
+    onRead?.()
+  }
+
+  async function handleSend(e) {
+    e.preventDefault()
+    if (!input.trim() || sending) return
+    setSending(true)
+    const text = input.trim()
+    setInput('')
+    await supabase.from('pro_messages').insert({
+      professional_user_id: userId,
+      sender_id:            userId,
+      sender_role:          'professional',
+      message:              text,
+      read_by_admin:        false,
+      read_by_professional: true,
+    })
+    setSending(false)
+  }
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader title="Mensajes" />
+      <div className="bg-white rounded-2xl border border-gray-200 flex flex-col" style={{ height: '65vh' }}>
+        {/* Cabecera */}
+        <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3">
+          <div className="w-8 h-8 bg-red-700 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-gray-900">Persianas Santander</p>
+            <p className="text-xs text-gray-400">Chat directo con el equipo</p>
+          </div>
+        </div>
+
+        {/* Mensajes */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="w-6 h-6 border-2 border-red-700 border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <p className="text-sm text-gray-400">Ningún mensaje todavía.</p>
+              <p className="text-xs text-gray-300 mt-1">Escríbenos cualquier consulta sobre tu cotización o pedido.</p>
+            </div>
+          ) : (
+            messages.map(m => {
+              const isMe = m.sender_role === 'professional'
+              return (
+                <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
+                    isMe ? 'bg-red-700 text-white rounded-br-md' : 'bg-gray-100 text-gray-800 rounded-bl-md'
+                  }`}>
+                    <p className="leading-relaxed">{m.message}</p>
+                    <p className={`text-xs mt-1 ${isMe ? 'text-red-200' : 'text-gray-400'}`}>
+                      {new Date(m.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                </div>
+              )
+            })
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Input */}
+        <form onSubmit={handleSend} className="px-4 py-3 border-t border-gray-100 flex items-center gap-3">
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="Escribe un mensaje…"
+            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400"
+          />
+          <button type="submit" disabled={!input.trim() || sending}
+            className="w-10 h-10 bg-red-700 hover:bg-red-800 text-white rounded-xl flex items-center justify-center flex-shrink-0 disabled:opacity-40 transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+            </svg>
+          </button>
+        </form>
+      </div>
     </div>
   )
 }
@@ -1530,8 +1775,10 @@ export default function ProfessionalDashboard() {
   const [empresa,        setEmpresa]        = useState(null)
   const [configuraciones,setConfiguraciones]= useState([])
   const [proyectos,      setProyectos]      = useState([])
+  const [cotizaciones,   setCotizaciones]   = useState([])
   const [pedidos,        setPedidos]        = useState([])
   const [facturas,       setFacturas]       = useState([])
+  const [unreadMsgs,     setUnreadMsgs]     = useState(0)
   const [logoUrl,        setLogoUrl]        = useState(null)
   const [loading,        setLoading]        = useState(true)
   const [globalDiscount, setGlobalDiscount] = useState(0)
@@ -1548,13 +1795,15 @@ export default function ProfessionalDashboard() {
       if (!user) { navigate('/login'); return }
       setUser(user)
 
-      const [empR, configR, proyR, pedR, facR, disc] = await Promise.all([
+      const [empR, configR, proyR, pedR, facR, disc, cotR, unreadR] = await Promise.all([
         supabase.from('professional_data').select('*').eq('user_id', user.id).maybeSingle(),
         supabase.from('blind_configurations').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('pro_projects').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('invoices').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         getProfessionalDiscountForUser(user.id),
+        supabase.from('pro_purchase_quotes').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('pro_messages').select('id', { count: 'exact', head: true }).eq('professional_user_id', user.id).eq('sender_role', 'admin').eq('read_by_professional', false),
       ])
 
       setGlobalDiscount(disc)
@@ -1562,6 +1811,8 @@ export default function ProfessionalDashboard() {
       setEmpresa(emp)
       setConfiguraciones(configR.data ?? [])
       setProyectos(proyR.data ?? [])
+      setCotizaciones(cotR.data ?? [])
+      setUnreadMsgs(unreadR.count ?? 0)
       setPedidos(pedR.data ?? [])
       setFacturas(facR.data ?? [])
 
@@ -1684,6 +1935,12 @@ export default function ProfessionalDashboard() {
                   {id === 'proyectos' && proyectos.length > 0 && (
                     <span className="ml-auto text-xs font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{proyectos.length}</span>
                   )}
+                  {id === 'cotizaciones' && cotizaciones.filter(c => c.status === 'pending').length > 0 && (
+                    <span className="ml-auto text-xs font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{cotizaciones.filter(c => c.status === 'pending').length}</span>
+                  )}
+                  {id === 'mensajes' && unreadMsgs > 0 && (
+                    <span className="ml-auto text-xs font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full">{unreadMsgs}</span>
+                  )}
                   {id === 'configuraciones' && configuraciones.length > 0 && (
                     <span className="ml-auto text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">{configuraciones.length}</span>
                   )}
@@ -1789,6 +2046,19 @@ export default function ProfessionalDashboard() {
                 logoUrl={logoUrl}
                 user={user}
                 onConfigSaved={c => setConfiguraciones(prev => [c, ...prev])}
+              />
+            )}
+
+            {/* ── MIS COMPRAS ── */}
+            {activeTab === 'cotizaciones' && (
+              <CotizacionesTab cotizaciones={cotizaciones} />
+            )}
+
+            {/* ── MENSAJES ── */}
+            {activeTab === 'mensajes' && (
+              <MensajesTab
+                userId={user.id}
+                onRead={() => setUnreadMsgs(0)}
               />
             )}
 
