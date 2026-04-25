@@ -295,6 +295,33 @@ function tplPresupuestoCliente(d: any) {
   `)
 }
 
+function tplCotizacionPro(d: any) {
+  const modificada = d.is_modified === 'sí'
+  const color      = modificada ? '#1d4ed8' : '#166534'
+  const bg         = modificada ? '#eff6ff' : '#f0fdf4'
+  const border     = modificada ? '#bfdbfe' : '#bbf7d0'
+  const titulo     = modificada ? '✏️ Tu cotización ha sido modificada' : '✅ Tu cotización ha sido aceptada'
+
+  const notasBlock = d.admin_notes
+    ? `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:14px;margin:16px 0">
+        <strong style="color:#374151;font-size:13px">Nota del administrador:</strong>
+        <p style="color:#6b7280;font-size:13px;margin:6px 0 0">${d.admin_notes}</p>
+       </div>`
+    : ''
+
+  return layout(`
+    <h2 style="color:#111;margin-top:0;font-size:18px">${titulo}</h2>
+    <p style="color:#374151;font-size:14px">Hola <strong>${d.pro_name}</strong>,</p>
+    <div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:20px;margin:16px 0;text-align:center">
+      <div style="font-size:26px;font-weight:bold;color:${color}">${d.total_con_iva}</div>
+      <div style="color:#6b7280;font-size:13px;margin-top:4px">Total con IVA</div>
+    </div>
+    ${notasBlock}
+    <p style="color:#374151;font-size:14px">Puedes consultar el detalle de tu cotización en tu área profesional.</p>
+    <p style="color:#9ca3af;font-size:12px">Cotización #${(d.quote_id ?? '').slice(0,8).toUpperCase()}</p>
+  `)
+}
+
 // ── Servidor ────────────────────────────────────────────────────────────────
 
 serve(async (req) => {
@@ -341,6 +368,14 @@ serve(async (req) => {
         ])
         break
       }
+
+      case 'pro_quote_accepted':
+        await send(
+          data.pro_email,
+          `Tu cotización ${data.is_modified === 'sí' ? 'ha sido modificada' : 'ha sido aceptada'} — Persianas Santander`,
+          tplCotizacionPro(data),
+        )
+        break
 
       default:
         throw new Error(`Tipo desconocido: ${type}`)
