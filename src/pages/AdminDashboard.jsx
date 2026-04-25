@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { generateInvoicePDF } from '../services/invoicePDF'
-import { generateBudgetPDF, generateAdminMultiBudgetPDF } from '../services/pdf'
+import { generateBudgetPDF, generateAdminMultiBudgetPDF, generateProQuotePDF } from '../services/pdf'
 import { notifyStatusChange, confirmAppointment, sendInvoiceEmail, sendBudgetResend } from '../services/email'
 import { getProfessionalDiscount, setProfessionalDiscount } from '../services/settings'
 import { getProductPrices, setProductPrices, DEFAULT_PRICES, DEFAULT_MOTOR_PRICES, DEFAULT_GUIDE_PRICE_PER_ML, DEFAULT_INSTALACION_PRICE, DEFAULT_INSTALACION_FIJA } from '../services/prices'
@@ -1637,11 +1637,13 @@ const BLIND_LABELS_ADMIN = {
 }
 
 function AdminProQuoteModal({ quote, proData, onClose, onUpdated }) {
-  const [status,     setStatus]     = useState(quote.status)
-  const [adminPrice, setAdminPrice] = useState(quote.admin_total_con_iva ?? quote.total_con_iva ?? 0)
-  const [notes,      setNotes]      = useState(quote.admin_notes ?? '')
-  const [saving,     setSaving]     = useState(false)
-  const [emailSent,  setEmailSent]  = useState(false)
+  const [status,      setStatus]      = useState(quote.status)
+  const [adminPrice,  setAdminPrice]  = useState(quote.admin_total_con_iva ?? quote.total_con_iva ?? 0)
+  const [notes,       setNotes]       = useState(quote.admin_notes ?? '')
+  const [saving,      setSaving]      = useState(false)
+  const [deleting,    setDeleting]    = useState(false)
+  const [confirmDel,  setConfirmDel]  = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   const isModified = parseFloat(adminPrice) !== parseFloat(quote.total_con_iva)
 
@@ -1655,11 +1657,10 @@ function AdminProQuoteModal({ quote, proData, onClose, onUpdated }) {
     }
     await supabase.from('pro_purchase_quotes').update(updates).eq('id', quote.id)
 
-    // Si hay modificación de precio, actualizar estimated_price en blind_configurations
     if ((status === 'accepted' || status === 'modified') && isModified) {
-      const items     = quote.items ?? []
-      const newTotal  = parseFloat(adminPrice) / 1.21
-      const oldTotal  = quote.total_sin_iva || 1
+      const items    = quote.items ?? []
+      const newTotal = parseFloat(adminPrice) / 1.21
+      const oldTotal = quote.total_sin_iva || 1
       for (const it of items) {
         if (!it.config_id) continue
         const newPrice = (it.price_professional / oldTotal) * newTotal
@@ -1669,21 +1670,43 @@ function AdminProQuoteModal({ quote, proData, onClose, onUpdated }) {
       }
     }
 
-    // Enviar email si se acepta o modifica
     if ((status === 'accepted' || status === 'modified') && proData?.email) {
+      let pdfBase64 = null
+      try {
+        const updatedQuote = { ...quote, status, admin_notes: notes.trim() || null, admin_total_con_iva: parseFloat(adminPrice) }
+        pdfBase64 = await generateProQuotePDF(updatedQuote, proData, { returnBase64: true })
+      } catch {}
       const { sendProQuoteAccepted } = await import('../services/email')
       await sendProQuoteAccepted({
-        proEmail:     proData.email,
-        proName:      proData.razon_social || proData.email,
-        quoteId:      quote.id,
-        totalConIva:  parseFloat(adminPrice),
-        adminNotes:   notes.trim(),
-        isModified:   isModified,
+        proEmail:    proData.email,
+        proName:     proData.razon_social || proData.email,
+        quoteId:     quote.id,
+        totalConIva: parseFloat(adminPrice),
+        adminNotes:  notes.trim(),
+        isModified,
+        pdfBase64,
       })
-      setEmailSent(true)
     }
 
     setSaving(false)
+    onUpdated()
+    onClose()
+  }
+
+  async function handleDownload() {
+    setDownloading(true)
+    try {
+      const updatedQuote = { ...quote, status, admin_notes: notes.trim() || null, admin_total_con_iva: parseFloat(adminPrice) }
+      const doc = await generateProQuotePDF(updatedQuote, proData)
+      doc?.save(`Cotizacion_${(quote.id ?? '').slice(0, 8).toUpperCase()}.pdf`)
+    } catch {}
+    setDownloading(false)
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    await supabase.from('pro_purchase_quotes').delete().eq('id', quote.id)
+    setDeleting(false)
     onUpdated()
     onClose()
   }
@@ -1772,6 +1795,34 @@ function AdminProQuoteModal({ quote, proData, onClose, onUpdated }) {
             <textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)}
               placeholder="Ej: Se ha ajustado el precio por volumen de compra…"
               className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400 resize-none" />
+          </div>
+
+          {/* Acciones secundarias */}
+          <div className="flex items-center justify-between pt-1">
+            <button onClick={handleDownload} disabled={downloading}
+              className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 disabled:opacity-50 transition-colors">
+              {downloading
+                ? <span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              }
+              Descargar PDF
+            </button>
+            {confirmDel ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
+                <button onClick={handleDelete} disabled={deleting}
+                  className="text-xs font-bold text-red-600 hover:text-red-800 disabled:opacity-50">
+                  {deleting ? '…' : 'Sí'}
+                </button>
+                <button onClick={() => setConfirmDel(false)} className="text-xs text-gray-500 hover:text-gray-700">No</button>
+              </div>
+            ) : (
+              <button onClick={() => setConfirmDel(true)}
+                className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                Eliminar
+              </button>
+            )}
           </div>
 
           <div className="flex gap-3 pt-2 border-t border-gray-100">

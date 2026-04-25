@@ -369,13 +369,18 @@ serve(async (req) => {
         break
       }
 
-      case 'pro_quote_accepted':
+      case 'pro_quote_accepted': {
+        const quoteAttachments = data.pdf_base64
+          ? [{ filename: data.pdf_filename ?? 'Cotizacion.pdf', content: data.pdf_base64, content_type: 'application/pdf' }]
+          : undefined
         await send(
           data.pro_email,
           `Tu cotización ${data.is_modified === 'sí' ? 'ha sido modificada' : 'ha sido aceptada'} — Persianas Santander`,
           tplCotizacionPro(data),
+          quoteAttachments,
         )
         break
+      }
 
       default:
         throw new Error(`Tipo desconocido: ${type}`)

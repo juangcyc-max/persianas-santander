@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
-import { generateGroupBudgetPDF, generateGroupInvoicePDF, generateOrderInvoicePDF } from '../services/pdf'
+import { generateGroupBudgetPDF, generateGroupInvoicePDF, generateOrderInvoicePDF, generateProQuotePDF } from '../services/pdf'
 import { getProfessionalDiscountForUser } from '../services/settings'
 import { getProductPrices, DEFAULT_MOTOR_PRICES, DEFAULT_GUIDE_PRICE_PER_ML, DEFAULT_INSTALACION_PRICE, DEFAULT_INSTALACION_FIJA, DEFAULT_PRICES } from '../services/prices'
 import WAButton from '../shared/WAButton'
@@ -119,7 +119,7 @@ const ORDER_STATUS = {
 const TABS = [
   { id: 'overview',         label: 'Resumen',          icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
   { id: 'proyectos',        label: 'Pres. clientes',   icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
-  { id: 'cotizaciones',     label: 'Mis compras',      icon: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
+  { id: 'cotizaciones',     label: 'Mis cotizaciones', icon: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
   { id: 'mensajes',         label: 'Mensajes',         icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
   { id: 'configuraciones',  label: 'Configuraciones',  icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
   { id: 'pedidos',          label: 'Pedidos',          icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
@@ -756,12 +756,32 @@ const QUOTE_STATUS = {
   rejected: { label: 'Rechazado',  cls: 'bg-red-100 text-red-700'      },
 }
 
-function CotizacionesTab({ cotizaciones }) {
-  const [expandedId, setExpandedId] = useState(null)
+function CotizacionesTab({ cotizaciones, onDelete }) {
+  const [expandedId,  setExpandedId]  = useState(null)
+  const [deletingId,  setDeletingId]  = useState(null)
+  const [confirmId,   setConfirmId]   = useState(null)
+  const [downloadingId, setDownloadingId] = useState(null)
+
+  async function handleDelete(id) {
+    setDeletingId(id)
+    await supabase.from('pro_purchase_quotes').delete().eq('id', id)
+    setDeletingId(null)
+    setConfirmId(null)
+    onDelete?.(id)
+  }
+
+  async function handleDownload(q) {
+    setDownloadingId(q.id)
+    try {
+      const doc = await generateProQuotePDF(q, {})
+      doc?.save(`Cotizacion_${(q.id ?? '').slice(0, 8).toUpperCase()}.pdf`)
+    } catch {}
+    setDownloadingId(null)
+  }
 
   if (cotizaciones.length === 0) return (
     <div className="space-y-4">
-      <SectionHeader title="Mis compras" />
+      <SectionHeader title="Mis cotizaciones" />
       <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
         <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -776,24 +796,25 @@ function CotizacionesTab({ cotizaciones }) {
 
   return (
     <div className="space-y-4">
-      <SectionHeader title="Mis compras" />
+      <SectionHeader title="Mis cotizaciones" />
       <div className="space-y-3">
         {cotizaciones.map(q => {
           const st      = QUOTE_STATUS[q.status] ?? QUOTE_STATUS.pending
           const total   = q.admin_total_con_iva ?? q.total_con_iva ?? 0
           const isOpen  = expandedId === q.id
+          const isAccepted = q.status === 'accepted' || q.status === 'modified'
           return (
             <div key={q.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
               <button onClick={() => setExpandedId(isOpen ? null : q.id)}
-                className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left">
+                className="w-full px-4 py-4 flex items-center justify-between gap-3 text-left">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-0.5">
+                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
-                    <span className="text-xs text-gray-400 font-mono">{fmtDate(q.created_at)}</span>
+                    <span className="text-xs text-gray-400">{fmtDate(q.created_at)}</span>
                   </div>
                   <p className="text-sm text-gray-600">{(q.items ?? []).length} persiana{(q.items ?? []).length !== 1 ? 's' : ''} · Dto. {q.discount_pct}%</p>
                 </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <span className="text-base font-black text-red-700">{fmt(total)}</span>
                   <svg className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -802,12 +823,12 @@ function CotizacionesTab({ cotizaciones }) {
               </button>
 
               {isOpen && (
-                <div className="px-5 pb-5 pt-1 border-t border-gray-100 space-y-3">
+                <div className="px-4 pb-5 pt-1 border-t border-gray-100 space-y-3">
                   {/* Items */}
                   <div className="space-y-2">
                     {(q.items ?? []).map((it, i) => (
-                      <div key={i} className="flex items-center justify-between bg-gray-50 rounded-xl px-3 py-2 text-sm">
-                        <div>
+                      <div key={i} className="flex items-start justify-between bg-gray-50 rounded-xl px-3 py-2 text-sm gap-2">
+                        <div className="min-w-0">
                           <p className="font-semibold text-gray-800">{blindLabel(it.blind_type)}</p>
                           <p className="text-xs text-gray-400">
                             {it.width && it.height ? `${it.width}×${it.height} mm` : ''}
@@ -815,13 +836,13 @@ function CotizacionesTab({ cotizaciones }) {
                             {it.guide_type && it.guide_type !== 'none' ? ` · guía ${it.guide_type}` : ''}
                           </p>
                         </div>
-                        <span className="font-bold text-gray-700">{fmt(it.price_professional * 1.21)}</span>
+                        <span className="font-bold text-gray-700 flex-shrink-0">{fmt(it.price_professional * 1.21)}</span>
                       </div>
                     ))}
                   </div>
 
                   {/* Totales */}
-                  <div className="flex justify-end gap-6 text-sm border-t border-gray-100 pt-3">
+                  <div className="flex justify-end gap-4 text-sm border-t border-gray-100 pt-3">
                     <div className="text-right">
                       <p className="text-xs text-gray-400">Sin IVA</p>
                       <p className="font-semibold text-gray-700">{fmt(q.admin_total_con_iva ? q.admin_total_con_iva / 1.21 : q.total_sin_iva)}</p>
@@ -832,7 +853,6 @@ function CotizacionesTab({ cotizaciones }) {
                     </div>
                   </div>
 
-                  {/* Nota del admin si hay modificación */}
                   {q.admin_notes && (
                     <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
                       <p className="text-xs font-semibold text-blue-700 mb-1">Nota de Persianas Santander</p>
@@ -840,22 +860,54 @@ function CotizacionesTab({ cotizaciones }) {
                     </div>
                   )}
 
-                  {q.status === 'accepted' || q.status === 'modified' ? (
+                  {isAccepted ? (
                     <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 flex items-center gap-2">
                       <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <p className="text-sm text-green-700 font-medium">Cotización aceptada. Ya puedes proceder al pedido desde el configurador.</p>
+                      <p className="text-sm text-green-700 font-medium">Cotización aceptada.</p>
                     </div>
                   ) : q.status === 'rejected' ? (
                     <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                      <p className="text-sm text-red-700">Cotización rechazada. Contacta con nosotros para más información.</p>
+                      <p className="text-sm text-red-700">Cotización rechazada. Contacta con nosotros.</p>
                     </div>
                   ) : (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                      <p className="text-sm text-amber-700">Cotización en revisión. Te notificaremos por email cuando esté lista.</p>
+                      <p className="text-sm text-amber-700">En revisión. Te notificaremos por email.</p>
                     </div>
                   )}
+
+                  {/* Acciones */}
+                  <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                    {isAccepted && (
+                      <button onClick={() => handleDownload(q)} disabled={downloadingId === q.id}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
+                        {downloadingId === q.id
+                          ? <span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                          : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        }
+                        Descargar PDF
+                      </button>
+                    )}
+                    <div className="ml-auto">
+                      {confirmId === q.id ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
+                          <button onClick={() => handleDelete(q.id)} disabled={deletingId === q.id}
+                            className="text-xs font-bold text-red-600 hover:text-red-800 disabled:opacity-50">
+                            {deletingId === q.id ? '…' : 'Sí'}
+                          </button>
+                          <button onClick={() => setConfirmId(null)} className="text-xs text-gray-500">No</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setConfirmId(q.id)}
+                          className="flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition-colors">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          Eliminar
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -2049,9 +2101,12 @@ export default function ProfessionalDashboard() {
               />
             )}
 
-            {/* ── MIS COMPRAS ── */}
+            {/* ── MIS COTIZACIONES ── */}
             {activeTab === 'cotizaciones' && (
-              <CotizacionesTab cotizaciones={cotizaciones} />
+              <CotizacionesTab
+                cotizaciones={cotizaciones}
+                onDelete={id => setCotizaciones(prev => prev.filter(q => q.id !== id))}
+              />
             )}
 
             {/* ── MENSAJES ── */}

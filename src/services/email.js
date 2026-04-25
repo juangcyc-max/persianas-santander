@@ -64,7 +64,7 @@ export function sendInvoiceEmail({ userEmail, invoice, orderId, items, pdfBase64
 }
 
 /** Notifica al profesional que su cotización ha sido aceptada/modificada */
-export function sendProQuoteAccepted({ proEmail, proName, quoteId, totalConIva, adminNotes, isModified }) {
+export function sendProQuoteAccepted({ proEmail, proName, quoteId, totalConIva, adminNotes, isModified, pdfBase64 = null }) {
   const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
   return callSendEmail('pro_quote_accepted', {
     pro_email:     proEmail,
@@ -73,6 +73,8 @@ export function sendProQuoteAccepted({ proEmail, proName, quoteId, totalConIva, 
     total_con_iva: fmt(totalConIva),
     admin_notes:   adminNotes || '',
     is_modified:   isModified ? 'sí' : 'no',
+    pdf_base64:    pdfBase64 ?? null,
+    pdf_filename:  pdfBase64 ? `Cotizacion_${(quoteId ?? '').slice(0, 8).toUpperCase()}.pdf` : null,
   })
 }
 

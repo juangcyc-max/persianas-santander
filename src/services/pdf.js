@@ -1319,3 +1319,104 @@ export async function generateOrderInvoicePDF({ order, invoice }) {
     console.error('Error generando factura de pedido:', err)
   }
 }
+
+// ── COTIZACIÓN DE COMPRA PROFESIONAL ──────────────────────────────────────
+export async function generateProQuotePDF(quote, proInfo = {}, { returnBase64 = false } = {}) {
+  try {
+    const doc      = new jsPDF({ unit: 'mm', format: 'a4' })
+    const W        = doc.internal.pageSize.width
+    const today    = formatDate(new Date())
+    const quoteNum = `COT-${(quote.id ?? '').slice(0, 8).toUpperCase()}`
+
+    const logoImg = await loadImage('/persianassantanderlogo.png')
+    addPageHeader(doc, logoImg, 'COTIZACIÓN DE COMPRA', quoteNum, today)
+
+    let y = 42
+
+    // Datos del profesional
+    sectionLabel(doc, 14, y, 'Datos del profesional')
+    y += 8
+    if (proInfo.razon_social) {
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...COLORS.dark)
+      doc.text(proInfo.razon_social, 14, y)
+      y += 5
+    }
+    if (proInfo.email) {
+      doc.setFontSize(8.5)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(...COLORS.mid)
+      doc.text(proInfo.email, 14, y)
+      y += 10
+    } else {
+      y += 5
+    }
+
+    // Tabla de persianas
+    sectionLabel(doc, 14, y, 'Persianas solicitadas')
+    y += 5
+
+    const rows = (quote.items ?? []).map((it, i) => [
+      String(i + 1),
+      LABELS.productType[it.blind_type] ?? it.blind_type ?? '—',
+      it.width && it.height ? `${it.width}×${it.height}` : '—',
+      it.mechanism ? (LABELS.mechanism[it.mechanism] ?? it.mechanism) : '—',
+      it.guide_type && it.guide_type !== 'none' ? (LABELS.guideType[it.guide_type] ?? it.guide_type) : '—',
+      it.slat_color_name ?? '—',
+      formatCurrency((it.price_professional ?? 0) * 1.21),
+    ])
+
+    autoTable(doc, {
+      startY: y,
+      head: [['#', 'Producto', 'Medidas (mm)', 'Mecanismo', 'Guías', 'Color lamas', 'Precio']],
+      body: rows,
+      theme: 'grid',
+      styles: { fontSize: 8, cellPadding: 2.5 },
+      headStyles: { fillColor: COLORS.red, textColor: COLORS.white, fontStyle: 'bold', fontSize: 7.5 },
+      columnStyles: {
+        0: { cellWidth: 8,  halign: 'center' },
+        6: { halign: 'right', fontStyle: 'bold' },
+      },
+      margin: { left: 14, right: 14 },
+    })
+
+    y = doc.lastAutoTable.finalY + 8
+
+    // Nota del admin
+    if (quote.admin_notes) {
+      const noteLines = doc.splitTextToSize(quote.admin_notes, W - 36)
+      const noteH     = noteLines.length * 5 + 14
+      doc.setFillColor(...COLORS.grayBg)
+      doc.roundedRect(14, y, W - 28, noteH, 2, 2, 'F')
+      sectionLabel(doc, 20, y + 8, 'Nota de Persianas Santander')
+      doc.setFontSize(8.5)
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(...COLORS.dark)
+      doc.text(noteLines, 20, y + 14)
+      y += noteH + 6
+    }
+
+    // Bloque de precio
+    const total  = quote.admin_total_con_iva ?? quote.total_con_iva ?? 0
+    const sinIva = total / 1.21
+    const iva    = total - sinIva
+    addPriceBlock(doc, y, { subtotalSinIva: sinIva, iva, finalPrice: total, discount: 0, lines: [] }, false, 0)
+
+    // Cabeceras y pies
+    const pageCount = doc.internal.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      addPageFooter(doc, [
+        'Persianas Santander · NIF B39476726 · Polígono Nueva Montaña, C/ Isla Oleo, Nave 9 · Santander',
+        'adminpersianassantander@gmail.com',
+      ], i, pageCount)
+    }
+
+    if (returnBase64) return doc.output('datauristring').split(',')[1]
+    return doc
+  } catch (err) {
+    console.error('Error generando PDF cotización pro:', err)
+    return null
+  }
+}
