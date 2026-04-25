@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
 import { generateGroupBudgetPDF, generateGroupInvoicePDF, generateOrderInvoicePDF } from '../services/pdf'
 import { getProfessionalDiscountForUser } from '../services/settings'
+import { getProductPrices, DEFAULT_MOTOR_PRICES, DEFAULT_GUIDE_PRICE_PER_ML, DEFAULT_INSTALACION_PRICE, DEFAULT_INSTALACION_FIJA, DEFAULT_PRICES } from '../services/prices'
 import WAButton from '../shared/WAButton'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -27,6 +28,52 @@ const BLIND_LABELS = {
   pano_mas_guias:              'Paño + Guías',
 }
 const blindLabel = (t) => BLIND_LABELS[t] ?? t ?? '—'
+
+// ── Lógica de precios para presupuestos profesionales ─────────────────────
+const PRO_BLIND_TYPES = [
+  { value: 'laminada',                    label: 'Paño Laminado'               },
+  { value: 'autoblocante',                label: 'Paño Autoblocante'           },
+  { value: 'blocking',                    label: 'Bloqueante'                  },
+  { value: 'sistema_mini_cajon_pvc',      label: 'Sistema Mini Cajón PVC'      },
+  { value: 'sistema_mini_cajon_aluminio', label: 'Sistema Mini Cajón Aluminio' },
+  { value: 'sistema_mini_autoblocante',   label: 'Sistema Mini Autoblocante'   },
+  { value: 'solo_motor',                  label: 'Solo Motor'                  },
+  { value: 'solo_guias',                  label: 'Solo Guías'                  },
+  { value: 'mosquitera_enrollable',       label: 'Mosquitera Enrollable'       },
+]
+const PRO_MOTOR_ONLY = ['autoblocante', 'blocking', 'sistema_mini_autoblocante']
+const PRO_NO_MOTOR   = ['mosquitera_enrollable', 'laminada']
+const PRO_PANO_TYPES = ['laminada', 'autoblocante', 'blocking', 'mosquitera_enrollable']
+const PRO_MIN_SQM    = 1.5
+
+function calcProItemPrice({ prices, motorPrices, guidePricePerMl, instalacionPrice, instalacionFija, blindType, width, height, mechanism, motorType, guideType, colorGroup, installacion }) {
+  const isPano      = PRO_PANO_TYPES.includes(blindType)
+  const isMotorOnly = PRO_MOTOR_ONLY.includes(blindType)
+  const isSoloMot   = blindType === 'solo_motor'
+  const isSoloGuia  = blindType === 'solo_guias'
+  if (isSoloMot) {
+    const mp = (motorPrices ?? DEFAULT_MOTOR_PRICES)[motorType ?? 'mecanico'] ?? 120
+    return (mp + (installacion ? (instalacionFija ?? DEFAULT_INSTALACION_FIJA) : 0)) * 1.21
+  }
+  if (isSoloGuia) {
+    const pml = (guidePricePerMl ?? DEFAULT_GUIDE_PRICE_PER_ML)[guideType] ?? 0
+    return pml * (height / 1000) * 2 * 1.21
+  }
+  const typePrices = (prices ?? DEFAULT_PRICES)[blindType] ?? {}
+  const basePerSqm = typePrices[colorGroup] ?? Object.values(typePrices)[0] ?? 0
+  const sqm        = Math.max(PRO_MIN_SQM, (width / 1000) * (height / 1000))
+  let total        = basePerSqm * sqm
+  if (!isPano && (mechanism === 'motor' || isMotorOnly)) {
+    total += (motorPrices ?? DEFAULT_MOTOR_PRICES)[motorType ?? 'mecanico'] ?? 120
+  }
+  if (guideType && guideType !== 'none') {
+    total += (guidePricePerMl ?? DEFAULT_GUIDE_PRICE_PER_ML)[guideType] * (height / 1000) * 2
+  }
+  if (installacion) {
+    total += (instalacionPrice ?? DEFAULT_INSTALACION_PRICE) * sqm
+  }
+  return total * 1.21
+}
 
 function processConfigurations(configs) {
   const groupMap = new Map()
@@ -109,30 +156,86 @@ function SectionHeader({ title, action }) {
   )
 }
 
-// ── Modal: Añadir ítem desde configuraciones guardadas ────────────────────
-function AddItemModal({ configuraciones, onAdd, onClose }) {
-  const [selected, setSelected] = useState(null)
-  const [desc,     setDesc]     = useState('')
-  const [price,    setPrice]    = useState('')
-  const [err,      setErr]      = useState('')
+// ── Modal: Configurar y añadir persiana directamente ─────────────────────
+function AddItemModal({ userId, onAdd, onClose, onConfigSaved }) {
+  const [blindType,    setBlindType]    = useState('laminada')
+  const [width,        setWidth]        = useState('')
+  const [height,       setHeight]       = useState('')
+  const [mechanism,    setMechanism]    = useState('muelle')
+  const [motorType,    setMotorType]    = useState('mecanico')
+  const [guideType,    setGuideType]    = useState('none')
+  const [colorGroup,   setColorGroup]   = useState('Grupo Base')
+  const [installacion, setInstallacion] = useState(false)
+  const [desc,         setDesc]         = useState('')
+  const [price,        setPrice]        = useState('')
+  const [pricesData,   setPricesData]   = useState(null)
+  const [priceEdited,  setPriceEdited]  = useState(false)
+  const [saving,       setSaving]       = useState(false)
+  const [err,          setErr]          = useState('')
 
-  function handleConfirm() {
-    if (!selected) { setErr('Selecciona una configuración'); return }
-    if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0) { setErr('Introduce un precio válido'); return }
+  useEffect(() => { getProductPrices().then(setPricesData) }, [])
+
+  const requiresMotor = PRO_MOTOR_ONLY.includes(blindType)
+  const noMotor       = PRO_NO_MOTOR.includes(blindType)
+  const isSoloMot     = blindType === 'solo_motor'
+  const isSoloGuia    = blindType === 'solo_guias'
+
+  useEffect(() => {
+    if (requiresMotor) setMechanism('motor')
+    else if (noMotor && mechanism === 'motor') setMechanism('muelle')
+  }, [blindType])
+
+  useEffect(() => {
+    if (priceEdited || !pricesData) return
+    const w = parseFloat(width)
+    const h = parseFloat(height)
+    if (!isSoloMot && !isSoloGuia && (!w || !h || isNaN(w) || isNaN(h))) return
+    if (isSoloGuia && (!h || isNaN(h))) return
+    const calc = calcProItemPrice({ ...pricesData, blindType, width: w || 0, height: h || 0, mechanism, motorType, guideType, colorGroup, installacion })
+    if (!isNaN(calc) && calc > 0) setPrice(calc.toFixed(2))
+  }, [pricesData, blindType, width, height, mechanism, motorType, guideType, colorGroup, installacion, priceEdited])
+
+  async function handleConfirm() {
+    if (!isSoloMot && (!height || isNaN(parseFloat(height)))) { setErr('Introduce la altura'); return }
+    if (!isSoloMot && !isSoloGuia && (!width || isNaN(parseFloat(width)))) { setErr('Introduce el ancho'); return }
+    if (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0) { setErr('Precio inválido'); return }
+    setSaving(true)
+    const w = parseFloat(width) || null
+    const h = parseFloat(height) || null
+    const mechFinal      = isSoloMot ? 'motor' : mechanism
+    const motorFinal     = (mechanism === 'motor' || requiresMotor || isSoloMot) ? motorType : null
+    const guideFinal     = guideType !== 'none' ? guideType : null
+    const colorFinal     = (!isSoloMot && !isSoloGuia) ? colorGroup : null
+    const costPrice      = parseFloat(price) / 1.21
+
+    const { data: savedConfig } = await supabase.from('blind_configurations').insert({
+      user_id:         userId,
+      blind_type:      blindType,
+      mechanism:       mechFinal,
+      motor_type:      motorFinal,
+      guide_type:      guideFinal,
+      width:           isSoloMot ? null : w,
+      height:          h,
+      slat_color_name: colorFinal,
+      estimated_price: costPrice,
+    }).select().single()
+
+    if (savedConfig) onConfigSaved?.(savedConfig)
+
     onAdd({
-      item_id:        uid(),
-      config_id:      selected.id,
-      description:    desc.trim() || blindLabel(selected.blind_type),
-      blind_type:     selected.blind_type,
-      mechanism:      selected.mechanism,
-      motor_type:     selected.motor_type ?? null,
-      guide_type:     selected.guide_type ?? null,
-      width:          selected.width,
-      height:         selected.height,
-      box_color_name: selected.box_color_name ?? null,
-      slat_color_name:selected.slat_color_name ?? null,
-      cost_price:     selected.estimated_price ?? 0,
-      client_price:   parseFloat(price),
+      item_id:         uid(),
+      config_id:       savedConfig?.id ?? null,
+      description:     desc.trim() || blindLabel(blindType),
+      blind_type:      blindType,
+      mechanism:       mechFinal,
+      motor_type:      motorFinal,
+      guide_type:      guideFinal,
+      width:           isSoloMot ? null : w,
+      height:          h,
+      box_color_name:  null,
+      slat_color_name: colorFinal,
+      cost_price:      costPrice,
+      client_price:    parseFloat(price),
     })
     onClose()
   }
@@ -149,56 +252,154 @@ function AddItemModal({ configuraciones, onAdd, onClose }) {
           </button>
         </div>
         <div className="px-6 py-5 space-y-4">
-          {configuraciones.length === 0 ? (
-            <div className="text-center py-6 text-gray-400">
-              <p className="text-sm">No tienes configuraciones guardadas.</p>
-              <Link to="/configurador" className="mt-3 inline-block text-sm font-bold text-red-700 hover:underline">Ir al configurador →</Link>
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-              {configuraciones.map(c => (
-                <button key={c.id} onClick={() => { setSelected(c); setPrice(String(c.estimated_price ?? '')); setErr('') }}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 text-left transition-all ${
-                    selected?.id === c.id ? 'border-red-600 bg-red-50' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                  }`}>
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900">{blindLabel(c.blind_type)}</p>
-                    <p className="text-xs text-gray-400">{c.width} × {c.height} mm · {c.mechanism}</p>
-                  </div>
-                  <span className={`text-sm font-bold flex-shrink-0 ml-3 ${selected?.id === c.id ? 'text-red-700' : 'text-gray-700'}`}>
-                    {fmt(c.estimated_price)}
-                  </span>
-                </button>
-              ))}
+
+          {/* Tipo */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Tipo de persiana</label>
+            <select value={blindType} onChange={e => { setBlindType(e.target.value); setPriceEdited(false); setErr('') }}
+              className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400">
+              {PRO_BLIND_TYPES.map(({ value, label }) => <option key={value} value={value}>{label}</option>)}
+            </select>
+          </div>
+
+          {/* Medidas */}
+          {!isSoloMot && (
+            <div className={`grid gap-3 ${isSoloGuia ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {!isSoloGuia && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Ancho (mm)</label>
+                  <input type="number" min="1" value={width} onChange={e => { setWidth(e.target.value); setPriceEdited(false); setErr('') }} placeholder="1200"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+                </div>
+              )}
+              <div>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Alto (mm)</label>
+                <input type="number" min="1" value={height} onChange={e => { setHeight(e.target.value); setPriceEdited(false); setErr('') }} placeholder="1500"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+              </div>
             </div>
           )}
 
-          {selected && (
-            <>
-              <Field label="Descripción (opcional)" value={desc} onChange={setDesc} placeholder="Ej: Ventana salón, Puerta garaje…" />
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Precio para el cliente (€ con IVA) *</label>
-                <div className="relative">
-                  <input type="number" min="0" step="0.01" value={price} onChange={e => { setPrice(e.target.value); setErr('') }}
-                    className="w-full px-3.5 py-2.5 pr-8 rounded-xl border border-gray-300 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
-                </div>
-                {price && !isNaN(parseFloat(price)) && (
-                  <p className="text-xs text-gray-400 mt-1">Sin IVA: {fmt(parseFloat(price) / 1.21)}</p>
-                )}
+          {/* Mecanismo */}
+          {!isSoloMot && !isSoloGuia && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Mecanismo</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'muelle', label: 'Muelle', disabled: requiresMotor },
+                  { id: 'cinta',  label: 'Cinta',  disabled: requiresMotor || noMotor },
+                  { id: 'motor',  label: 'Motor',  disabled: noMotor },
+                ].map(({ id, label, disabled }) => (
+                  <button key={id} type="button" disabled={disabled}
+                    onClick={() => { if (!disabled) { setMechanism(id); setPriceEdited(false) } }}
+                    className={`py-2 px-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      mechanism === id ? 'border-red-600 bg-red-50 text-red-700'
+                      : disabled ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
+                      : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                    }`}>
+                    {label}
+                  </button>
+                ))}
               </div>
-            </>
+            </div>
           )}
+
+          {/* Motor type */}
+          {(mechanism === 'motor' || requiresMotor || isSoloMot) && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Tipo de motor</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'mecanico',        label: 'Mecánico' },
+                  { id: 'mando_distancia', label: 'Mando distancia' },
+                ].map(({ id, label }) => (
+                  <button key={id} type="button" onClick={() => { setMotorType(id); setPriceEdited(false) }}
+                    className={`py-2 px-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      motorType === id ? 'border-red-600 bg-red-50 text-red-700' : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                    }`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Guías */}
+          {!isSoloMot && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Guías</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { id: 'none', label: 'Sin guías' },
+                  { id: 'v25',  label: 'Guía V25'  },
+                  { id: 'h25',  label: 'Guía H25'  },
+                ].map(({ id, label }) => (
+                  <button key={id} type="button" onClick={() => { setGuideType(id); setPriceEdited(false) }}
+                    className={`py-2 px-3 rounded-xl border-2 text-xs font-semibold transition-all ${
+                      guideType === id ? 'border-red-600 bg-red-50 text-red-700' : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                    }`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Color group */}
+          {!isSoloMot && !isSoloGuia && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Grupo de color</label>
+              <select value={colorGroup} onChange={e => { setColorGroup(e.target.value); setPriceEdited(false) }}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400">
+                {['Grupo Base', 'Grupo 1', 'Grupo 2', 'Grupo 3'].map(g => <option key={g} value={g}>{g}</option>)}
+              </select>
+            </div>
+          )}
+
+          {/* Instalación */}
+          <button type="button" onClick={() => { setInstallacion(v => !v); setPriceEdited(false) }}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-all ${installacion ? 'border-red-600 bg-red-50' : 'border-gray-200 hover:border-gray-300'}`}>
+            <div className="flex items-center gap-2">
+              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${installacion ? 'border-red-600 bg-red-600' : 'border-gray-300'}`}>
+                {installacion && <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+              </div>
+              <span className="text-sm font-medium text-gray-700">Con instalación</span>
+            </div>
+            <span className="text-xs text-gray-400">{isSoloMot ? '+150 €' : '+100 €/m²'}</span>
+          </button>
+
+          {/* Precio */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Precio para el cliente (€ con IVA)</label>
+            <div className="relative">
+              <input type="number" min="0" step="0.01" value={price}
+                onChange={e => { setPrice(e.target.value); setPriceEdited(true); setErr('') }}
+                placeholder="0.00"
+                className="w-full px-3.5 py-2.5 pr-8 rounded-xl border border-gray-300 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400" />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
+            </div>
+            {price && !isNaN(parseFloat(price)) && parseFloat(price) > 0 && (
+              <p className="text-xs text-gray-400 mt-1">Sin IVA: {fmt(parseFloat(price) / 1.21)}</p>
+            )}
+            {priceEdited && (
+              <button type="button" onClick={() => setPriceEdited(false)} className="text-xs text-red-600 hover:underline mt-1 block">
+                Recalcular automáticamente
+              </button>
+            )}
+          </div>
+
+          {/* Descripción */}
+          <Field label="Descripción (opcional)" value={desc} onChange={setDesc} placeholder="Ej: Ventana salón, Puerta garaje…" />
 
           {err && <p className="text-xs text-red-600 font-medium">{err}</p>}
 
           <div className="flex gap-3 pt-1">
-            <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+            <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50">
               Cancelar
             </button>
-            <button onClick={handleConfirm} disabled={!selected}
-              className="flex-1 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white text-sm font-bold disabled:opacity-40 transition-colors">
-              Añadir
+            <button type="button" onClick={handleConfirm} disabled={saving}
+              className="flex-1 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white text-sm font-bold disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+              {saving ? <Spinner small /> : 'Añadir'}
             </button>
           </div>
         </div>
@@ -208,7 +409,7 @@ function AddItemModal({ configuraciones, onAdd, onClose }) {
 }
 
 // ── Modal: Editar / ver proyecto ──────────────────────────────────────────
-function ProjectModal({ project: initial, configuraciones, empresa, logoUrl, onSave, onDelete, onClose }) {
+function ProjectModal({ project: initial, userId, empresa, logoUrl, onSave, onDelete, onClose, onConfigSaved }) {
   const [project,      setProject]      = useState({ ...initial })
   const [saving,       setSaving]       = useState(false)
   const [generating,   setGenerating]   = useState(null) // 'budget' | 'invoice'
@@ -336,9 +537,6 @@ function ProjectModal({ project: initial, configuraciones, empresa, logoUrl, onS
             {items.length === 0 ? (
               <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center">
                 <p className="text-sm text-gray-400">Sin persianas. Pulsa "Añadir persiana" para empezar.</p>
-                <Link to="/configurador" className="mt-2 inline-block text-xs font-bold text-red-700 hover:underline">
-                  O crea una nueva configuración →
-                </Link>
               </div>
             ) : (
               <div className="space-y-2">
@@ -454,7 +652,7 @@ function ProjectModal({ project: initial, configuraciones, empresa, logoUrl, onS
       </div>
 
       {showAddItem && (
-        <AddItemModal configuraciones={configuraciones} onAdd={addItem} onClose={() => setShowAddItem(false)} />
+        <AddItemModal userId={userId} onAdd={addItem} onClose={() => setShowAddItem(false)} onConfigSaved={onConfigSaved} />
       )}
     </div>
   )
@@ -549,7 +747,7 @@ function ProyectoCard({ p, pitems, total, onEdit }) {
 }
 
 // ── Tab Proyectos ─────────────────────────────────────────────────────────
-function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoUrl, user }) {
+function ProyectosTab({ proyectos, setProyectos, empresa, logoUrl, user, onConfigSaved }) {
   const [modal,  setModal]  = useState(null)
   const [search, setSearch] = useState('')
 
@@ -661,12 +859,13 @@ function ProyectosTab({ proyectos, setProyectos, configuraciones, empresa, logoU
       {modal && (
         <ProjectModal
           project={modal}
-          configuraciones={configuraciones}
+          userId={user.id}
           empresa={empresa}
           logoUrl={logoUrl}
           onSave={saveProject}
           onDelete={deleteProject}
           onClose={() => setModal(null)}
+          onConfigSaved={onConfigSaved}
         />
       )}
     </div>
@@ -1586,10 +1785,10 @@ export default function ProfessionalDashboard() {
               <ProyectosTab
                 proyectos={proyectos}
                 setProyectos={setProyectos}
-                configuraciones={configuraciones}
                 empresa={empresa ?? {}}
                 logoUrl={logoUrl}
                 user={user}
+                onConfigSaved={c => setConfiguraciones(prev => [c, ...prev])}
               />
             )}
 
