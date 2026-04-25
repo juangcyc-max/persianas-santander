@@ -32,7 +32,7 @@ const MOTOR_ONLY = ['autoblocante', 'blocking', 'sistema_mini_autoblocante']
 const isMotorOnly = (type) => MOTOR_ONLY.includes(type)
 
 // Tipos que NO admiten motor
-const NO_MOTOR = ['mosquitera_enrollable']
+const NO_MOTOR = ['mosquitera_enrollable', 'laminada']
 
 function loadCart() {
   try {

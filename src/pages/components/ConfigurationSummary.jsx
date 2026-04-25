@@ -43,8 +43,9 @@ function ConfigurationSummary({
   const isSoloGuia  = productType === 'solo_guias'
   const isMosqui    = productType === 'mosquitera_enrollable'
 
+  const isPanoNoMotor    = ['laminada', 'mosquitera_enrollable'].includes(productType)
   const showMechanismRow = !isMotorOnly && !isSoloMoto && !isSoloGuia && !isMosqui
-  const showMotorRow     = mechanism === 'motor' || isMotorOnly || isSoloMoto
+  const showMotorRow     = (!isPanoNoMotor && mechanism === 'motor') || isMotorOnly || isSoloMoto
 
   const rows = [
     {

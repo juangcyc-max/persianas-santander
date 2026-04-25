@@ -1,6 +1,6 @@
 function MechanismSelector({ productType, mechanism, onMechanismChange, orientation, onOrientationChange }) {
   const requiresMotor = ['sistema_mini_autoblocante', 'autoblocante', 'blocking'].includes(productType)
-  const noMotor = productType === 'mosquitera_enrollable'
+  const noMotor = ['mosquitera_enrollable', 'laminada'].includes(productType)
 
   const mechanisms = [
     {
