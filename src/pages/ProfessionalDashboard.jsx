@@ -756,7 +756,7 @@ const QUOTE_STATUS = {
   rejected: { label: 'Rechazado',  cls: 'bg-red-100 text-red-700'      },
 }
 
-function CotizacionesTab({ cotizaciones, onDelete }) {
+function CotizacionesTab({ cotizaciones, onDelete, proInfo }) {
   const [expandedId,  setExpandedId]  = useState(null)
   const [deletingId,  setDeletingId]  = useState(null)
   const [confirmId,   setConfirmId]   = useState(null)
@@ -773,7 +773,7 @@ function CotizacionesTab({ cotizaciones, onDelete }) {
   async function handleDownload(q) {
     setDownloadingId(q.id)
     try {
-      const doc = await generateProQuotePDF(q, {})
+      const doc = await generateProQuotePDF(q, proInfo ?? {})
       doc?.save(`Cotizacion_${(q.id ?? '').slice(0, 8).toUpperCase()}.pdf`)
     } catch {}
     setDownloadingId(null)
@@ -2106,6 +2106,7 @@ export default function ProfessionalDashboard() {
               <CotizacionesTab
                 cotizaciones={cotizaciones}
                 onDelete={id => setCotizaciones(prev => prev.filter(q => q.id !== id))}
+                proInfo={{ razon_social: empresa?.razon_social, email: user?.email }}
               />
             )}
 
