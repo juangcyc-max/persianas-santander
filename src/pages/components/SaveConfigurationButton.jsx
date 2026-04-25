@@ -8,6 +8,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
   const [status,       setStatus]       = useState(null) // null | 'success' | 'error' | 'auth'
   const [message,      setMessage]      = useState('')
   const [savedId,      setSavedId]      = useState(null)
+  const [isPro,        setIsPro]        = useState(false)
   const [addingCart,   setAddingCart]   = useState(false)
   const [addedToCart,  setAddedToCart]  = useState(false)
   const [destUrl,      setDestUrl]      = useState(null)
@@ -69,8 +70,11 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
       setMessage(configNumber)
       onSuccess?.(saved)
 
+      const userIsPro = user.user_metadata?.user_type === 'professional'
+      setIsPro(userIsPro)
+
       // Auto-cotización para profesionales
-      if (user.user_metadata?.user_type === 'professional' && saved) {
+      if (userIsPro && saved) {
         const proPrice = basePrice * (1 - proDiscount / 100)
         await supabase.from('pro_purchase_quotes').insert({
           user_id:       user.id,
@@ -163,34 +167,43 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 20 })
             </button>
           </div>
           {savedId && (
-            <button
-              onClick={handleAddToCart}
-              disabled={addingCart || addedToCart}
-              className={`w-full py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
-                addedToCart
-                  ? 'bg-green-200 text-green-800 cursor-default'
-                  : 'bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-60'
-              }`}
-            >
-              {addingCart ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : addedToCart ? (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                  Añadido a la cesta
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                  Añadir a la cesta
-                </>
-              )}
-            </button>
+            isPro ? (
+              <div className="flex items-center gap-2 text-xs text-green-700">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+                </svg>
+                Cotización de compra generada — visible en <button onClick={() => navigate('/panel-profesional')} className="font-semibold underline ml-1">Mis compras →</button>
+              </div>
+            ) : (
+              <button
+                onClick={handleAddToCart}
+                disabled={addingCart || addedToCart}
+                className={`w-full py-2.5 px-4 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors ${
+                  addedToCart
+                    ? 'bg-green-200 text-green-800 cursor-default'
+                    : 'bg-gray-900 hover:bg-gray-800 text-white disabled:opacity-60'
+                }`}
+              >
+                {addingCart ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : addedToCart ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Añadido a la cesta
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    Añadir a la cesta
+                  </>
+                )}
+              </button>
+            )
           )}
         </div>
       )}
