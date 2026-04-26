@@ -1321,19 +1321,28 @@ export async function generateOrderInvoicePDF({ order, invoice }) {
 }
 
 // ── PRESUPUESTO CLIENTE DESDE COTIZACIÓN (sin precios de coste ni notas internas) ──
+export async function generateClientInvoiceFromQuotePDF(params) {
+  return generateClientBudgetFromQuotePDF({ ...params, docType: 'invoice' })
+}
+
 export async function generateClientBudgetFromQuotePDF({
   quote    = {},
   proInfo  = {},
   marginPct = 0,
   logoUrl   = null,
   returnBase64 = false,
+  docType  = 'budget', // 'budget' | 'invoice'
+  invoiceNumber = null,
 } = {}) {
   try {
     const doc   = new jsPDF({ unit: 'mm', format: 'a4' })
     const W     = doc.internal.pageSize.width
     const ML    = 14
     const today = formatDate(new Date())
-    const bNum  = `PRES-${(quote.id ?? '').slice(0, 8).toUpperCase()}`
+    const isInvoice  = docType === 'invoice'
+    const bNum       = isInvoice
+      ? (invoiceNumber ?? `FAC-${(quote.id ?? '').slice(0, 8).toUpperCase()}`)
+      : `PRES-${(quote.id ?? '').slice(0, 8).toUpperCase()}`
     const brandColor = COLORS.blue
 
     const adminTotal  = parseFloat(quote.admin_total_con_iva ?? quote.total_con_iva ?? 0)
@@ -1360,7 +1369,7 @@ export async function generateClientBudgetFromQuotePDF({
     doc.setTextColor(...COLORS.white)
     doc.setFontSize(16)
     doc.setFont('helvetica', 'bold')
-    doc.text('PRESUPUESTO', W - ML, 14, { align: 'right' })
+    doc.text(isInvoice ? 'FACTURA' : 'PRESUPUESTO', W - ML, 14, { align: 'right' })
     doc.setFontSize(9)
     doc.setFont('helvetica', 'normal')
     doc.text(bNum, W - ML, 21, { align: 'right' })

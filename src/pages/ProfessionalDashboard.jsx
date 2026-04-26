@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
-import { generateGroupBudgetPDF, generateGroupInvoicePDF, generateOrderInvoicePDF, generateProQuotePDF, generateClientBudgetFromQuotePDF } from '../services/pdf'
+import { generateGroupBudgetPDF, generateGroupInvoicePDF, generateOrderInvoicePDF, generateProQuotePDF, generateClientBudgetFromQuotePDF, generateClientInvoiceFromQuotePDF } from '../services/pdf'
 import { getProfessionalDiscountForUser } from '../services/settings'
 import { getProductPrices, DEFAULT_MOTOR_PRICES, DEFAULT_GUIDE_PRICE_PER_ML, DEFAULT_INSTALACION_PRICE, DEFAULT_INSTALACION_FIJA, DEFAULT_PRICES } from '../services/prices'
 import WAButton from '../shared/WAButton'
@@ -765,6 +765,8 @@ function CotizacionesTab({ cotizaciones, onDelete, onUpdate, proInfo, logoUrl })
   const [savingClient,     setSavingClient]      = useState({})
   const [downloadingClient,setDownloadingClient] = useState({})
   const [acceptingClient,  setAcceptingClient]   = useState({})
+  const [invoiceNums,      setInvoiceNums]       = useState({}) // id → string
+  const [generatingInv,    setGeneratingInv]     = useState({})
 
   async function handleDelete(id) {
     setDeletingId(id)
@@ -780,6 +782,19 @@ function CotizacionesTab({ cotizaciones, onDelete, onUpdate, proInfo, logoUrl })
       doc?.save(`Cotizacion_${(q.id ?? '').slice(0, 8).toUpperCase()}.pdf`)
     } catch {}
     setDownloadingId(null)
+  }
+
+  async function handleGenerateInvoice(q) {
+    setGeneratingInv(p => ({ ...p, [q.id]: true }))
+    try {
+      const margin = parseFloat(q.client_margin_pct ?? editMargin[q.id] ?? 0)
+      const invNum = invoiceNums[q.id] || `FAC-${(q.id ?? '').slice(0, 8).toUpperCase()}`
+      const doc = await generateClientInvoiceFromQuotePDF({
+        quote: q, proInfo: proInfo ?? {}, marginPct: margin, logoUrl, invoiceNumber: invNum,
+      })
+      doc?.save(`Factura_cliente_${invNum}.pdf`)
+    } catch {}
+    setGeneratingInv(p => ({ ...p, [q.id]: false }))
   }
 
   async function handleSaveClientData(id, adminTotal) {
@@ -983,6 +998,28 @@ function CotizacionesTab({ cotizaciones, onDelete, onUpdate, proInfo, logoUrl })
                         </button>
                       )}
                     </div>
+
+                    {/* Factura para cliente — solo cuando ambos han aceptado */}
+                    {clientAccepted && isAccepted && (
+                      <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-blue-100 mt-1">
+                        <span className="text-xs text-blue-600 font-medium">Factura cliente:</span>
+                        <input
+                          type="text"
+                          value={invoiceNums[q.id] ?? `FAC-${(q.id ?? '').slice(0, 8).toUpperCase()}`}
+                          onChange={e => setInvoiceNums(p => ({ ...p, [q.id]: e.target.value }))}
+                          className="w-36 border border-blue-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-300 bg-white"
+                          placeholder="Nº factura"
+                        />
+                        <button onClick={() => handleGenerateInvoice(q)} disabled={generatingInv[q.id]}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                          {generatingInv[q.id]
+                            ? <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                          }
+                          Generar factura
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Acciones generales */}
