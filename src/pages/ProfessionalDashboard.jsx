@@ -798,17 +798,17 @@ function CotizacionesTab({ cotizaciones, onDelete, onUpdate, proInfo, logoUrl })
     setGeneratingInv(p => ({ ...p, [q.id]: false }))
   }
 
-  async function handleSaveClientData(id, adminTotal) {
+  async function handleSaveClientData(id, adminTotal, currentMarginPct, currentWorkNotes, currentClientInfo) {
     setSavingClient(p => ({ ...p, [id]: true }))
-    const margin      = parseFloat(editMargin[id] ?? 0)
+    const margin      = parseFloat(editMargin[id] !== undefined ? editMargin[id] : (currentMarginPct ?? 0))
     const clientTotal = parseFloat(adminTotal) * (1 + margin / 100)
-    const notes       = editWorkNotes[id] !== undefined ? editWorkNotes[id] : null
-    const ci          = editClientInfo[id]
+    const notes       = editWorkNotes[id] !== undefined ? editWorkNotes[id] : (currentWorkNotes ?? null)
+    const ci          = editClientInfo[id] !== undefined ? editClientInfo[id] : (currentClientInfo ?? null)
     const updates     = { client_margin_pct: margin, client_total: clientTotal }
     if (notes !== null) updates.work_notes = notes.trim() || null
-    if (ci !== undefined) updates.client_info = Object.values(ci).some(v => v?.trim()) ? ci : null
-    await supabase.from('pro_purchase_quotes').update(updates).eq('id', id)
-    onUpdate?.(id, updates)
+    if (ci !== null) updates.client_info = Object.values(ci).some(v => v?.trim()) ? ci : null
+    const { error } = await supabase.from('pro_purchase_quotes').update(updates).eq('id', id)
+    if (!error) onUpdate?.(id, updates)
     setSavingClient(p => ({ ...p, [id]: false }))
   }
 
@@ -954,7 +954,7 @@ function CotizacionesTab({ cotizaciones, onDelete, onUpdate, proInfo, logoUrl })
                       </div>
                       <span className="text-xs text-gray-400">→</span>
                       <span className="text-sm font-black text-blue-700">{fmt(clientTotal)}</span>
-                      <button onClick={() => handleSaveClientData(q.id, adminTotal)} disabled={savingClient[q.id]}
+                      <button onClick={() => handleSaveClientData(q.id, adminTotal, q.client_margin_pct, q.work_notes, q.client_info)} disabled={savingClient[q.id]}
                         className="px-2.5 py-1 text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-colors disabled:opacity-50">
                         {savingClient[q.id] ? '…' : 'Guardar'}
                       </button>
