@@ -60,6 +60,8 @@ function OrderModal({ order, onClose, onUpdate }) {
   const [sendingEmail,  setSendingEmail]  = useState(false)
   const [generatingInvoice, setGeneratingInvoice] = useState(false)
   const [existingInvoice,   setExistingInvoice]   = useState(null)
+  const [proformaTotal,     setProformaTotal]     = useState('')
+  const [savingProforma,    setSavingProforma]    = useState(false)
 
   useEffect(() => { loadInvoice() }, [])
 
@@ -70,13 +72,15 @@ function OrderModal({ order, onClose, onUpdate }) {
       .eq('order_id', order.id)
       .maybeSingle()
     setExistingInvoice(data ?? null)
+    if (data) setProformaTotal(String(data.total_with_iva ?? ''))
   }
 
   // Crea el registro de factura en BD (sin descargar PDF)
   async function createInvoiceRecord() {
-    const totalSinIva = (order.total_with_iva ?? 0) / 1.21
-    const iva         = (order.total_with_iva ?? 0) - totalSinIva
-    const invoiceNum  = `FAC-${Date.now().toString().slice(-8)}`
+    const isProformaOrder = order.installacion !== false   // con instalación → proforma
+    const totalSinIva     = (order.total_with_iva ?? 0) / 1.21
+    const iva             = (order.total_with_iva ?? 0) - totalSinIva
+    const invoiceNum      = `${isProformaOrder ? 'PRO' : 'FAC'}-${Date.now().toString().slice(-8)}`
 
     const { data: inv, error } = await supabase
       .from('invoices')
@@ -95,6 +99,7 @@ function OrderModal({ order, onClose, onUpdate }) {
 
     if (error) throw error
     setExistingInvoice(inv)
+    setProformaTotal(String(inv.total_with_iva ?? ''))
     return inv
   }
 
@@ -130,9 +135,33 @@ function OrderModal({ order, onClose, onUpdate }) {
     if (data) setExistingInvoice(data)
   }
 
+  async function handleUpdateProformaTotal() {
+    setSavingProforma(true)
+    const newTotal = parseFloat(String(proformaTotal).replace(',', '.'))
+    if (!isNaN(newTotal) && newTotal > 0) {
+      const sinIva = newTotal / 1.21
+      const iva    = newTotal - sinIva
+      const { data } = await supabase.from('invoices')
+        .update({ total_with_iva: newTotal, total_without_iva: sinIva, iva })
+        .eq('id', existingInvoice.id).select().single()
+      if (data) { setExistingInvoice(data); setProformaTotal(String(data.total_with_iva)) }
+    }
+    setSavingProforma(false)
+  }
+
+  async function handleConfirmDefinitiva() {
+    if (!window.confirm('¿Convertir esta factura proforma en definitiva? Esta acción no se puede revertir.')) return
+    const newNum = existingInvoice.invoice_number.replace(/^PRO-/, 'FAC-')
+    const { data } = await supabase.from('invoices')
+      .update({ invoice_number: newNum })
+      .eq('id', existingInvoice.id).select().single()
+    if (data) setExistingInvoice(data)
+  }
+
   const calendarUrl = buildCalendarUrl(order, confirmedDate, confirmedTime)
-  const isParticular    = order.user_type === 'public'
+  const isParticular     = order.user_type === 'public'
   const tieneInstalacion = order.installacion !== false
+  const isProformaInvoice = existingInvoice?.invoice_number?.startsWith('PRO-') ?? false
 
   const HORAS = ['08:00','09:00','10:00','11:00','12:00','13:00','16:00','17:00','18:00','19:00']
 
@@ -397,13 +426,19 @@ function OrderModal({ order, onClose, onUpdate }) {
                           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                   }
-                  {generatingInvoice ? 'Generando...' : 'Generar factura'}
+                  {generatingInvoice ? 'Generando...' : tieneInstalacion ? 'Generar factura proforma' : 'Generar factura'}
                 </button>
               ) : (
                 <div className="space-y-3">
+                  {/* Cabecera factura */}
                   <div className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3">
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">{existingInvoice.invoice_number}</p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-bold text-gray-900">{existingInvoice.invoice_number}</p>
+                        {isProformaInvoice && (
+                          <span className="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">PROFORMA</span>
+                        )}
+                      </div>
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
                         existingInvoice.payment_status === 'paid'
                           ? 'bg-green-100 text-green-700'
@@ -421,6 +456,29 @@ function OrderModal({ order, onClose, onUpdate }) {
                       Descargar PDF
                     </button>
                   </div>
+
+                  {/* Edición proforma: actualizar importe y confirmar definitiva */}
+                  {isProformaInvoice && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 space-y-2">
+                      <p className="text-xs font-bold text-blue-700">Proforma — actualizar importe tras medidas</p>
+                      <div className="flex gap-2">
+                        <input
+                          type="number" min="0" step="0.01"
+                          value={proformaTotal}
+                          onChange={e => setProformaTotal(e.target.value)}
+                          placeholder="Total con IVA (€)"
+                          className="flex-1 px-3 py-2 text-sm border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white" />
+                        <button onClick={handleUpdateProformaTotal} disabled={savingProforma}
+                          className="px-3 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-60">
+                          {savingProforma ? '...' : 'Actualizar'}
+                        </button>
+                      </div>
+                      <button onClick={handleConfirmDefinitiva}
+                        className="w-full py-2 text-xs font-bold text-blue-700 bg-blue-100 hover:bg-blue-200 rounded-lg transition-colors">
+                        Confirmar como factura definitiva →
+                      </button>
+                    </div>
+                  )}
 
                   {/* Cambiar estado de pago */}
                   <div className="flex gap-2">

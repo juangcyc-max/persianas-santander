@@ -48,7 +48,8 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null, { 
   const ML   = 14
   const MR   = 14
   const CW   = W - ML - MR                  // 182
-  const isPaid = invoice.payment_status === 'paid'
+  const isPaid     = invoice.payment_status === 'paid'
+  const isProforma = invoice.invoice_number?.startsWith('PRO-')
 
   const logoImg = await loadImage('/persianassantanderlogo.png')
 
@@ -62,9 +63,9 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null, { 
 
   // Título
   doc.setTextColor(...C.white)
-  doc.setFontSize(22)
+  doc.setFontSize(isProforma ? 16 : 22)
   doc.setFont('helvetica', 'bold')
-  doc.text('FACTURA', ML, 22)
+  doc.text(isProforma ? 'FACTURA PROFORMA' : 'FACTURA', ML, 22)
 
   // Número y fecha (derecha)
   doc.setFontSize(8.5)
@@ -85,12 +86,25 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null, { 
   const bText = isPaid ? 'PAGADA' : 'PENDIENTE DE PAGO'
   const bW    = isPaid ? 34 : 58
 
-  doc.setFillColor(...bBg)
-  doc.roundedRect(ML, 38, bW, 9, 2, 2, 'F')
-  doc.setTextColor(...bTxt)
   doc.setFontSize(7.5)
   doc.setFont('helvetica', 'bold')
-  doc.text(bText, ML + bW / 2, 43.8, { align: 'center' })
+
+  if (isProforma) {
+    const pW = 74
+    doc.setFillColor(219, 234, 254)
+    doc.roundedRect(ML, 38, pW, 9, 2, 2, 'F')
+    doc.setTextColor(29, 78, 216)
+    doc.text('PROFORMA · SUJETA A MEDICIÓN', ML + pW / 2, 43.8, { align: 'center' })
+    doc.setFillColor(...bBg)
+    doc.roundedRect(ML + pW + 4, 38, bW, 9, 2, 2, 'F')
+    doc.setTextColor(...bTxt)
+    doc.text(bText, ML + pW + 4 + bW / 2, 43.8, { align: 'center' })
+  } else {
+    doc.setFillColor(...bBg)
+    doc.roundedRect(ML, 38, bW, 9, 2, 2, 'F')
+    doc.setTextColor(...bTxt)
+    doc.text(bText, ML + bW / 2, 43.8, { align: 'center' })
+  }
 
   let y = 55
 
@@ -240,18 +254,30 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null, { 
   // Nota de pago (izquierda)
   const noteW = CW - boxW - 6
   const noteH = 22
-  doc.setFillColor(...(isPaid ? C.greenBg : C.amberBg))
-  doc.roundedRect(ML, y, noteW, noteH, 3, 3, 'F')
-  doc.setFontSize(8.5)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...(isPaid ? C.green : C.amber))
-  doc.text(isPaid ? 'Pago recibido' : 'Pendiente de pago', ML + 6, y + 8)
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(7.5)
-  const noteBody = isPaid
-    ? 'Gracias por confiar en Persianas Santander.'
-    : 'Realiza la transferencia a la cuenta\nindicada por la empresa.'
-  doc.text(noteBody, ML + 6, y + 15, { maxWidth: noteW - 10 })
+  if (isProforma) {
+    doc.setFillColor(219, 234, 254)
+    doc.roundedRect(ML, y, noteW, noteH, 3, 3, 'F')
+    doc.setFontSize(8.5)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(29, 78, 216)
+    doc.text('Importe provisional', ML + 6, y + 8)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7.5)
+    doc.text('Se actualizará con el precio definitivo\ntras la visita de medición.', ML + 6, y + 15, { maxWidth: noteW - 10 })
+  } else {
+    doc.setFillColor(...(isPaid ? C.greenBg : C.amberBg))
+    doc.roundedRect(ML, y, noteW, noteH, 3, 3, 'F')
+    doc.setFontSize(8.5)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...(isPaid ? C.green : C.amber))
+    doc.text(isPaid ? 'Pago recibido' : 'Pendiente de pago', ML + 6, y + 8)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7.5)
+    const noteBody = isPaid
+      ? 'Gracias por confiar en Persianas Santander.'
+      : 'Realiza la transferencia a la cuenta\nindicada por la empresa.'
+    doc.text(noteBody, ML + 6, y + 15, { maxWidth: noteW - 10 })
+  }
 
   // Caja de totales (derecha)
   const proRows = isPro && proDiscount ? 2 : 0
@@ -308,7 +334,12 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null, { 
   label(doc, ML, y + 4, 'Condiciones generales')
   y += 11
 
-  const conditions = [
+  const conditions = isProforma ? [
+    'DOCUMENTO PROVISIONAL — no tiene validez como factura definitiva.',
+    'El precio final se confirmará tras la visita de medición y se emitirá la factura definitiva.',
+    'Garantía: 2 años en mecanismos · 5 años en lamas de aluminio.',
+    'Cualquier reclamación deberá realizarse en un plazo máximo de 48 h tras la instalación.',
+  ] : [
     'Precio definitivo sujeto a verificación de medidas en visita técnica.',
     'Garantía: 2 años en mecanismos · 5 años en lamas de aluminio.',
     'Cualquier reclamación deberá realizarse en un plazo máximo de 48 h tras la recepción.',
@@ -346,5 +377,6 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null, { 
   if (returnBase64) {
     return doc.output('datauristring').split(',')[1]
   }
-  doc.save(`Factura_${invoice.invoice_number}.pdf`)
+  const prefix = isProforma ? 'FacturaProforma' : 'Factura'
+  doc.save(`${prefix}_${invoice.invoice_number}.pdf`)
 }
