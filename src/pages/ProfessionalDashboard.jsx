@@ -978,7 +978,7 @@ function MensajesTab({ userId, onRead }) {
   return (
     <div className="space-y-4">
       <SectionHeader title="Mensajes" />
-      <div className="bg-white rounded-2xl border border-gray-200 flex flex-col" style={{ height: '65vh' }}>
+      <div className="bg-white rounded-2xl border border-gray-200 flex flex-col h-[60vh] sm:h-[65vh]">
         {/* Cabecera */}
         <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3">
           <div className="w-8 h-8 bg-red-700 rounded-full flex items-center justify-center flex-shrink-0">
@@ -1212,7 +1212,7 @@ function ProConfigCard({ c, onDelete, deleting, isExpanded, onToggle }) {
             {added ? 'En cesta · ' : ''}{blindLabel(c.blind_type)}
           </span>
           {!added && c.width && c.height && (
-            <span className="text-xs text-gray-400 hidden sm:inline">· {c.width}×{c.height}</span>
+            <span className="text-xs text-gray-400">· {c.width}×{c.height}</span>
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
@@ -1900,7 +1900,7 @@ export default function ProfessionalDashboard() {
               <img src="/persianassantanderlogo.png" alt="Persianas Santander" className="h-9 w-auto" onError={e => { e.target.src = '/persianassantanderlogo.svg' }} />
               <div className="hidden sm:block h-6 w-px bg-gray-200" />
               <span className="hidden sm:block text-sm font-semibold text-gray-700">Panel profesional</span>
-              <span className="hidden sm:inline-flex bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+              <span className="inline-flex bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
                 −{globalDiscount}%
               </span>
             </div>
@@ -1958,6 +1958,18 @@ export default function ProfessionalDashboard() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
                       </svg>
                       {label}
+                      {id === 'proyectos' && proyectos.length > 0 && (
+                        <span className="ml-auto text-xs font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{proyectos.length}</span>
+                      )}
+                      {id === 'cotizaciones' && cotizaciones.filter(c => c.status === 'pending').length > 0 && (
+                        <span className="ml-auto text-xs font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{cotizaciones.filter(c => c.status === 'pending').length}</span>
+                      )}
+                      {id === 'mensajes' && unreadMsgs > 0 && (
+                        <span className="ml-auto text-xs font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full">{unreadMsgs}</span>
+                      )}
+                      {id === 'configuraciones' && configuraciones.length > 0 && (
+                        <span className="ml-auto text-xs font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">{configuraciones.length}</span>
+                      )}
                     </button>
                   ))}
                   <button onClick={handleLogout}
