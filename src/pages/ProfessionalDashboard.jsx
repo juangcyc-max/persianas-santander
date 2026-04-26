@@ -2018,7 +2018,7 @@ export default function ProfessionalDashboard() {
       setUser(user)
 
       const [empR, configR, pedR, facR, disc, cotR, unreadR] = await Promise.all([
-        supabase.from('professional_data').select('*').eq('user_id', user.id).maybeSingle(),
+        supabase.rpc('get_professional_data', { p_user_id: user.id }).then(r => ({ data: r.data?.[0] ?? null, error: r.error })),
         supabase.from('blind_configurations').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('invoices').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),

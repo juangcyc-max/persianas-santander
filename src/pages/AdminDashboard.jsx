@@ -2104,9 +2104,8 @@ function AdminProfesionalesSection({ adminUser }) {
     // Cargar datos de los profesionales
     const userIds = [...new Set(quotes.map(q => q.user_id).filter(Boolean))]
     if (userIds.length > 0) {
-      const { data: pds } = await supabase.from('professional_data')
-        .select('user_id,razon_social,cif_nif,direccion_fiscal,codigo_postal,ciudad,provincia,telefono,email_facturacion')
-        .in('user_id', userIds)
+      const pdResults = await Promise.all(userIds.map(id => supabase.rpc('get_professional_data', { p_user_id: id }).then(r => r.data?.[0] ? { ...r.data[0], user_id: id } : null)))
+      const pds = pdResults.filter(Boolean)
       const { data: prs } = await supabase.from('profiles').select('id,email').in('id', userIds)
       const map = {}
       userIds.forEach(id => {
