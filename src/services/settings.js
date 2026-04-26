@@ -37,7 +37,7 @@ export async function getProfessionalDiscountForUser(userId) {
       .select('discount_percent')
       .eq('user_id', userId)
       .maybeSingle()
-    if (data?.discount_percent != null) return parseFloat(data.discount_percent)
+    if (data?.discount_percent != null && data.discount_percent > 0) return parseFloat(data.discount_percent)
   } catch {}
   return getProfessionalDiscount()
 }
