@@ -2068,9 +2068,11 @@ export default function ProfessionalDashboard() {
               <img src="/persianassantanderlogo.png" alt="Persianas Santander" className="h-9 w-auto" onError={e => { e.target.src = '/persianassantanderlogo.svg' }} />
               <div className="hidden sm:block h-6 w-px bg-gray-200" />
               <span className="hidden sm:block text-sm font-semibold text-gray-700">Panel profesional</span>
-              <span className="inline-flex bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
-                −{globalDiscount}%
-              </span>
+              {globalDiscount > 0 && (
+                <span className="inline-flex bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full">
+                  −{globalDiscount}%
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-2">
               <Link to="/cesta" className="relative p-2 rounded-xl hover:bg-gray-100 transition-colors">
@@ -2189,11 +2191,11 @@ export default function ProfessionalDashboard() {
 
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
-                    { label: 'Descuento activo', value: `−${globalDiscount}%`, sub: 'Tarifa profesional', accent: true },
+                    globalDiscount > 0 ? { label: 'Descuento activo', value: `−${globalDiscount}%`, sub: 'Tarifa profesional', accent: true } : null,
                     { label: 'Cotizaciones', value: cotizaciones.length, sub: `${cotizaciones.filter(c => c.client_status === 'accepted').length} aceptadas por cliente` },
                     { label: 'Pedidos', value: pedidos.length, sub: `${pedidos.filter(p => p.status === 'completed').length} completados` },
                     { label: 'Total facturado', value: fmt(totalFacturado), sub: 'pedidos completados' },
-                  ].map(({ label, value, sub, accent }) => (
+                  ].filter(Boolean).map(({ label, value, sub, accent }) => (
                     <div key={label} className={`rounded-2xl p-5 border ${accent ? 'bg-red-700 border-red-600' : 'bg-white border-gray-200'}`}>
                       <p className={`text-2xl font-black mb-0.5 ${accent ? 'text-white' : 'text-gray-900'}`}>{value}</p>
                       <p className={`text-sm font-medium ${accent ? 'text-red-200' : 'text-gray-700'}`}>{label}</p>
