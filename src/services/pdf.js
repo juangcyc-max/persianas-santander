@@ -1333,25 +1333,30 @@ export async function generateProQuotePDF(quote, proInfo = {}, { returnBase64 = 
 
     let y = 42
 
-    // Datos del profesional
-    sectionLabel(doc, 14, y, 'Datos del profesional')
-    y += 8
+    // Datos del profesional — bloque gris con todos los datos fiscales
+    const proLines = [
+      proInfo.cif_nif           ? `CIF/NIF: ${proInfo.cif_nif}`                                           : null,
+      proInfo.direccion_fiscal  ? proInfo.direccion_fiscal                                                 : null,
+      [proInfo.codigo_postal, proInfo.ciudad, proInfo.provincia].filter(Boolean).join(' ') || null,
+      proInfo.telefono          ? `Tel. ${proInfo.telefono}`                                               : null,
+      proInfo.email             ? proInfo.email                                                            : null,
+    ].filter(Boolean)
+
+    const blockH = 10 + (proLines.length * 5.5) + 6
+    doc.setFillColor(...COLORS.grayBg)
+    doc.roundedRect(14, y, W - 28, blockH, 2, 2, 'F')
+    sectionLabel(doc, 20, y + 8, 'Datos del profesional')
     if (proInfo.razon_social) {
       doc.setFontSize(10)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(...COLORS.dark)
-      doc.text(proInfo.razon_social, 14, y)
-      y += 5
-    }
-    if (proInfo.email) {
-      doc.setFontSize(8.5)
+      doc.text(proInfo.razon_social, 20, y + 8 + 7)
       doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8.5)
       doc.setTextColor(...COLORS.mid)
-      doc.text(proInfo.email, 14, y)
-      y += 10
-    } else {
-      y += 5
+      proLines.forEach((l, i) => doc.text(l, 20, y + 8 + 7 + 5.5 + i * 5.5))
     }
+    y += blockH + 6
 
     // Tabla de persianas
     sectionLabel(doc, 14, y, 'Persianas solicitadas')

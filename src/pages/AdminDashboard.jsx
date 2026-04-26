@@ -2040,13 +2040,24 @@ function AdminProfesionalesSection({ adminUser }) {
     // Cargar datos de los profesionales
     const userIds = [...new Set(quotes.map(q => q.user_id).filter(Boolean))]
     if (userIds.length > 0) {
-      const { data: pds } = await supabase.from('professional_data').select('user_id,razon_social').in('user_id', userIds)
+      const { data: pds } = await supabase.from('professional_data')
+        .select('user_id,razon_social,cif_nif,direccion_fiscal,codigo_postal,ciudad,provincia,telefono,email_facturacion')
+        .in('user_id', userIds)
       const { data: prs } = await supabase.from('profiles').select('id,email').in('id', userIds)
       const map = {}
       userIds.forEach(id => {
         const pd = pds?.find(p => p.user_id === id)
         const pr = prs?.find(p => p.id === id)
-        map[id] = { razon_social: pd?.razon_social ?? null, email: pr?.email ?? id.slice(0, 8) }
+        map[id] = {
+          razon_social:      pd?.razon_social      ?? null,
+          cif_nif:           pd?.cif_nif           ?? null,
+          direccion_fiscal:  pd?.direccion_fiscal  ?? null,
+          codigo_postal:     pd?.codigo_postal     ?? null,
+          ciudad:            pd?.ciudad            ?? null,
+          provincia:         pd?.provincia         ?? null,
+          telefono:          pd?.telefono          ?? null,
+          email:             pd?.email_facturacion ?? pr?.email ?? id.slice(0, 8),
+        }
       })
       setProData(map)
 

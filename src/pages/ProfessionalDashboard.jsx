@@ -2106,7 +2106,16 @@ export default function ProfessionalDashboard() {
               <CotizacionesTab
                 cotizaciones={cotizaciones}
                 onDelete={id => setCotizaciones(prev => prev.filter(q => q.id !== id))}
-                proInfo={{ razon_social: empresa?.razon_social, email: user?.email }}
+                proInfo={{
+                  razon_social:     empresa?.razon_social     ?? null,
+                  cif_nif:          empresa?.cif_nif          ?? null,
+                  direccion_fiscal: empresa?.direccion_fiscal ?? null,
+                  codigo_postal:    empresa?.codigo_postal    ?? null,
+                  ciudad:           empresa?.ciudad           ?? null,
+                  provincia:        empresa?.provincia        ?? null,
+                  telefono:         empresa?.telefono         ?? null,
+                  email:            empresa?.email_facturacion ?? user?.email ?? null,
+                }}
               />
             )}
 
