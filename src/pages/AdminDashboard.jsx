@@ -3154,6 +3154,7 @@ function AdminClientsSection() {
   const [deleteErr,      setDeleteErr]      = useState('')
   const [proDiscountEdit,setProDiscountEdit]= useState({}) // userId → string
   const [savingProDisc,  setSavingProDisc]  = useState(null)
+  const [savedProDisc,   setSavedProDisc]   = useState(null) // userId con confirmación
 
   useEffect(() => { loadAll() }, [])
 
@@ -3171,14 +3172,17 @@ function AdminClientsSection() {
     setLoading(false)
   }
 
-  async function handleSaveProDiscount(userId) {
+  async function handleSaveProDiscount(userId, currentDbValue) {
     setSavingProDisc(userId)
-    const raw = proDiscountEdit[userId]
-    const percent = raw === '' || raw === undefined ? null : parseFloat(raw)
+    setSavedProDisc(null)
+    const raw     = proDiscountEdit[userId] !== undefined ? proDiscountEdit[userId] : String(currentDbValue ?? '')
+    const percent = raw === '' ? null : parseFloat(raw)
     const ok = await setProfessionalDiscountForUser(userId, isNaN(percent) ? null : percent)
     if (ok) {
       setProData(prev => ({ ...prev, [userId]: { ...prev[userId], discount_percent: isNaN(percent) ? null : percent } }))
       setProDiscountEdit(prev => { const n = { ...prev }; delete n[userId]; return n })
+      setSavedProDisc(userId)
+      setTimeout(() => setSavedProDisc(s => s === userId ? null : s), 2500)
     }
     setSavingProDisc(null)
   }
@@ -3340,20 +3344,22 @@ function AdminClientsSection() {
                             />
                             <span className="text-xs text-gray-400">%</span>
                             <button
-                              onClick={() => handleSaveProDiscount(c.id)}
-                              disabled={savingProDisc === c.id || proDiscountEdit[c.id] === undefined}
+                              onClick={() => handleSaveProDiscount(c.id, p.discount_percent)}
+                              disabled={savingProDisc === c.id}
                               className="text-xs font-semibold px-3 py-1 rounded-lg bg-red-700 text-white hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                             >
                               {savingProDisc === c.id ? '…' : 'Guardar'}
                             </button>
-                            {proDiscountEdit[c.id] !== undefined && proDiscountEdit[c.id] !== '' && (
-                              <button
-                                onClick={() => { setProDiscountEdit(prev => ({ ...prev, [c.id]: '' })); handleSaveProDiscount(c.id) }}
-                                className="text-xs text-gray-400 hover:text-gray-600"
-                              >
-                                Usar global
-                              </button>
+                            {savedProDisc === c.id && (
+                              <span className="text-xs text-green-600 font-semibold">✓ Guardado</span>
                             )}
+                            <button
+                              onClick={() => { setProDiscountEdit(prev => ({ ...prev, [c.id]: '' })); handleSaveProDiscount(c.id, null) }}
+                              disabled={savingProDisc === c.id}
+                              className="text-xs text-gray-400 hover:text-gray-600 disabled:opacity-40"
+                            >
+                              Usar global
+                            </button>
                           </div>
                         </div>
                       ) : (
