@@ -1,5 +1,5 @@
 // PriceDisplay recibe el desglose de precios ya calculado desde Configurator
-function PriceDisplay({ priceBreakdown, userType, proDiscount = 20 }) {
+function PriceDisplay({ priceBreakdown, userType, proDiscount = 0 }) {
   const fmt = (n) =>
     new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2 }).format(n)
 
