@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
-import { generateGroupBudgetPDF, generateGroupInvoicePDF, generateOrderInvoicePDF, generateProQuotePDF } from '../services/pdf'
+import { generateGroupBudgetPDF, generateGroupInvoicePDF, generateOrderInvoicePDF, generateProQuotePDF, generateClientBudgetFromQuotePDF } from '../services/pdf'
 import { getProfessionalDiscountForUser } from '../services/settings'
 import { getProductPrices, DEFAULT_MOTOR_PRICES, DEFAULT_GUIDE_PRICE_PER_ML, DEFAULT_INSTALACION_PRICE, DEFAULT_INSTALACION_FIJA, DEFAULT_PRICES } from '../services/prices'
 import WAButton from '../shared/WAButton'
@@ -117,13 +117,12 @@ const ORDER_STATUS = {
 }
 
 const TABS = [
-  { id: 'overview',         label: 'Resumen',          icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
-  { id: 'proyectos',        label: 'Pres. clientes',   icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
-  { id: 'cotizaciones',     label: 'Mis cotizaciones', icon: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
-  { id: 'mensajes',         label: 'Mensajes',         icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
-  { id: 'configuraciones',  label: 'Configuraciones',  icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
-  { id: 'pedidos',          label: 'Pedidos',          icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
-  { id: 'empresa',          label: 'Mi empresa',       icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
+  { id: 'overview',         label: 'Resumen',            icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+  { id: 'cotizaciones',     label: 'Cotiz. y clientes',  icon: 'M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z' },
+  { id: 'mensajes',         label: 'Mensajes',           icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
+  { id: 'configuraciones',  label: 'Configuraciones',    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
+  { id: 'pedidos',          label: 'Pedidos',            icon: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z' },
+  { id: 'empresa',          label: 'Mi empresa',         icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
 ]
 
 // ── Componentes base ──────────────────────────────────────────────────────
@@ -756,17 +755,21 @@ const QUOTE_STATUS = {
   rejected: { label: 'Rechazado',  cls: 'bg-red-100 text-red-700'      },
 }
 
-function CotizacionesTab({ cotizaciones, onDelete, proInfo }) {
-  const [expandedId,  setExpandedId]  = useState(null)
-  const [deletingId,  setDeletingId]  = useState(null)
-  const [confirmId,   setConfirmId]   = useState(null)
-  const [downloadingId, setDownloadingId] = useState(null)
+function CotizacionesTab({ cotizaciones, onDelete, onUpdate, proInfo, logoUrl }) {
+  const [expandedId,       setExpandedId]       = useState(null)
+  const [deletingId,       setDeletingId]        = useState(null)
+  const [confirmId,        setConfirmId]         = useState(null)
+  const [downloadingId,    setDownloadingId]     = useState(null)
+  const [editMargin,       setEditMargin]        = useState({})
+  const [editWorkNotes,    setEditWorkNotes]     = useState({})
+  const [savingClient,     setSavingClient]      = useState({})
+  const [downloadingClient,setDownloadingClient] = useState({})
+  const [acceptingClient,  setAcceptingClient]   = useState({})
 
   async function handleDelete(id) {
     setDeletingId(id)
     await supabase.from('pro_purchase_quotes').delete().eq('id', id)
-    setDeletingId(null)
-    setConfirmId(null)
+    setDeletingId(null); setConfirmId(null)
     onDelete?.(id)
   }
 
@@ -779,9 +782,39 @@ function CotizacionesTab({ cotizaciones, onDelete, proInfo }) {
     setDownloadingId(null)
   }
 
+  async function handleSaveClientData(id, adminTotal) {
+    setSavingClient(p => ({ ...p, [id]: true }))
+    const margin      = parseFloat(editMargin[id] ?? 0)
+    const clientTotal = parseFloat(adminTotal) * (1 + margin / 100)
+    const notes       = editWorkNotes[id] !== undefined ? editWorkNotes[id] : null
+    const updates     = { client_margin_pct: margin, client_total: clientTotal }
+    if (notes !== null) updates.work_notes = notes.trim() || null
+    await supabase.from('pro_purchase_quotes').update(updates).eq('id', id)
+    onUpdate?.(id, updates)
+    setSavingClient(p => ({ ...p, [id]: false }))
+  }
+
+  async function handleClientAccepted(id) {
+    setAcceptingClient(p => ({ ...p, [id]: true }))
+    const now = new Date().toISOString()
+    await supabase.from('pro_purchase_quotes').update({ client_status: 'accepted', client_accepted_at: now }).eq('id', id)
+    onUpdate?.(id, { client_status: 'accepted', client_accepted_at: now })
+    setAcceptingClient(p => ({ ...p, [id]: false }))
+  }
+
+  async function handleDownloadClientPDF(q) {
+    setDownloadingClient(p => ({ ...p, [q.id]: true }))
+    const margin = parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0))
+    try {
+      const doc = await generateClientBudgetFromQuotePDF({ quote: q, proInfo: proInfo ?? {}, marginPct: margin, logoUrl })
+      doc?.save(`Presupuesto_${(q.id ?? '').slice(0, 8).toUpperCase()}.pdf`)
+    } catch {}
+    setDownloadingClient(p => ({ ...p, [q.id]: false }))
+  }
+
   if (cotizaciones.length === 0) return (
     <div className="space-y-4">
-      <SectionHeader title="Mis cotizaciones" />
+      <SectionHeader title="Cotizaciones y presupuestos" />
       <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
         <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -789,33 +822,40 @@ function CotizacionesTab({ cotizaciones, onDelete, proInfo }) {
           </svg>
         </div>
         <p className="font-semibold text-gray-700 mb-1">Sin cotizaciones todavía</p>
-        <p className="text-sm text-gray-400">Cuando guardes una configuración, aparecerá aquí tu cotización de compra.</p>
+        <p className="text-sm text-gray-400">Cuando guardes una configuración se generará tu cotización de compra y el presupuesto para tu cliente.</p>
       </div>
     </div>
   )
 
   return (
     <div className="space-y-4">
-      <SectionHeader title="Mis cotizaciones" />
+      <SectionHeader title="Cotizaciones y presupuestos" />
       <div className="space-y-3">
         {cotizaciones.map(q => {
-          const st      = QUOTE_STATUS[q.status] ?? QUOTE_STATUS.pending
-          const total   = q.admin_total_con_iva ?? q.total_con_iva ?? 0
-          const isOpen  = expandedId === q.id
+          const st         = QUOTE_STATUS[q.status] ?? QUOTE_STATUS.pending
+          const adminTotal = q.admin_total_con_iva ?? q.total_con_iva ?? 0
+          const isOpen     = expandedId === q.id
           const isAccepted = q.status === 'accepted' || q.status === 'modified'
+          const clientMargin = parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0))
+          const clientTotal  = adminTotal * (1 + clientMargin / 100)
+          const clientAccepted = q.client_status === 'accepted'
           return (
             <div key={q.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+              {/* Cabecera colapsable */}
               <button onClick={() => setExpandedId(isOpen ? null : q.id)}
                 className="w-full px-4 py-4 flex items-center justify-between gap-3 text-left">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-0.5 flex-wrap">
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                    {clientAccepted && (
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Cliente ✓</span>
+                    )}
                     <span className="text-xs text-gray-400">{fmtDate(q.created_at)}</span>
                   </div>
                   <p className="text-sm text-gray-600">{(q.items ?? []).length} persiana{(q.items ?? []).length !== 1 ? 's' : ''} · Dto. {q.discount_pct}%</p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-base font-black text-red-700">{fmt(total)}</span>
+                  <span className="text-base font-black text-red-700">{fmt(adminTotal)}</span>
                   <svg className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -824,7 +864,9 @@ function CotizacionesTab({ cotizaciones, onDelete, proInfo }) {
 
               {isOpen && (
                 <div className="px-4 pb-5 pt-1 border-t border-gray-100 space-y-3">
-                  {/* Items */}
+
+                  {/* ── SECCIÓN 1: Tu compra a Santander ── */}
+                  <p className="text-xs font-bold text-gray-400 uppercase tracking-wide pt-1">Tu compra a Persianas Santander</p>
                   <div className="space-y-2">
                     {(q.items ?? []).map((it, i) => (
                       <div key={i} className="flex items-start justify-between bg-gray-50 rounded-xl px-3 py-2 text-sm gap-2">
@@ -841,15 +883,14 @@ function CotizacionesTab({ cotizaciones, onDelete, proInfo }) {
                     ))}
                   </div>
 
-                  {/* Totales */}
                   <div className="flex justify-end gap-4 text-sm border-t border-gray-100 pt-3">
                     <div className="text-right">
                       <p className="text-xs text-gray-400">Sin IVA</p>
-                      <p className="font-semibold text-gray-700">{fmt(q.admin_total_con_iva ? q.admin_total_con_iva / 1.21 : q.total_sin_iva)}</p>
+                      <p className="font-semibold text-gray-700">{fmt(adminTotal / 1.21)}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs text-gray-400">Total con IVA</p>
-                      <p className="font-black text-red-700 text-base">{fmt(total)}</p>
+                      <p className="font-black text-red-700 text-base">{fmt(adminTotal)}</p>
                     </div>
                   </div>
 
@@ -865,7 +906,7 @@ function CotizacionesTab({ cotizaciones, onDelete, proInfo }) {
                       <svg className="w-4 h-4 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      <p className="text-sm text-green-700 font-medium">Cotización aceptada.</p>
+                      <p className="text-sm text-green-700 font-medium">Cotización aceptada por Persianas Santander.</p>
                     </div>
                   ) : q.status === 'rejected' ? (
                     <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3">
@@ -873,11 +914,78 @@ function CotizacionesTab({ cotizaciones, onDelete, proInfo }) {
                     </div>
                   ) : (
                     <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                      <p className="text-sm text-amber-700">En revisión. Te notificaremos por email.</p>
+                      <p className="text-sm text-amber-700">En revisión por Persianas Santander. Te notificaremos.</p>
                     </div>
                   )}
 
-                  {/* Acciones */}
+                  {/* ── SECCIÓN 2: Presupuesto para tu cliente ── */}
+                  <div className="mt-1 pt-3 border-t border-blue-100 bg-blue-50/40 rounded-xl px-3 py-3 space-y-3">
+                    <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Presupuesto para tu cliente</p>
+
+                    {/* Margen */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-medium text-gray-600">Tu margen:</span>
+                      <div className="relative">
+                        <input
+                          type="number" min="0" max="500" step="1"
+                          value={editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0)}
+                          onChange={e => setEditMargin(p => ({ ...p, [q.id]: e.target.value }))}
+                          className="w-16 px-2 py-1 pr-4 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-blue-300"
+                        />
+                        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                      </div>
+                      <span className="text-xs text-gray-400">→</span>
+                      <span className="text-sm font-black text-blue-700">{fmt(clientTotal)}</span>
+                      <button onClick={() => handleSaveClientData(q.id, adminTotal)} disabled={savingClient[q.id]}
+                        className="px-2.5 py-1 text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-colors disabled:opacity-50">
+                        {savingClient[q.id] ? '…' : 'Guardar'}
+                      </button>
+                    </div>
+
+                    {/* Notas de trabajo — solo visibles internamente para el admin */}
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 mb-1 block">
+                        Notas de trabajo <span className="text-gray-400 font-normal">(internas — solo las ve Persianas Santander)</span>
+                      </label>
+                      <textarea
+                        value={editWorkNotes[q.id] !== undefined ? editWorkNotes[q.id] : (q.work_notes ?? '')}
+                        onChange={e => setEditWorkNotes(p => ({ ...p, [q.id]: e.target.value }))}
+                        placeholder="Instalación en 2ª planta, requiere desmontaje previo, características especiales…"
+                        rows={2}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-200 resize-none bg-white"
+                      />
+                    </div>
+
+                    {/* Acciones cliente */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button onClick={() => handleDownloadClientPDF(q)} disabled={downloadingClient[q.id]}
+                        className="flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-white border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                        {downloadingClient[q.id]
+                          ? <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                          : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        }
+                        PDF para cliente
+                      </button>
+
+                      {clientAccepted ? (
+                        <div className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                          Cliente aceptó · {fmtDate(q.client_accepted_at)}
+                        </div>
+                      ) : (
+                        <button onClick={() => handleClientAccepted(q.id)} disabled={acceptingClient[q.id]}
+                          className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                          {acceptingClient[q.id]
+                            ? <span className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+                            : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                          }
+                          Mi cliente ha aceptado
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Acciones generales */}
                   <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
                     {isAccepted && (
                       <button onClick={() => handleDownload(q)} disabled={downloadingId === q.id}
@@ -886,7 +994,7 @@ function CotizacionesTab({ cotizaciones, onDelete, proInfo }) {
                           ? <span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                           : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                         }
-                        Descargar PDF
+                        PDF cotización Santander
                       </button>
                     )}
                     <div className="ml-auto">
@@ -1826,7 +1934,6 @@ export default function ProfessionalDashboard() {
   const [user,           setUser]           = useState(null)
   const [empresa,        setEmpresa]        = useState(null)
   const [configuraciones,setConfiguraciones]= useState([])
-  const [proyectos,      setProyectos]      = useState([])
   const [cotizaciones,   setCotizaciones]   = useState([])
   const [pedidos,        setPedidos]        = useState([])
   const [facturas,       setFacturas]       = useState([])
@@ -1847,10 +1954,9 @@ export default function ProfessionalDashboard() {
       if (!user) { navigate('/login'); return }
       setUser(user)
 
-      const [empR, configR, proyR, pedR, facR, disc, cotR, unreadR] = await Promise.all([
+      const [empR, configR, pedR, facR, disc, cotR, unreadR] = await Promise.all([
         supabase.from('professional_data').select('*').eq('user_id', user.id).maybeSingle(),
         supabase.from('blind_configurations').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-        supabase.from('pro_projects').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('invoices').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         getProfessionalDiscountForUser(user.id),
@@ -1862,7 +1968,6 @@ export default function ProfessionalDashboard() {
       const emp = empR.data ?? null
       setEmpresa(emp)
       setConfiguraciones(configR.data ?? [])
-      setProyectos(proyR.data ?? [])
       setCotizaciones(cotR.data ?? [])
       setUnreadMsgs(unreadR.count ?? 0)
       setPedidos(pedR.data ?? [])
@@ -1958,9 +2063,6 @@ export default function ProfessionalDashboard() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
                       </svg>
                       {label}
-                      {id === 'proyectos' && proyectos.length > 0 && (
-                        <span className="ml-auto text-xs font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{proyectos.length}</span>
-                      )}
                       {id === 'cotizaciones' && cotizaciones.filter(c => c.status === 'pending').length > 0 && (
                         <span className="ml-auto text-xs font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{cotizaciones.filter(c => c.status === 'pending').length}</span>
                       )}
@@ -1996,9 +2098,6 @@ export default function ProfessionalDashboard() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
                   </svg>
                   {label}
-                  {id === 'proyectos' && proyectos.length > 0 && (
-                    <span className="ml-auto text-xs font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{proyectos.length}</span>
-                  )}
                   {id === 'cotizaciones' && cotizaciones.filter(c => c.status === 'pending').length > 0 && (
                     <span className="ml-auto text-xs font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{cotizaciones.filter(c => c.status === 'pending').length}</span>
                   )}
@@ -2028,7 +2127,7 @@ export default function ProfessionalDashboard() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     { label: 'Descuento activo', value: `−${globalDiscount}%`, sub: 'Tarifa profesional', accent: true },
-                    { label: 'Presupuestos', value: proyectos.length, sub: `${proyectos.filter(p => p.status === 'accepted').length} aceptados` },
+                    { label: 'Cotizaciones', value: cotizaciones.length, sub: `${cotizaciones.filter(c => c.client_status === 'accepted').length} aceptadas por cliente` },
                     { label: 'Pedidos', value: pedidos.length, sub: `${pedidos.filter(p => p.status === 'completed').length} completados` },
                     { label: 'Total facturado', value: fmt(totalFacturado), sub: 'pedidos completados' },
                   ].map(({ label, value, sub, accent }) => (
@@ -2072,25 +2171,25 @@ export default function ProfessionalDashboard() {
                   </Link>
                 )}
 
-                {/* Últimos presupuestos */}
-                {proyectos.length > 0 && (
+                {/* Últimas cotizaciones */}
+                {cotizaciones.length > 0 && (
                   <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
                     <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                      <h3 className="font-bold text-gray-900 text-sm">Últimos presupuestos</h3>
-                      <button onClick={() => setActiveTab('proyectos')} className="text-xs font-semibold text-red-700 hover:underline">Ver todos</button>
+                      <h3 className="font-bold text-gray-900 text-sm">Últimas cotizaciones</h3>
+                      <button onClick={() => setActiveTab('cotizaciones')} className="text-xs font-semibold text-red-700 hover:underline">Ver todas</button>
                     </div>
                     <div className="divide-y divide-gray-100">
-                      {proyectos.slice(0, 4).map(p => {
-                        const total = (p.items ?? []).reduce((s, it) => s + (Number(it.client_price) || 0), 0)
+                      {cotizaciones.slice(0, 4).map(q => {
+                        const st = QUOTE_STATUS[q.status] ?? QUOTE_STATUS.pending
                         return (
-                          <div key={p.id} className="px-5 py-3 flex items-center justify-between gap-4">
+                          <div key={q.id} className="px-5 py-3 flex items-center justify-between gap-4">
                             <div className="min-w-0">
-                              <p className="text-sm font-semibold text-gray-900 truncate">{p.name || p.client_name || 'Sin nombre'}</p>
-                              <p className="text-xs text-gray-400">{(p.items ?? []).length} persianas · {fmtDate(p.created_at)}</p>
+                              <p className="text-sm font-semibold text-gray-900">{(q.items ?? []).length} persiana{(q.items ?? []).length !== 1 ? 's' : ''}</p>
+                              <p className="text-xs text-gray-400">{fmtDate(q.created_at)}</p>
                             </div>
                             <div className="flex items-center gap-3 flex-shrink-0">
-                              <Badge status={p.status} />
-                              <span className="font-bold text-red-700 text-sm">{fmt(total)}</span>
+                              <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                              <span className="font-bold text-red-700 text-sm">{fmt(q.admin_total_con_iva ?? q.total_con_iva ?? 0)}</span>
                             </div>
                           </div>
                         )
@@ -2101,23 +2200,13 @@ export default function ProfessionalDashboard() {
               </div>
             )}
 
-            {/* ── PROYECTOS ── */}
-            {activeTab === 'proyectos' && (
-              <ProyectosTab
-                proyectos={proyectos}
-                setProyectos={setProyectos}
-                empresa={empresa ?? {}}
-                logoUrl={logoUrl}
-                user={user}
-                onConfigSaved={c => setConfiguraciones(prev => [c, ...prev])}
-              />
-            )}
-
-            {/* ── MIS COTIZACIONES ── */}
+            {/* ── COTIZACIONES Y CLIENTES ── */}
             {activeTab === 'cotizaciones' && (
               <CotizacionesTab
                 cotizaciones={cotizaciones}
                 onDelete={id => setCotizaciones(prev => prev.filter(q => q.id !== id))}
+                onUpdate={(id, updates) => setCotizaciones(prev => prev.map(q => q.id === id ? { ...q, ...updates } : q))}
+                logoUrl={logoUrl}
                 proInfo={{
                   razon_social:     empresa?.razon_social     ?? null,
                   cif_nif:          empresa?.cif_nif          ?? null,

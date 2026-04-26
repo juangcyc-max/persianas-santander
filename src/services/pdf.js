@@ -1320,6 +1320,138 @@ export async function generateOrderInvoicePDF({ order, invoice }) {
   }
 }
 
+// ── PRESUPUESTO CLIENTE DESDE COTIZACIÓN (sin precios de coste ni notas internas) ──
+export async function generateClientBudgetFromQuotePDF({
+  quote    = {},
+  proInfo  = {},
+  marginPct = 0,
+  logoUrl   = null,
+  returnBase64 = false,
+} = {}) {
+  try {
+    const doc   = new jsPDF({ unit: 'mm', format: 'a4' })
+    const W     = doc.internal.pageSize.width
+    const ML    = 14
+    const today = formatDate(new Date())
+    const bNum  = `PRES-${(quote.id ?? '').slice(0, 8).toUpperCase()}`
+    const brandColor = COLORS.blue
+
+    const adminTotal  = parseFloat(quote.admin_total_con_iva ?? quote.total_con_iva ?? 0)
+    const margin      = parseFloat(marginPct ?? quote.client_margin_pct ?? 0)
+    const clientTotal = adminTotal * (1 + margin / 100)
+    const scaleFactor = adminTotal > 0 ? clientTotal / adminTotal : 1
+
+    // Cabecera azul
+    doc.setFillColor(...brandColor)
+    doc.rect(0, 0, W, 32, 'F')
+    doc.setFillColor(60, 110, 190)
+    doc.rect(0, 32, W, 1.5, 'F')
+
+    // Logo o nombre empresa
+    const logoImg = logoUrl ? await loadImage(logoUrl) : null
+    if (logoImg) {
+      doc.addImage(logoImg, 'PNG', ML, 6, 0, 20)
+    } else {
+      doc.setTextColor(...COLORS.white)
+      doc.setFontSize(11)
+      doc.setFont('helvetica', 'bold')
+      doc.text(proInfo.razon_social ?? 'Mi Empresa', ML, 21)
+    }
+    doc.setTextColor(...COLORS.white)
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.text('PRESUPUESTO', W - ML, 14, { align: 'right' })
+    doc.setFontSize(9)
+    doc.setFont('helvetica', 'normal')
+    doc.text(bNum, W - ML, 21, { align: 'right' })
+    doc.text(today, W - ML, 27, { align: 'right' })
+
+    let y = 42
+
+    // Bloque datos emisor
+    const proLines = [
+      proInfo.cif_nif           ? `NIF/CIF: ${proInfo.cif_nif}` : null,
+      proInfo.direccion_fiscal  ? proInfo.direccion_fiscal       : null,
+      [proInfo.codigo_postal, proInfo.ciudad, proInfo.provincia].filter(Boolean).join(' ') || null,
+      proInfo.telefono          ? `Tel. ${proInfo.telefono}`     : null,
+      proInfo.email             ? proInfo.email                  : null,
+    ].filter(Boolean)
+    const blockH = 10 + proLines.length * 5.5 + 6
+    doc.setFillColor(...COLORS.grayBg)
+    doc.roundedRect(ML, y, W - 28, blockH, 2, 2, 'F')
+    sectionLabel(doc, ML + 6, y + 8, 'Datos del emisor', brandColor)
+    if (proInfo.razon_social) {
+      doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...COLORS.dark)
+      doc.text(proInfo.razon_social, ML + 6, y + 15)
+    }
+    proLines.forEach((ln, i) => {
+      doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(...COLORS.mid)
+      doc.text(ln, ML + 6, y + 21 + i * 5.5)
+    })
+    y += blockH + 8
+
+    // Tabla de ítems con precios cliente (sin coste ni margen)
+    sectionLabel(doc, ML, y, 'Persianas incluidas', brandColor)
+    y += 5
+
+    autoTable(doc, {
+      startY: y,
+      head: [['#', 'Tipo', 'Medidas', 'Mecanismo', 'Guías', 'Precio']],
+      body: (quote.items ?? []).map((it, i) => {
+        const itAdminPrice  = (it.price_professional ?? 0) * 1.21
+        const itClientPrice = itAdminPrice * scaleFactor
+        return [
+          String(i + 1),
+          LABELS.productType[it.blind_type] ?? it.blind_type ?? '—',
+          it.width && it.height ? `${it.width} × ${it.height} mm` : (it.height ? `${it.height} mm` : '—'),
+          it.mechanism ? (LABELS.mechanism[it.mechanism] ?? it.mechanism) : '—',
+          it.guide_type && it.guide_type !== 'none' ? (LABELS.guideType[it.guide_type] ?? it.guide_type) : '—',
+          formatCurrency(itClientPrice),
+        ]
+      }),
+      styles:     { font: 'helvetica', fontSize: 8, cellPadding: 2.5 },
+      headStyles: { fillColor: brandColor, textColor: COLORS.white, fontStyle: 'bold', fontSize: 7.5 },
+      columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 5: { cellWidth: 28, halign: 'right', fontStyle: 'bold' } },
+      margin: { left: ML, right: ML },
+    })
+
+    y = doc.lastAutoTable.finalY + 6
+
+    // Bloque totales
+    const sinIva = clientTotal / 1.21
+    const iva    = clientTotal - sinIva
+    doc.setFillColor(...COLORS.grayBg)
+    doc.roundedRect(W - ML - 72, y, 72, 28, 2, 2, 'F')
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(...COLORS.mid)
+    doc.text('Base imponible:',   W - ML - 66, y + 8)
+    doc.text('IVA (21%):',        W - ML - 66, y + 14)
+    doc.setFont('helvetica', 'bold'); doc.setTextColor(...COLORS.dark)
+    doc.text('TOTAL:',            W - ML - 66, y + 22)
+    doc.text(formatCurrency(sinIva),     W - ML - 2, y + 8,  { align: 'right' })
+    doc.text(formatCurrency(iva),        W - ML - 2, y + 14, { align: 'right' })
+    doc.setFontSize(10)
+    doc.text(formatCurrency(clientTotal), W - ML - 2, y + 22, { align: 'right' })
+    y += 36
+
+    doc.setFontSize(7.5); doc.setFont('helvetica', 'italic'); doc.setTextColor(...COLORS.light)
+    doc.text('Presupuesto válido durante 30 días desde la fecha de emisión. Precios con IVA incluido.', ML, y)
+
+    const footerL1 = [proInfo.razon_social, proInfo.cif_nif].filter(Boolean).join(' · ')
+    const footerL2 = [proInfo.telefono, proInfo.email].filter(Boolean).join(' · ')
+    const pageCount = doc.internal.getNumberOfPages()
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i)
+      addPageFooter(doc, [footerL1 || 'Empresa profesional', footerL2 || ''], i, pageCount)
+    }
+
+    if (returnBase64) return doc.output('datauristring').split(',')[1]
+    return doc
+  } catch (err) {
+    console.error('[generateClientBudgetFromQuotePDF]', err)
+    return null
+  }
+}
+
 // ── COTIZACIÓN DE COMPRA PROFESIONAL ──────────────────────────────────────
 export async function generateProQuotePDF(quote, proInfo = {}, { returnBase64 = false } = {}) {
   try {

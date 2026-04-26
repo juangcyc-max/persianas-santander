@@ -1759,7 +1759,8 @@ function AdminProQuoteModal({ quote, proData, onClose, onUpdated }) {
   const [confirmDel,  setConfirmDel]  = useState(false)
   const [downloading, setDownloading] = useState(false)
 
-  const isModified = parseFloat(adminPrice) !== parseFloat(quote.total_con_iva)
+  const isModified     = parseFloat(adminPrice) !== parseFloat(quote.total_con_iva)
+  const clientAccepted = quote.client_status === 'accepted'
 
   async function handleSave() {
     setSaving(true)
@@ -1841,6 +1842,19 @@ function AdminProQuoteModal({ quote, proData, onClose, onUpdated }) {
         </div>
 
         <div className="px-6 py-5 space-y-5">
+          {/* Banner: bloqueado hasta que el cliente del pro acepte */}
+          {!clientAccepted && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3">
+              <svg className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <div>
+                <p className="text-xs font-semibold text-amber-700">En espera de aceptación del cliente</p>
+                <p className="text-xs text-amber-600 mt-0.5">El profesional aún no ha confirmado que su cliente ha aceptado el presupuesto. Puedes ver los detalles pero no gestionar hasta entonces.</p>
+              </div>
+            </div>
+          )}
+
           {/* Items */}
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Persianas solicitadas</p>
@@ -1871,10 +1885,29 @@ function AdminProQuoteModal({ quote, proData, onClose, onUpdated }) {
             </div>
           </div>
 
+          {/* Info interna: lo que el pro cobra a su cliente + notas de trabajo — SOLO ADMIN */}
+          {(quote.client_total || quote.work_notes) && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 space-y-2">
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">Solo visible para el administrador</p>
+              {quote.client_total > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">El profesional cobra a su cliente:</span>
+                  <span className="font-bold text-gray-900">{fmt(quote.client_total)}</span>
+                </div>
+              )}
+              {quote.work_notes && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-0.5">Notas de trabajo:</p>
+                  <p className="text-sm text-gray-700 italic">{quote.work_notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Estado */}
           <div>
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Estado</label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className={`grid grid-cols-2 gap-2 ${!clientAccepted ? 'opacity-50 pointer-events-none' : ''}`}>
               {Object.entries(PRO_QUOTE_STATUS).map(([k, { label, cls }]) => (
                 <button key={k} type="button" onClick={() => setStatus(k)}
                   className={`py-2 px-3 rounded-xl border-2 text-sm font-semibold transition-all ${
@@ -1943,8 +1976,9 @@ function AdminProQuoteModal({ quote, proData, onClose, onUpdated }) {
             <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50">
               Cancelar
             </button>
-            <button onClick={handleSave} disabled={saving}
-              className="flex-1 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white text-sm font-bold disabled:opacity-60 transition-colors flex items-center justify-center gap-2">
+            <button onClick={handleSave} disabled={saving || !clientAccepted}
+              className="flex-1 py-2.5 rounded-xl bg-red-700 hover:bg-red-800 text-white text-sm font-bold disabled:opacity-60 transition-colors flex items-center justify-center gap-2"
+              title={!clientAccepted ? 'Esperando que el cliente del profesional acepte el presupuesto' : ''}>
               {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : null}
               {saving ? 'Guardando…' : 'Guardar y notificar'}
             </button>
@@ -2156,8 +2190,11 @@ function AdminProfesionalesSection({ adminUser }) {
                       <p className="text-sm font-semibold text-gray-900 truncate">{name}</p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                        {q.client_status === 'accepted'
+                          ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">Cliente ✓</span>
+                          : <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600">🔒 Cliente pendiente</span>
+                        }
                         <span className="text-xs text-gray-400">{fmtDate(q.created_at)}</span>
-                        <span className="text-xs text-gray-400">−{q.discount_pct}%</span>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
@@ -2193,7 +2230,13 @@ function AdminProfesionalesSection({ adminUser }) {
                         <td className="px-4 py-3 text-gray-500">−{q.discount_pct}%</td>
                         <td className="px-4 py-3 font-bold text-red-700">{fmt(total)}</td>
                         <td className="px-4 py-3">
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls}`}>{st.label}</span>
+                          <div className="flex flex-col gap-1">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${st.cls} w-fit`}>{st.label}</span>
+                            {q.client_status === 'accepted'
+                              ? <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 w-fit">Cliente ✓</span>
+                              : <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 w-fit">🔒 Pendiente</span>
+                            }
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-xs text-gray-400">{fmtDate(q.created_at)}</td>
                         <td className="px-4 py-3 text-right">
