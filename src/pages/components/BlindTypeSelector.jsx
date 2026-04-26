@@ -133,7 +133,7 @@ function BlindTypeSelector({ blindType, onTypeChange }) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className={`font-bold text-sm mb-0.5 ${isSistema ? 'text-red-700' : 'text-gray-900'}`}>
-                  Sistema Mini
+                  Sistema Mini Cajón
                 </p>
                 {!isSistema && <p className="text-xs text-gray-400">Cajón PVC, Aluminio o Autoblocante · Guías opcionales</p>}
                 {isSistema && (

@@ -2065,7 +2065,7 @@ export default function ProfessionalDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <img src="/persianassantanderlogo.png" alt="Persianas Santander" className="h-9 w-auto" onError={e => { e.target.src = '/persianassantanderlogo.svg' }} />
+              <img src="/persianassantanderlogo.png" alt="Persianas Santander" className="h-9 w-auto cursor-pointer" onClick={() => navigate('/')} onError={e => { e.target.src = '/persianassantanderlogo.svg' }} />
               <div className="hidden sm:block h-6 w-px bg-gray-200" />
               <span className="hidden sm:block text-sm font-semibold text-gray-700">Panel profesional</span>
               {globalDiscount > 0 && (
@@ -2192,11 +2192,12 @@ export default function ProfessionalDashboard() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
                     globalDiscount > 0 ? { label: 'Descuento activo', value: `−${globalDiscount}%`, sub: 'Tarifa profesional', accent: true } : null,
-                    { label: 'Cotizaciones', value: cotizaciones.length, sub: `${cotizaciones.filter(c => c.client_status === 'accepted').length} aceptadas por cliente` },
-                    { label: 'Pedidos', value: pedidos.length, sub: `${pedidos.filter(p => p.status === 'completed').length} completados` },
+                    { label: 'Cotizaciones', value: cotizaciones.length, sub: `${cotizaciones.filter(c => c.client_status === 'accepted').length} aceptadas por cliente`, tab: 'cotizaciones' },
+                    { label: 'Pedidos', value: pedidos.length, sub: `${pedidos.filter(p => p.status === 'completed').length} completados`, tab: 'pedidos' },
                     { label: 'Total facturado', value: fmt(totalFacturado), sub: 'pedidos completados' },
-                  ].filter(Boolean).map(({ label, value, sub, accent }) => (
-                    <div key={label} className={`rounded-2xl p-5 border ${accent ? 'bg-red-700 border-red-600' : 'bg-white border-gray-200'}`}>
+                  ].filter(Boolean).map(({ label, value, sub, accent, tab }) => (
+                    <div key={label} onClick={() => tab && setActiveTab(tab)}
+                      className={`rounded-2xl p-5 border ${accent ? 'bg-red-700 border-red-600' : 'bg-white border-gray-200'} ${tab ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}>
                       <p className={`text-2xl font-black mb-0.5 ${accent ? 'text-white' : 'text-gray-900'}`}>{value}</p>
                       <p className={`text-sm font-medium ${accent ? 'text-red-200' : 'text-gray-700'}`}>{label}</p>
                       {sub && <p className={`text-xs mt-0.5 ${accent ? 'text-red-300' : 'text-gray-400'}`}>{sub}</p>}

@@ -697,8 +697,8 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
-              <img src="/persianassantanderlogo.png" alt="Persianas Santander" className="h-9 w-auto"
-                onError={e => { e.target.src = '/persianassantanderlogo.svg' }} />
+              <img src="/persianassantanderlogo.png" alt="Persianas Santander" className="h-9 w-auto cursor-pointer"
+                onClick={() => window.location.href = '/'} onError={e => { e.target.src = '/persianassantanderlogo.svg' }} />
               <div className="hidden sm:block h-6 w-px bg-gray-200" />
               <span className="hidden sm:flex items-center gap-2 text-sm font-bold text-gray-700">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
