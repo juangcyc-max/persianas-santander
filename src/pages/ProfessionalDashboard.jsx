@@ -767,6 +767,7 @@ function CotizacionesTab({ cotizaciones, onDelete, onUpdate, proInfo, logoUrl })
   const [acceptingClient,  setAcceptingClient]   = useState({})
   const [invoiceNums,      setInvoiceNums]       = useState({}) // id → string
   const [generatingInv,    setGeneratingInv]     = useState({})
+  const [editClientInfo,   setEditClientInfo]    = useState({}) // id → {nombre,nif,direccion,email}
 
   async function handleDelete(id) {
     setDeletingId(id)
@@ -802,8 +803,10 @@ function CotizacionesTab({ cotizaciones, onDelete, onUpdate, proInfo, logoUrl })
     const margin      = parseFloat(editMargin[id] ?? 0)
     const clientTotal = parseFloat(adminTotal) * (1 + margin / 100)
     const notes       = editWorkNotes[id] !== undefined ? editWorkNotes[id] : null
+    const ci          = editClientInfo[id]
     const updates     = { client_margin_pct: margin, client_total: clientTotal }
     if (notes !== null) updates.work_notes = notes.trim() || null
+    if (ci !== undefined) updates.client_info = Object.values(ci).some(v => v?.trim()) ? ci : null
     await supabase.from('pro_purchase_quotes').update(updates).eq('id', id)
     onUpdate?.(id, updates)
     setSavingClient(p => ({ ...p, [id]: false }))
@@ -955,6 +958,29 @@ function CotizacionesTab({ cotizaciones, onDelete, onUpdate, proInfo, logoUrl })
                         className="px-2.5 py-1 text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-colors disabled:opacity-50">
                         {savingClient[q.id] ? '…' : 'Guardar'}
                       </button>
+                    </div>
+
+                    {/* Datos del cliente final */}
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-gray-600 block">Datos del cliente final</label>
+                      {[
+                        { key: 'nombre',    placeholder: 'Nombre o razón social' },
+                        { key: 'nif',       placeholder: 'NIF / DNI' },
+                        { key: 'direccion', placeholder: 'Dirección completa' },
+                        { key: 'email',     placeholder: 'Email' },
+                      ].map(({ key, placeholder }) => {
+                        const ci = editClientInfo[q.id] ?? q.client_info ?? {}
+                        return (
+                          <input key={key} type="text" placeholder={placeholder}
+                            value={ci[key] ?? ''}
+                            onChange={e => setEditClientInfo(p => ({
+                              ...p,
+                              [q.id]: { ...(p[q.id] ?? q.client_info ?? {}), [key]: e.target.value }
+                            }))}
+                            className="w-full px-3 py-1.5 text-xs rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-blue-200 bg-white"
+                          />
+                        )
+                      })}
                     </div>
 
                     {/* Notas de trabajo — solo visibles internamente para el admin */}

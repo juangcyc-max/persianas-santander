@@ -1399,6 +1399,30 @@ export async function generateClientBudgetFromQuotePDF({
     })
     y += blockH + 8
 
+    // Bloque destinatario (datos del cliente final) si existen
+    const ci = quote.client_info ?? {}
+    const ciLines = [
+      ci.nif       ? `NIF/DNI: ${ci.nif}` : null,
+      ci.direccion || null,
+      ci.email     || null,
+    ].filter(Boolean)
+    if (ci.nombre || ciLines.length > 0) {
+      const ciH = 10 + (ci.nombre ? 6 : 0) + ciLines.length * 5.5 + 4
+      doc.setFillColor(240, 245, 255)
+      doc.roundedRect(ML, y, W - 28, ciH, 2, 2, 'F')
+      sectionLabel(doc, ML + 6, y + 8, 'Datos del cliente', brandColor)
+      let cy = y + 15
+      if (ci.nombre) {
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...COLORS.dark)
+        doc.text(ci.nombre, ML + 6, cy); cy += 6
+      }
+      ciLines.forEach(ln => {
+        doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(...COLORS.mid)
+        doc.text(ln, ML + 6, cy); cy += 5.5
+      })
+      y += ciH + 8
+    }
+
     // Tabla de ítems con precios cliente (sin coste ni margen)
     sectionLabel(doc, ML, y, 'Persianas incluidas', brandColor)
     y += 5
