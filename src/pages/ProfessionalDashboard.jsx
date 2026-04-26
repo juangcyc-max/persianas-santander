@@ -1095,6 +1095,7 @@ function MensajesTab({ userId, onRead }) {
   const [input,     setInput]     = useState('')
   const [loading,   setLoading]   = useState(true)
   const [sending,   setSending]   = useState(false)
+  const [hoverId,   setHoverId]   = useState(null)
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -1104,6 +1105,10 @@ function MensajesTab({ userId, onRead }) {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pro_messages',
         filter: `professional_user_id=eq.${userId}` },
         (payload) => setMessages(prev => [...prev, payload.new])
+      )
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pro_messages',
+        filter: `professional_user_id=eq.${userId}` },
+        (payload) => setMessages(prev => prev.filter(m => m.id !== payload.old.id))
       )
       .subscribe()
     return () => supabase.removeChannel(channel)
@@ -1121,7 +1126,6 @@ function MensajesTab({ userId, onRead }) {
       .order('created_at', { ascending: true })
     setMessages(data ?? [])
     setLoading(false)
-    // Marcar como leídos
     await supabase.from('pro_messages')
       .update({ read_by_professional: true })
       .eq('professional_user_id', userId)
@@ -1144,6 +1148,11 @@ function MensajesTab({ userId, onRead }) {
       read_by_professional: true,
     })
     setSending(false)
+  }
+
+  async function handleDelete(id) {
+    setMessages(prev => prev.filter(m => m.id !== id))
+    await supabase.from('pro_messages').delete().eq('id', id)
   }
 
   return (
@@ -1178,7 +1187,24 @@ function MensajesTab({ userId, onRead }) {
             messages.map(m => {
               const isMe = m.sender_role === 'professional'
               return (
-                <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                <div
+                  key={m.id}
+                  className={`flex items-end gap-1.5 ${isMe ? 'justify-end' : 'justify-start'}`}
+                  onMouseEnter={() => setHoverId(m.id)}
+                  onMouseLeave={() => setHoverId(null)}
+                >
+                  {/* Botón eliminar — solo mis mensajes, visible al hover */}
+                  {isMe && hoverId === m.id && (
+                    <button
+                      onClick={() => handleDelete(m.id)}
+                      className="p-1 rounded-full text-gray-300 hover:text-red-400 hover:bg-red-50 transition-colors flex-shrink-0 mb-1"
+                      title="Eliminar mensaje"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  )}
                   <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
                     isMe ? 'bg-red-700 text-white rounded-br-md' : 'bg-gray-100 text-gray-800 rounded-bl-md'
                   }`}>

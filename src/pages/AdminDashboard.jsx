@@ -1994,6 +1994,7 @@ function AdminChatConversation({ proUserId, proName, adminUserId, onBack }) {
   const [input,    setInput]    = useState('')
   const [loading,  setLoading]  = useState(true)
   const [sending,  setSending]  = useState(false)
+  const [hoverId,  setHoverId]  = useState(null)
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -2003,6 +2004,10 @@ function AdminChatConversation({ proUserId, proName, adminUserId, onBack }) {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'pro_messages',
         filter: `professional_user_id=eq.${proUserId}` },
         (payload) => setMessages(prev => [...prev, payload.new])
+      )
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'pro_messages',
+        filter: `professional_user_id=eq.${proUserId}` },
+        (payload) => setMessages(prev => prev.filter(m => m.id !== payload.old.id))
       )
       .subscribe()
     return () => supabase.removeChannel(channel)
@@ -2036,6 +2041,11 @@ function AdminChatConversation({ proUserId, proName, adminUserId, onBack }) {
     setSending(false)
   }
 
+  async function handleDelete(id) {
+    setMessages(prev => prev.filter(m => m.id !== id))
+    await supabase.from('pro_messages').delete().eq('id', id)
+  }
+
   return (
     <div className="bg-white rounded-2xl border border-gray-200 flex flex-col" style={{ height: '65vh' }}>
       <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3">
@@ -2056,7 +2066,24 @@ function AdminChatConversation({ proUserId, proName, adminUserId, onBack }) {
         ) : messages.map(m => {
           const isAdmin = m.sender_role === 'admin'
           return (
-            <div key={m.id} className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}>
+            <div
+              key={m.id}
+              className={`flex items-end gap-1.5 ${isAdmin ? 'justify-end' : 'justify-start'}`}
+              onMouseEnter={() => setHoverId(m.id)}
+              onMouseLeave={() => setHoverId(null)}
+            >
+              {/* Admin puede eliminar cualquier mensaje */}
+              {hoverId === m.id && (
+                <button
+                  onClick={() => handleDelete(m.id)}
+                  className={`p-1 rounded-full transition-colors flex-shrink-0 mb-1 ${isAdmin ? 'order-first text-gray-300 hover:text-red-300 hover:bg-red-900/20' : 'text-gray-300 hover:text-red-400 hover:bg-red-50'}`}
+                  title="Eliminar mensaje"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
               <div className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm ${
                 isAdmin ? 'bg-red-700 text-white rounded-br-md' : 'bg-gray-100 text-gray-800 rounded-bl-md'
               }`}>

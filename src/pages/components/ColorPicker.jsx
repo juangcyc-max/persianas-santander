@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 const GAMA_ORDER = ['Grupo Base', 'Grupo 1', 'Grupo 2', 'Grupo 3']
 
 const GAMA_STYLE = {
@@ -11,6 +13,18 @@ function ColorPicker({ label, selectedColor, onColorChange, colors }) {
   const selectedColor_ = colors.find(c => c.hex === selectedColor)
   const selectedName   = selectedColor_?.name ?? '—'
   const selectedIsWood = selectedColor_?.wood ?? false
+  const selectedGama   = selectedColor_?.gama ?? null
+
+  // By default, only the group that contains the selected color is open
+  const [openGroups, setOpenGroups] = useState(() => {
+    const initial = {}
+    GAMA_ORDER.forEach(g => { initial[g] = false })
+    if (selectedGama) initial[selectedGama] = true
+    else initial['Grupo Base'] = true
+    return initial
+  })
+
+  const toggleGroup = (gama) => setOpenGroups(prev => ({ ...prev, [gama]: !prev[gama] }))
 
   const hexToLuma = (hex) => {
     try {
@@ -64,59 +78,85 @@ function ColorPicker({ label, selectedColor, onColorChange, colors }) {
         </div>
       </div>
 
-      {/* Grupos de colores */}
-      <div className="space-y-3">
+      {/* Grupos de colores — colapsables */}
+      <div className="space-y-1.5">
         {groups.map(({ gama, items }) => {
-          const style = GAMA_STYLE[gama] ?? { label: gama, dot: '#999' }
+          const style    = GAMA_STYLE[gama] ?? { label: gama, dot: '#999' }
+          const isOpen   = openGroups[gama] ?? false
+          const hasSelected = items.some(c => c.hex === selectedColor)
+
           return (
-            <div key={gama}>
-              {/* Etiqueta de gama */}
-              <div className="flex items-center gap-1.5 mb-1.5">
+            <div key={gama} className={`rounded-xl border transition-colors ${hasSelected && !isOpen ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-gray-50'}`}>
+              {/* Cabecera del grupo — clickable */}
+              <button
+                type="button"
+                onClick={() => toggleGroup(gama)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left"
+              >
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: style.dot }} />
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{style.label}</span>
-                <div className="flex-1 h-px bg-gray-100" />
-              </div>
+                <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide flex-1">
+                  {style.label}
+                  <span className="ml-1.5 text-gray-400 font-normal normal-case tracking-normal">({items.length})</span>
+                </span>
+                {hasSelected && !isOpen && (() => {
+                  const sel = items.find(c => c.hex === selectedColor)
+                  return (
+                    <div className="flex items-center gap-1 mr-2">
+                      <div className="w-3 h-3 rounded-sm border border-gray-200" style={{ backgroundColor: selectedColor }} />
+                      <span className="text-xs text-red-600 font-medium">{sel?.name}</span>
+                    </div>
+                  )
+                })()}
+                <svg
+                  className={`w-3.5 h-3.5 text-gray-400 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
 
               {/* Chips de color */}
-              <div className="grid grid-cols-6 gap-1.5">
-                {items.map((color) => {
-                  const isSelected = selectedColor === color.hex
-                  const isLight    = hexToLuma(color.hex) > 210
+              {isOpen && (
+                <div className="grid grid-cols-6 gap-1.5 px-3 pb-3">
+                  {items.map((color) => {
+                    const isSelected = selectedColor === color.hex
+                    const isLight    = hexToLuma(color.hex) > 210
 
-                  return (
-                    <button
-                      key={color.name}
-                      onClick={() => onColorChange(color.hex)}
-                      title={`${color.name} · ${color.gama}`}
-                      className={`
-                        relative aspect-square w-full rounded-lg transition-all duration-150
-                        ${isSelected
-                          ? 'ring-2 ring-offset-1 ring-red-600 scale-110 shadow-md'
-                          : 'hover:scale-105 hover:shadow-sm'
-                        }
-                        ${isLight ? 'border border-gray-200' : ''}
-                      `}
-                      style={color.wood ? { background: woodGrain(color.hex) } : { backgroundColor: color.hex }}
-                    >
-                      {isSelected && (
-                        <div className="absolute inset-0 flex items-center justify-center rounded-lg">
-                          <div
-                            className="w-3 h-3 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: hexToLuma(color.hex) > 128 ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.9)' }}
-                          >
-                            <svg className="w-2 h-2" fill="none"
-                              stroke={hexToLuma(color.hex) > 128 ? 'white' : '#374151'}
-                              viewBox="0 0 24 24"
+                    return (
+                      <button
+                        key={color.name}
+                        onClick={() => onColorChange(color.hex)}
+                        title={`${color.name} · ${color.gama}`}
+                        className={`
+                          relative aspect-square w-full rounded-lg transition-all duration-150
+                          ${isSelected
+                            ? 'ring-2 ring-offset-1 ring-red-600 scale-110 shadow-md'
+                            : 'hover:scale-105 hover:shadow-sm'
+                          }
+                          ${isLight ? 'border border-gray-200' : ''}
+                        `}
+                        style={color.wood ? { background: woodGrain(color.hex) } : { backgroundColor: color.hex }}
+                      >
+                        {isSelected && (
+                          <div className="absolute inset-0 flex items-center justify-center rounded-lg">
+                            <div
+                              className="w-3 h-3 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: hexToLuma(color.hex) > 128 ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.9)' }}
                             >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
+                              <svg className="w-2 h-2" fill="none"
+                                stroke={hexToLuma(color.hex) > 128 ? 'white' : '#374151'}
+                                viewBox="0 0 24 24"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           )
         })}
