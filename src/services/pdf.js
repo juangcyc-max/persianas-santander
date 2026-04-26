@@ -1212,7 +1212,7 @@ export async function generateGroupInvoicePDF({
 
 // ── FACTURA DE PEDIDO (cesta → Persianas Santander) ───────────────────────
 // Genera la factura oficial de PS para pedidos realizados desde la cesta.
-export async function generateOrderInvoicePDF({ order, invoice }) {
+export async function generateOrderInvoicePDF({ order, invoice, proData = null }) {
   try {
     const doc    = new jsPDF()
     const W      = doc.internal.pageSize.width
@@ -1244,7 +1244,12 @@ export async function generateOrderInvoicePDF({ order, invoice }) {
 
     const clientName = billing.nombre
       ? `${billing.nombre}${billing.apellidos ? ' ' + billing.apellidos : ''}`.trim()
-      : 'Cliente profesional'
+      : (proData?.razon_social ?? 'Cliente profesional')
+    const clientNif     = billing.dni_nif     || proData?.cif_nif           || null
+    const clientDir     = billing.direccion   || proData?.direccion_fiscal  || null
+    const clientCP      = billing.codigo_postal || proData?.codigo_postal   || null
+    const clientCiudad  = billing.ciudad      || proData?.ciudad            || null
+    const clientEmail   = billing.email       || proData?.email             || null
     doc.setTextColor(...COLORS.dark)
     doc.setFontSize(10)
     doc.setFont('helvetica', 'bold')
@@ -1252,11 +1257,11 @@ export async function generateOrderInvoicePDF({ order, invoice }) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(9)
     doc.setTextColor(...COLORS.mid)
-    if (billing.dni_nif)    doc.text(`DNI/NIF: ${billing.dni_nif}`, 20, y + 22)
-    if (billing.direccion)  doc.text(billing.direccion, 20, y + 29)
-    const city = [billing.codigo_postal, billing.ciudad].filter(Boolean).join(' ')
+    if (clientNif)    doc.text(`DNI/NIF: ${clientNif}`, 20, y + 22)
+    if (clientDir)    doc.text(clientDir, 20, y + 29)
+    const city = [clientCP, clientCiudad].filter(Boolean).join(' ')
     if (city) doc.text(city, 20, y + 36)
-    if (billing.email) doc.text(billing.email, W - 14, y + 22, { align: 'right' })
+    if (clientEmail) doc.text(clientEmail, W - 14, y + 22, { align: 'right' })
     y += 50
 
     // ── TABLA DE ÍTEMS ────────────────────────────────────────────────────

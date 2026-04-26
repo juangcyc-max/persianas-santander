@@ -1702,7 +1702,7 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
 }
 
 // ── Tab Pedidos (unifica pedidos + facturas) ──────────────────────────────
-function PedidosTab({ pedidos, facturas, newOrderId }) {
+function PedidosTab({ pedidos, facturas, newOrderId, proData }) {
   const navigate = useNavigate()
   const [downloadingId, setDownloadingId] = useState(null)
   const [expandedId,    setExpandedId]    = useState(null)
@@ -1723,7 +1723,7 @@ function PedidosTab({ pedidos, facturas, newOrderId }) {
 
   async function handleDownload(order, invoice) {
     setDownloadingId(order.id)
-    await generateOrderInvoicePDF({ order, invoice })
+    await generateOrderInvoicePDF({ order, invoice, proData })
     setDownloadingId(null)
   }
 
@@ -2299,7 +2299,7 @@ export default function ProfessionalDashboard() {
             )}
 
             {/* ── PEDIDOS ── */}
-            {activeTab === 'pedidos' && <PedidosTab pedidos={pedidos} facturas={facturas} newOrderId={newOrderId} />}
+            {activeTab === 'pedidos' && <PedidosTab pedidos={pedidos} facturas={facturas} newOrderId={newOrderId} proData={empresa} />}
 
             {/* ── EMPRESA ── */}
             {activeTab === 'empresa' && (
