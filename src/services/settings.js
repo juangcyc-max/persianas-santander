@@ -28,8 +28,7 @@ export async function setProfessionalDiscount(percent) {
   return !error
 }
 
-// Descuento individual por profesional (professional_data.discount_percent)
-// El descuento específico del admin para ese pro prevalece sobre el global
+// Si el admin ha puesto un descuento individual (discount_percent no null), prevalece sobre el global
 export async function getProfessionalDiscountForUser(userId) {
   try {
     const { data } = await supabase
@@ -37,11 +36,13 @@ export async function getProfessionalDiscountForUser(userId) {
       .select('discount_percent')
       .eq('user_id', userId)
       .maybeSingle()
-    if (data?.discount_percent != null && data.discount_percent > 0) return parseFloat(data.discount_percent)
+    if (data?.discount_percent !== null && data?.discount_percent !== undefined)
+      return parseFloat(data.discount_percent)
   } catch {}
   return getProfessionalDiscount()
 }
 
+// percent = número o null (null → usa el descuento global)
 export async function setProfessionalDiscountForUser(userId, percent) {
   const { error } = await supabase
     .from('professional_data')

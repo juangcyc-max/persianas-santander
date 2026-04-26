@@ -4,7 +4,7 @@ import { supabase } from '../services/supabase/client'
 import { generateInvoicePDF } from '../services/invoicePDF'
 import { generateBudgetPDF, generateAdminMultiBudgetPDF, generateProQuotePDF } from '../services/pdf'
 import { notifyStatusChange, confirmAppointment, sendInvoiceEmail, sendBudgetResend } from '../services/email'
-import { getProfessionalDiscount, setProfessionalDiscount } from '../services/settings'
+import { getProfessionalDiscount, setProfessionalDiscount, setProfessionalDiscountForUser } from '../services/settings'
 import { getProductPrices, setProductPrices, DEFAULT_PRICES, DEFAULT_MOTOR_PRICES, DEFAULT_GUIDE_PRICE_PER_ML, DEFAULT_INSTALACION_PRICE, DEFAULT_INSTALACION_FIJA } from '../services/prices'
 
 // ── Helpers ───────────────────────────────────────────────────────────────
@@ -3149,9 +3149,11 @@ function AdminClientsSection() {
   const [search,    setSearch]    = useState('')
   const [typeFilter,setTypeFilter]= useState('all')
   const [expanded,  setExpanded]  = useState(null)
-  const [deleting,  setDeleting]  = useState(null)
-  const [confirm,   setConfirm]   = useState(null)
-  const [deleteErr, setDeleteErr] = useState('')
+  const [deleting,       setDeleting]       = useState(null)
+  const [confirm,        setConfirm]        = useState(null)
+  const [deleteErr,      setDeleteErr]      = useState('')
+  const [proDiscountEdit,setProDiscountEdit]= useState({}) // userId → string
+  const [savingProDisc,  setSavingProDisc]  = useState(null)
 
   useEffect(() => { loadAll() }, [])
 
@@ -3167,6 +3169,18 @@ function AdminClientsSection() {
     ;(pros ?? []).forEach(p => { map[p.user_id] = p })
     setProData(map)
     setLoading(false)
+  }
+
+  async function handleSaveProDiscount(userId) {
+    setSavingProDisc(userId)
+    const raw = proDiscountEdit[userId]
+    const percent = raw === '' || raw === undefined ? null : parseFloat(raw)
+    const ok = await setProfessionalDiscountForUser(userId, isNaN(percent) ? null : percent)
+    if (ok) {
+      setProData(prev => ({ ...prev, [userId]: { ...prev[userId], discount_percent: isNaN(percent) ? null : percent } }))
+      setProDiscountEdit(prev => { const n = { ...prev }; delete n[userId]; return n })
+    }
+    setSavingProDisc(null)
   }
 
   async function handleDelete(userId) {
@@ -3306,12 +3320,41 @@ function AdminClientsSection() {
                   {isExpanded && (
                     <div className="px-4 pb-4 pt-2 bg-gray-50 border-t border-gray-100">
                       {isPro && p ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 sm:gap-x-6 gap-y-2 text-sm">
-                          {p.cif_nif       && <div><span className="text-xs text-gray-400 block">CIF/NIF</span><span className="font-mono font-semibold">{p.cif_nif}</span></div>}
-                          {p.telefono      && <div><span className="text-xs text-gray-400 block">Teléfono</span>{p.telefono}</div>}
-                          {p.ciudad        && <div><span className="text-xs text-gray-400 block">Ciudad</span>{p.ciudad}</div>}
-                          {p.direccion_fiscal && <div className="sm:col-span-2"><span className="text-xs text-gray-400 block">Dirección fiscal</span>{p.direccion_fiscal}</div>}
-                          {p.email_facturacion && <div><span className="text-xs text-gray-400 block">Email facturación</span>{p.email_facturacion}</div>}
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 sm:gap-x-6 gap-y-2 text-sm">
+                            {p.cif_nif       && <div><span className="text-xs text-gray-400 block">CIF/NIF</span><span className="font-mono font-semibold">{p.cif_nif}</span></div>}
+                            {p.telefono      && <div><span className="text-xs text-gray-400 block">Teléfono</span>{p.telefono}</div>}
+                            {p.ciudad        && <div><span className="text-xs text-gray-400 block">Ciudad</span>{p.ciudad}</div>}
+                            {p.direccion_fiscal && <div className="sm:col-span-2"><span className="text-xs text-gray-400 block">Dirección fiscal</span>{p.direccion_fiscal}</div>}
+                            {p.email_facturacion && <div><span className="text-xs text-gray-400 block">Email facturación</span>{p.email_facturacion}</div>}
+                          </div>
+                          {/* Descuento individual */}
+                          <div className="flex items-center gap-2 pt-1 border-t border-gray-200">
+                            <span className="text-xs text-gray-500 font-medium whitespace-nowrap">Descuento individual:</span>
+                            <input
+                              type="number" min="0" max="100" step="1"
+                              placeholder={`Global`}
+                              value={proDiscountEdit[c.id] !== undefined ? proDiscountEdit[c.id] : (p.discount_percent ?? '')}
+                              onChange={e => setProDiscountEdit(prev => ({ ...prev, [c.id]: e.target.value }))}
+                              className="w-20 border border-gray-200 rounded-lg px-2 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-red-300"
+                            />
+                            <span className="text-xs text-gray-400">%</span>
+                            <button
+                              onClick={() => handleSaveProDiscount(c.id)}
+                              disabled={savingProDisc === c.id || proDiscountEdit[c.id] === undefined}
+                              className="text-xs font-semibold px-3 py-1 rounded-lg bg-red-700 text-white hover:bg-red-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            >
+                              {savingProDisc === c.id ? '…' : 'Guardar'}
+                            </button>
+                            {proDiscountEdit[c.id] !== undefined && proDiscountEdit[c.id] !== '' && (
+                              <button
+                                onClick={() => { setProDiscountEdit(prev => ({ ...prev, [c.id]: '' })); handleSaveProDiscount(c.id) }}
+                                className="text-xs text-gray-400 hover:text-gray-600"
+                              >
+                                Usar global
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ) : (
                         <p className="text-xs text-gray-400">Registro: {fmtDate(c.created_at)}</p>
