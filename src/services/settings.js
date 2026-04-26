@@ -21,9 +21,7 @@ export async function getProfessionalDiscount() {
 }
 
 export async function setProfessionalDiscount(percent) {
-  const { error } = await supabase
-    .from('settings')
-    .upsert({ key: 'professional_discount', value: String(percent) }, { onConflict: 'key' })
+  const { error } = await supabase.rpc('admin_set_global_discount', { discount: percent })
   if (!error) sessionStorage.setItem(SESSION_KEY, String(percent))
   return !error
 }
