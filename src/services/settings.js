@@ -44,9 +44,9 @@ export async function getProfessionalDiscountForUser(userId) {
 
 // percent = número o null (null → usa el descuento global)
 export async function setProfessionalDiscountForUser(userId, percent) {
-  const { error } = await supabase
-    .from('professional_data')
-    .update({ discount_percent: percent })
-    .eq('user_id', userId)
+  const { error } = await supabase.rpc('admin_set_professional_discount', {
+    target_user_id: userId,
+    discount: percent ?? null,
+  })
   return !error
 }
