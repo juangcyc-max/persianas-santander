@@ -18,7 +18,8 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 0 }) 
   useEffect(() => {
     if (!destUrl) return
     window.scrollTo({ top: 0, behavior: 'instant' })
-    navigate(destUrl, { replace: true })
+    const isPanel = destUrl === '/panel-profesional'
+    navigate(isPanel ? { pathname: '/panel-profesional', search: '?tab=cotizaciones' } : destUrl, { replace: true })
   }, [destUrl])
 
   async function handleSave() {
@@ -99,7 +100,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 0 }) 
         })
       }
 
-      const dest = userIsPro ? '/panel-profesional?tab=cotizaciones' : '/mis-configuraciones'
+      const dest = userIsPro ? '/panel-profesional' : '/mis-configuraciones'
       setTimeout(() => setDestUrl(dest), 800)
 
     } catch (err) {

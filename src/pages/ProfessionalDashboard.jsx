@@ -2027,11 +2027,14 @@ export default function ProfessionalDashboard() {
   const { itemCount }   = useCart()
   const tabParam    = searchParams.get('tab')
   const newOrderId  = searchParams.get('new')
-  const [activeTab,      setActiveTab]      = useState(tabParam === 'facturas' ? 'pedidos' : (tabParam ?? 'overview'))
+  const VALID_TABS  = TABS.map(t => t.id)
+  const resolveTab  = (p) => p === 'facturas' ? 'pedidos' : (VALID_TABS.includes(p) ? p : 'overview')
+  const [activeTab,      setActiveTab]      = useState(resolveTab(tabParam))
 
   useEffect(() => {
     if (!tabParam) return
-    setActiveTab(tabParam === 'facturas' ? 'pedidos' : tabParam)
+    const valid = VALID_TABS.includes(tabParam) ? tabParam : 'overview'
+    setActiveTab(tabParam === 'facturas' ? 'pedidos' : valid)
   }, [tabParam])
   const [menuOpen,       setMenuOpen]       = useState(false)
   const [user,           setUser]           = useState(null)
