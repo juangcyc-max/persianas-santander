@@ -95,12 +95,10 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 0 }) 
         })
       }
 
-      const dest = userIsPro
-        ? { pathname: '/panel-profesional', state: { tab: 'cotizaciones' } }
-        : '/mis-configuraciones'
       setTimeout(() => {
         window.scrollTo({ top: 0, behavior: 'instant' })
-        navigate(dest, { replace: true })
+        if (userIsPro) navigate('/panel-profesional', { replace: true, state: { tab: 'cotizaciones' } })
+        else navigate('/mis-configuraciones', { replace: true })
       }, 800)
 
     } catch (err) {
