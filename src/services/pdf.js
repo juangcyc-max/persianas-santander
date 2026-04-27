@@ -233,8 +233,9 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
     const isSoloMotor    = productType === 'solo_motor'
     const isGuideProduct = ['solo_guias', 'motor_mas_guias'].includes(productType)
     const isMotorOnly    = ['autoblocante', 'blocking', 'sistema_mini_autoblocante'].includes(productType)
-    const showMotorRow   = configuration.mechanism === 'motor' || isSoloMotor || isMotorOnly
-    const showMecRow     = !isSoloMotor && !isGuideProduct && !isMotorOnly
+    const isRawPano      = ['laminada', 'autoblocante', 'blocking'].includes(productType)
+    const showMotorRow   = !isRawPano && (configuration.mechanism === 'motor' || isSoloMotor || isMotorOnly)
+    const showMecRow     = !isRawPano && !isSoloMotor && !isGuideProduct && !isMotorOnly
     const colorName      = (name, gama) => name ? `${name} (${gama ?? '—'})` : '—'
 
     const tableRows = [
@@ -547,8 +548,9 @@ export async function generateClientBudgetPDF({
     const isSoloMotor    = productType === 'solo_motor'
     const isGuideProduct = ['solo_guias', 'motor_mas_guias'].includes(productType)
     const isMotorOnly    = ['autoblocante', 'blocking', 'sistema_mini_autoblocante'].includes(productType)
-    const showMotorRow   = configuration.mechanism === 'motor' || isSoloMotor || isMotorOnly
-    const showMecRow     = !isSoloMotor && !isGuideProduct && !isMotorOnly
+    const isRawPano      = ['laminada', 'autoblocante', 'blocking'].includes(productType)
+    const showMotorRow   = !isRawPano && (configuration.mechanism === 'motor' || isSoloMotor || isMotorOnly)
+    const showMecRow     = !isRawPano && !isSoloMotor && !isGuideProduct && !isMotorOnly
     const colorName      = (name, gama) => name ? `${name} (${gama ?? '—'})` : '—'
 
     const tableRows = [
