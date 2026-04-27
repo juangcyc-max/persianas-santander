@@ -90,6 +90,26 @@ function SmartRedirect() {
   return <Navigate to={redirect} replace />
 }
 
+// ── Redirige admins al panel si intentan acceder a la web normal ─────────
+function AdminRedirect({ children }) {
+  const [ready, setReady] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) { setReady(true); return }
+      const u = session.user
+      const admin = u.user_metadata?.user_type === 'admin'
+      setIsAdmin(admin)
+      setReady(true)
+    })
+  }, [])
+
+  if (!ready) return null
+  if (isAdmin) return <Navigate to="/admin" replace />
+  return children
+}
+
 function App() {
   return (
     <HelmetProvider>
@@ -105,6 +125,7 @@ function App() {
             <Route path="/inicio"            element={<SmartRedirect />} />
             <Route path="/reset-password"    element={<ResetPassword />} />
             <Route path="/*" element={
+              <AdminRedirect>
               <div className="min-h-screen bg-gray-50 w-full">
                 <Header />
                 <WAButton />
@@ -125,6 +146,7 @@ function App() {
                   </Routes>
                 </main>
               </div>
+              </AdminRedirect>
             } />
           </Routes>
         </CartProvider>
