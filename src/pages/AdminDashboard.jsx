@@ -1106,6 +1106,10 @@ function BudgetModal({ budget, onClose, onSaved }) {
       guideType:      budget.guide_type ?? null,
       installacion:   budget.installacion !== false,
       clientNotes:    budget.client_notes ?? '',
+      boxColorName:   budget.box_color_name  ?? null,
+      boxColorGama:   budget.box_color_gama  ?? null,
+      slatColorName:  budget.slat_color_name ?? null,
+      slatColorGama:  budget.slat_color_gama ?? null,
     }
     return { customerData, configuration }
   }

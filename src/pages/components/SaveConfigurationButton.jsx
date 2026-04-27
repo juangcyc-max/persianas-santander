@@ -86,6 +86,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 0 }) 
             guide_type:         configuration.guideType ?? null,
             width:              configuration.width ?? null,
             height:             configuration.height ?? null,
+            box_color_name:     configuration.boxColorName  ?? null,
             slat_color_name:    configuration.slatColorName ?? null,
             installacion:       configuration.installacion !== false,
             price_public:       basePrice,

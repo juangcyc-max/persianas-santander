@@ -1432,24 +1432,34 @@ export async function generateClientBudgetFromQuotePDF({
     sectionLabel(doc, ML, y, 'Persianas incluidas', brandColor)
     y += 5
 
+    const SISTEMAS_CB = ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante']
     autoTable(doc, {
       startY: y,
-      head: [['#', 'Tipo', 'Medidas', 'Mecanismo', 'Guías', 'Precio']],
+      head: [['#', 'Tipo', 'Medidas', 'Mecanismo', 'Guías', 'Color', 'Precio']],
       body: (quote.items ?? []).map((it, i) => {
         const itAdminPrice  = (it.price_professional ?? 0) * 1.21
         const itClientPrice = itAdminPrice * scaleFactor
+        const isSis = SISTEMAS_CB.includes(it.blind_type)
+        const colorStr = isSis
+          ? [it.box_color_name ? `Cajón: ${it.box_color_name}` : null, it.slat_color_name ? `Lamas: ${it.slat_color_name}` : null].filter(Boolean).join('\n') || '—'
+          : it.slat_color_name ?? '—'
         return [
           String(i + 1),
           LABELS.productType[it.blind_type] ?? it.blind_type ?? '—',
           it.width && it.height ? `${it.width} × ${it.height} mm` : (it.height ? `${it.height} mm` : '—'),
           it.mechanism ? (LABELS.mechanism[it.mechanism] ?? it.mechanism) : '—',
           it.guide_type && it.guide_type !== 'none' ? (LABELS.guideType[it.guide_type] ?? it.guide_type) : '—',
+          colorStr,
           formatCurrency(itClientPrice),
         ]
       }),
       styles:     { font: 'helvetica', fontSize: 8, cellPadding: 2.5 },
       headStyles: { fillColor: brandColor, textColor: COLORS.white, fontStyle: 'bold', fontSize: 7.5 },
-      columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 5: { cellWidth: 28, halign: 'right', fontStyle: 'bold' } },
+      columnStyles: {
+        0: { cellWidth: 8,  halign: 'center' },
+        5: { cellWidth: 30 },
+        6: { cellWidth: 24, halign: 'right', fontStyle: 'bold' },
+      },
       margin: { left: ML, right: ML },
     })
 
@@ -1532,19 +1542,26 @@ export async function generateProQuotePDF(quote, proInfo = {}, { returnBase64 = 
     sectionLabel(doc, 14, y, 'Persianas solicitadas')
     y += 5
 
-    const rows = (quote.items ?? []).map((it, i) => [
-      String(i + 1),
-      LABELS.productType[it.blind_type] ?? it.blind_type ?? '—',
-      it.width && it.height ? `${it.width}×${it.height}` : '—',
-      it.mechanism ? (LABELS.mechanism[it.mechanism] ?? it.mechanism) : '—',
-      it.guide_type && it.guide_type !== 'none' ? (LABELS.guideType[it.guide_type] ?? it.guide_type) : '—',
-      it.slat_color_name ?? '—',
-      formatCurrency((it.price_professional ?? 0) * 1.21),
-    ])
+    const SISTEMAS_PRO = ['sistema_mini_cajon_pvc', 'sistema_mini_cajon_aluminio', 'sistema_mini_autoblocante']
+    const rows = (quote.items ?? []).map((it, i) => {
+      const isSis = SISTEMAS_PRO.includes(it.blind_type)
+      const colorStr = isSis
+        ? [it.box_color_name ? `Cajón: ${it.box_color_name}` : null, it.slat_color_name ? `Lamas: ${it.slat_color_name}` : null].filter(Boolean).join(' · ') || '—'
+        : it.slat_color_name ?? '—'
+      return [
+        String(i + 1),
+        LABELS.productType[it.blind_type] ?? it.blind_type ?? '—',
+        it.width && it.height ? `${it.width}×${it.height}` : '—',
+        it.mechanism ? (LABELS.mechanism[it.mechanism] ?? it.mechanism) : '—',
+        it.guide_type && it.guide_type !== 'none' ? (LABELS.guideType[it.guide_type] ?? it.guide_type) : '—',
+        colorStr,
+        formatCurrency((it.price_professional ?? 0) * 1.21),
+      ]
+    })
 
     autoTable(doc, {
       startY: y,
-      head: [['#', 'Producto', 'Medidas (mm)', 'Mecanismo', 'Guías', 'Color lamas', 'Precio']],
+      head: [['#', 'Producto', 'Medidas (mm)', 'Mecanismo', 'Guías', 'Color', 'Precio']],
       body: rows,
       theme: 'grid',
       styles: { fontSize: 8, cellPadding: 2.5 },
