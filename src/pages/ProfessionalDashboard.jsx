@@ -754,7 +754,7 @@ const QUOTE_STATUS = {
   rejected: { label: 'Rechazado',  cls: 'bg-red-100 text-red-700'      },
 }
 
-function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, onDelete, onUpdate, proInfo, logoUrl }) {
+function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, onDelete, onUpdate, proInfo, logoUrl, globalDiscount = 0 }) {
   const [expandedId,       setExpandedId]       = useState(null)
   const [deletingId,       setDeletingId]        = useState(null)
   const [confirmId,        setConfirmId]         = useState(null)
@@ -1092,7 +1092,7 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
 
       {/* ── Configuraciones guardadas ── */}
       <div className="pt-2">
-        <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} />
+        <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} globalDiscount={globalDiscount} />
       </div>
     </div>
   )
@@ -1376,7 +1376,7 @@ function ProyectosTab({ proyectos, setProyectos, empresa, logoUrl, user, onConfi
 }
 
 // ── Tarjeta de configuración con carrito ──────────────────────────────────
-function ProConfigCard({ c, onDelete, deleting, isExpanded, onToggle }) {
+function ProConfigCard({ c, onDelete, deleting, isExpanded, onToggle, globalDiscount = 0 }) {
   const navigate               = useNavigate()
   const { addToCart, items: cartItems, orderedConfigIds } = useCart()
   const [adding,     setAdding]    = useState(false)
@@ -1422,7 +1422,7 @@ function ProConfigCard({ c, onDelete, deleting, isExpanded, onToggle }) {
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-          <span className={`text-sm font-black ${added ? 'text-green-700' : 'text-red-700'}`}>{fmt(c.price_professional ? c.price_professional * 1.21 : c.estimated_price)}</span>
+          <span className={`text-sm font-black ${added ? 'text-green-700' : 'text-red-700'}`}>{fmt((c.estimated_price ?? 0) * (1 - globalDiscount / 100))}</span>
           <span className="text-xs text-gray-400">{fmtDate(c.created_at)}</span>
           <svg className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
             fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1493,13 +1493,13 @@ function ProConfigCard({ c, onDelete, deleting, isExpanded, onToggle }) {
 }
 
 // ── Tarjeta de grupo (varias persianas de una sesión) ────────────────────
-function ProGroupCard({ items, onDeleteGroup, deleting, isExpanded, onToggle }) {
+function ProGroupCard({ items, onDeleteGroup, deleting, isExpanded, onToggle, globalDiscount = 0 }) {
   const { addToCart, items: cartItems, orderedConfigIds } = useCart()
   const navigate = useNavigate()
   const [adding,  setAdding] = useState(false)
   const [confirm, setConfirm] = useState(false)
 
-  const total      = items.reduce((s, c) => s + (c.price_professional ? c.price_professional * 1.21 : (c.estimated_price ?? 0)), 0)
+  const total      = items.reduce((s, c) => s + (c.estimated_price ?? 0) * (1 - globalDiscount / 100), 0)
   const inCart     = cartItems.length > 0 && items.every(c => cartItems.some(ci => ci.configuration_id === c.id))
   const isOrdered  = !inCart && items.every(c => orderedConfigIds.has(c.id))
   const allInCart  = inCart || isOrdered
@@ -1558,7 +1558,7 @@ function ProGroupCard({ items, onDeleteGroup, deleting, isExpanded, onToggle }) 
                   <p className="font-semibold text-gray-800 truncate">{blindLabel(c.blind_type)}</p>
                   {c.width && c.height && <p className="text-gray-400">{c.width} × {c.height} mm{c.mechanism ? ` · ${c.mechanism}` : ''}</p>}
                 </div>
-                <span className="font-bold text-gray-700 flex-shrink-0">{fmt(c.price_professional ? c.price_professional * 1.21 : c.estimated_price)}</span>
+                <span className="font-bold text-gray-700 flex-shrink-0">{fmt((c.estimated_price ?? 0) * (1 - globalDiscount / 100))}</span>
               </div>
             ))}
           </div>
@@ -1617,7 +1617,7 @@ function ProGroupCard({ items, onDeleteGroup, deleting, isExpanded, onToggle }) 
 }
 
 // ── Tab Configuraciones ───────────────────────────────────────────────────
-function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
+function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscount = 0 }) {
   const [search,     setSearch]    = useState('')
   const [deleting,   setDeleting]  = useState(null)
   const [sortOrder,  setSortOrder] = useState('desc')
@@ -1718,6 +1718,7 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
                 deleting={deleting === entry.id ? entry.id : null}
                 isExpanded={expandedId === cardKey}
                 onToggle={() => setExpandedId(prev => prev === cardKey ? null : cardKey)}
+                globalDiscount={globalDiscount}
               />
             ) : (
               <ProConfigCard
@@ -1727,6 +1728,7 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones }) {
                 deleting={deleting}
                 isExpanded={expandedId === cardKey}
                 onToggle={() => setExpandedId(prev => prev === cardKey ? null : cardKey)}
+                globalDiscount={globalDiscount}
               />
             )
           })}
@@ -2320,6 +2322,7 @@ export default function ProfessionalDashboard() {
                 onDelete={id => setCotizaciones(prev => prev.filter(q => q.id !== id))}
                 onUpdate={(id, updates) => setCotizaciones(prev => prev.map(q => q.id === id ? { ...q, ...updates } : q))}
                 logoUrl={logoUrl}
+                globalDiscount={globalDiscount}
                 proInfo={{
                   razon_social:     empresa?.razon_social     ?? null,
                   cif_nif:          empresa?.cif_nif          ?? null,
