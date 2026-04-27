@@ -99,7 +99,8 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 0 }) 
         })
       }
 
-      setTimeout(() => setDestUrl('/mis-configuraciones'), 800)
+      const dest = userIsPro ? '/panel-profesional?tab=cotizaciones' : '/mis-configuraciones'
+      setTimeout(() => setDestUrl(dest), 800)
 
     } catch (err) {
       setStatus('error')
