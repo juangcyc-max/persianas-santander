@@ -763,6 +763,7 @@ function CotizacionesTab({ cotizaciones, onDelete, onUpdate, proInfo, logoUrl })
   const [editMargin,       setEditMargin]        = useState({})
   const [editWorkNotes,    setEditWorkNotes]     = useState({})
   const [savingClient,     setSavingClient]      = useState({})
+  const [savedClient,      setSavedClient]       = useState({})
   const [downloadingClient,setDownloadingClient] = useState({})
   const [acceptingClient,  setAcceptingClient]   = useState({})
   const [invoiceNums,      setInvoiceNums]       = useState({}) // id → string
@@ -808,7 +809,11 @@ function CotizacionesTab({ cotizaciones, onDelete, onUpdate, proInfo, logoUrl })
     if (notes !== null) updates.work_notes = notes.trim() || null
     if (ci !== null) updates.client_info = Object.values(ci).some(v => v?.trim()) ? ci : null
     const { error } = await supabase.from('pro_purchase_quotes').update(updates).eq('id', id)
-    if (!error) onUpdate?.(id, updates)
+    if (!error) {
+      onUpdate?.(id, updates)
+      setSavedClient(p => ({ ...p, [id]: true }))
+      setTimeout(() => setSavedClient(p => ({ ...p, [id]: false })), 2000)
+    }
     setSavingClient(p => ({ ...p, [id]: false }))
   }
 
@@ -954,9 +959,9 @@ function CotizacionesTab({ cotizaciones, onDelete, onUpdate, proInfo, logoUrl })
                       </div>
                       <span className="text-xs text-gray-400">→</span>
                       <span className="text-sm font-black text-blue-700">{fmt(clientTotal)}</span>
-                      <button onClick={() => handleSaveClientData(q.id, adminTotal, q.client_margin_pct, q.work_notes, q.client_info)} disabled={savingClient[q.id]}
-                        className="px-2.5 py-1 text-xs font-bold bg-blue-700 hover:bg-blue-800 text-white rounded-lg transition-colors disabled:opacity-50">
-                        {savingClient[q.id] ? '…' : 'Guardar'}
+                      <button onClick={() => handleSaveClientData(q.id, adminTotal, q.client_margin_pct, q.work_notes, q.client_info)} disabled={savingClient[q.id] || savedClient[q.id]}
+                        className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${savedClient[q.id] ? 'bg-green-600 text-white' : 'bg-blue-700 hover:bg-blue-800 text-white'}`}>
+                        {savingClient[q.id] ? '…' : savedClient[q.id] ? '✓ Guardado' : 'Guardar'}
                       </button>
                     </div>
 
