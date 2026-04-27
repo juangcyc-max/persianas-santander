@@ -13,8 +13,7 @@ BEGIN
 
   -- Borrar registros dependientes en orden (respetando FKs entre tablas)
   DELETE FROM pro_purchase_quotes  WHERE user_id = target_user_id;
-  DELETE FROM pro_messages         WHERE professional_user_id = target_user_id
-                                      OR admin_user_id = target_user_id;
+  DELETE FROM pro_messages         WHERE professional_user_id = target_user_id;
   DELETE FROM pro_projects         WHERE user_id = target_user_id;
   DELETE FROM cart_items           WHERE user_id = target_user_id;
   DELETE FROM invoices             WHERE user_id = target_user_id;
