@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Resumen Productos — Persianas Santander</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
+  .box { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; max-width: 400px; }
+  h1 { color: #b41419; font-size: 20px; margin-bottom: 8px; }
+  p { color: #666; font-size: 14px; margin-bottom: 24px; }
+  button { background: #b41419; color: white; border: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: bold; cursor: pointer; }
+  button:hover { background: #9a1015; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h1>Persianas Santander</h1>
+  <p>Haz clic para descargar el resumen completo de productos en PDF.</p>
+  <button onclick="generarPDF()">⬇ Descargar PDF</button>
+</div>
+
+<script>
+function generarPDF() {
+  const { jsPDF } = window.jspdf
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
+  const W = 210
+  const rojo = [180, 20, 25]
+  const oscuro = [30, 30, 30]
+  const medio = [90, 90, 90]
+  const claro = [150, 150, 150]
+  const gris = [248, 248, 248]
+  const blanco = [255, 255, 255]
+
+  // ── CABECERA ──
+  doc.setFillColor(...rojo)
+  doc.rect(0, 0, W, 32, 'F')
+  doc.setTextColor(...blanco)
+  doc.setFontSize(20)
+  doc.setFont('helvetica', 'bold')
+  doc.text('CATÁLOGO DE PRODUCTOS', 14, 14)
+  doc.setFontSize(9)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Persianas Santander S.L.  ·  NIF: B39476726  ·  Santander', 14, 22)
+  doc.text(new Date().toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit', year:'numeric' }), W - 14, 22, { align: 'right' })
+
+  let y = 40
+
+  // ── FUNCIÓN HELPER: sección ──
+  function seccion(titulo, icono) {
+    if (y > 240) { doc.addPage(); y = 20 }
+    doc.setFillColor(...rojo)
+    doc.rect(14, y, 3, 7, 'F')
+    doc.setTextColor(...rojo)
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.text(titulo, 20, y + 5.5)
+    y += 12
+  }
+
+  function subtitulo(texto) {
+    doc.setTextColor(...oscuro)
+    doc.setFontSize(9.5)
+    doc.setFont('helvetica', 'bold')
+    doc.text(texto, 14, y)
+    y += 6
+  }
+
+  function nota(texto) {
+    doc.setTextColor(...medio)
+    doc.setFontSize(8)
+    doc.setFont('helvetica', 'italic')
+    const lines = doc.splitTextToSize(texto, W - 28)
+    doc.text(lines, 14, y)
+    y += lines.length * 5 + 2
+  }
+
+  function campo(label, valor) {
+    doc.setFillColor(...gris)
+    doc.roundedRect(14, y, W - 28, 8, 1, 1, 'F')
+    doc.setTextColor(...claro)
+    doc.setFontSize(7.5)
+    doc.setFont('helvetica', 'normal')
+    doc.text(label, 20, y + 5.5)
+    doc.setTextColor(...oscuro)
+    doc.setFont('helvetica', 'bold')
+    doc.text(valor, W - 16, y + 5.5, { align: 'right' })
+    y += 10
+  }
+
+  function tabla(columnas, filas) {
+    const colW = (W - 28) / columnas.length
+    // cabecera
+    doc.setFillColor(...rojo)
+    doc.roundedRect(14, y, W - 28, 8, 1, 1, 'F')
+    doc.setTextColor(...blanco)
+    doc.setFontSize(7.5)
+    doc.setFont('helvetica', 'bold')
+    columnas.forEach((c, i) => doc.text(c, 16 + i * colW, y + 5.5))
+    y += 9
+    // filas
+    filas.forEach((fila, fi) => {
+      if (fi % 2 === 0) { doc.setFillColor(252, 252, 252); doc.rect(14, y, W - 28, 8, 'F') }
+      doc.setTextColor(...oscuro)
+      doc.setFontSize(7.5)
+      doc.setFont('helvetica', 'normal')
+      fila.forEach((c, i) => doc.text(String(c), 16 + i * colW, y + 5.5))
+      y += 8
+    })
+    y += 4
+  }
+
+  function separador() { y += 6 }
+
+  // ══════════════════════════════════════════
+  // 1. PAÑOS DE PERSIANA
+  // ══════════════════════════════════════════
+  seccion('PAÑOS DE PERSIANA')
+  nota('Producto en bruto — únicamente el panel de lamas, sin cajón ni mecanismo.')
+
+  tabla(
+    ['Producto', 'Descripción', 'Mecanismo', 'Colores'],
+    [
+      ['Paño Laminado',     'Lamas estándar a medida',         '—',               'Todos los grupos'],
+      ['Paño Autoblocante', 'Lamas con sistema autoblocante',  '—',               'Todos los grupos'],
+    ]
+  )
+
+  subtitulo('Qué aparece en presupuesto y factura:')
+  campo('Tipo de producto', 'Paño Laminado / Autoblocante')
+  campo('Medidas', 'Ancho × Alto (mm)')
+  campo('Color de lamas', 'Nombre del color · Grupo')
+  campo('Instalación', 'Con o sin instalación')
+  separador()
+
+  // ══════════════════════════════════════════
+  // 2. SISTEMAS MINI CAJÓN
+  // ══════════════════════════════════════════
+  seccion('SISTEMAS MINI CAJÓN')
+  nota('Conjunto completo: cajón + lamas. Cajón y guías comparten siempre el mismo color.')
+
+  tabla(
+    ['Producto', 'Cajón', 'Mecanismo', 'Motor'],
+    [
+      ['Mini Cajón PVC',      'PVC',      'Libre (muelle/cinta/motor)', 'Opcional'],
+      ['Mini Cajón Aluminio', 'Aluminio', 'Libre (muelle/cinta/motor)', 'Opcional'],
+      ['Mini Autoblocante',   'PVC/Al.',  'Motor obligatorio',          'Incluido'],
+    ]
+  )
+
+  subtitulo('Qué aparece en presupuesto y factura:')
+  campo('Tipo de producto', 'Sistema Mini Cajón PVC / Aluminio / Autoblocante')
+  campo('Medidas', 'Ancho × Alto (mm)')
+  campo('Mecanismo', 'Muelle · Cinta · Motor  (según elección)')
+  campo('Motor', 'Mecánico · Mando a distancia  (si aplica)')
+  campo('Guías', 'V25 o H25 por metro lineal  (opcionales)')
+  campo('Color cajón + guías', 'Nombre del color · Grupo')
+  campo('Color de lamas', 'Nombre del color · Grupo')
+  campo('Instalación', 'Con o sin instalación')
+  separador()
+
+  // ══════════════════════════════════════════
+  // 3. PRODUCTOS INDIVIDUALES
+  // ══════════════════════════════════════════
+  seccion('PRODUCTOS INDIVIDUALES')
+
+  subtitulo('Mosquitera Enrollable')
+  campo('Medidas', 'Ancho × Alto (mm)')
+  campo('Mecanismo', 'Muelle o Cinta')
+  campo('Color', 'Solo Grupo Base')
+  campo('Instalación', 'Con o sin instalación')
+  separador()
+
+  subtitulo('Solo Motor')
+  campo('Tipo de motor', 'Mecánico · Mando a distancia')
+  campo('Instalación', 'Con o sin instalación')
+  separador()
+
+  subtitulo('Solo Guías')
+  campo('Altura', 'mm (precio por metro lineal)')
+  campo('Tipo de guía', 'V25 o H25')
+  campo('Color', 'Nombre del color · Grupo')
+  campo('Instalación', 'Con o sin instalación')
+  separador()
+
+  // ══════════════════════════════════════════
+  // 4. GRUPOS DE COLOR
+  // ══════════════════════════════════════════
+  seccion('GRUPOS DE COLOR')
+  nota('El precio varía según el grupo de color elegido.')
+
+  tabla(
+    ['Grupo', 'Nivel', 'Aplicación'],
+    [
+      ['Grupo Base', 'Estándar',  'Colores neutros — precio base'],
+      ['Grupo 1',    'Medio',     'Suplemento sobre precio base'],
+      ['Grupo 2',    'Medio-alto','Suplemento sobre precio base'],
+      ['Grupo 3',    'Premium',   'Suplemento mayor sobre precio base'],
+    ]
+  )
+
+  nota('Para sistemas: cajón y guías siempre del mismo color. Las lamas pueden tener un color diferente dentro del mismo grupo de precio.')
+
+  // ══════════════════════════════════════════
+  // PIE DE PÁGINA
+  // ══════════════════════════════════════════
+  const pages = doc.internal.getNumberOfPages()
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i)
+    const H = doc.internal.pageSize.height
+    doc.setFillColor(245, 245, 245)
+    doc.rect(0, H - 12, W, 12, 'F')
+    doc.setTextColor(...claro)
+    doc.setFontSize(7)
+    doc.setFont('helvetica', 'normal')
+    doc.text('Persianas Santander S.L.  ·  NIF: B39476726  ·  C/ Isla Oleo, Nave 9 - Pol. Nueva Montaña, 39011 Santander', W / 2, H - 4.5, { align: 'center' })
+    doc.text(`Pág. ${i} / ${pages}`, W - 14, H - 4.5, { align: 'right' })
+  }
+
+  doc.save('Catalogo_Productos_Persianas_Santander.pdf')
+}
+</script>
+</body>
+</html>
