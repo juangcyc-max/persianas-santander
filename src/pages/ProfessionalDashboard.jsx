@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
 import { generateGroupBudgetPDF, generateGroupInvoicePDF, generateOrderInvoicePDF, generateProQuotePDF, generateClientBudgetFromQuotePDF, generateClientInvoiceFromQuotePDF } from '../services/pdf'
@@ -2023,6 +2023,7 @@ function EmpresaTab({ empresa, setEmpresa, user, logoUrl, setLogoUrl }) {
 // ── Página principal ──────────────────────────────────────────────────────
 export default function ProfessionalDashboard() {
   const navigate        = useNavigate()
+  const location        = useLocation()
   const [searchParams]  = useSearchParams()
   const { itemCount }   = useCart()
   const tabParam    = searchParams.get('tab')
@@ -2030,11 +2031,8 @@ export default function ProfessionalDashboard() {
   const VALID_TABS  = TABS.map(t => t.id)
   const resolveTab  = (p) => p === 'facturas' ? 'pedidos' : (VALID_TABS.includes(p) ? p : 'overview')
   const [activeTab,      setActiveTab]      = useState(() => {
-    const stored = sessionStorage.getItem('proActiveTab')
-    if (stored && TABS.map(t => t.id).includes(stored)) {
-      sessionStorage.removeItem('proActiveTab')
-      return stored
-    }
+    const stateTab = location.state?.tab
+    if (stateTab && VALID_TABS.includes(stateTab)) return stateTab
     return resolveTab(tabParam)
   })
 

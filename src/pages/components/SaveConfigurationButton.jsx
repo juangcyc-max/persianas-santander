@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../services/supabase/client'
 import { useCart } from '../../context/CartContext'
@@ -11,17 +11,13 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 0 }) 
   const [isPro,        setIsPro]        = useState(false)
   const [addingCart,   setAddingCart]   = useState(false)
   const [addedToCart,  setAddedToCart]  = useState(false)
-  const [destUrl,      setDestUrl]      = useState(null)
+  const savingRef = useRef(false)
   const navigate = useNavigate()
   const { addToCart } = useCart()
 
-  useEffect(() => {
-    if (!destUrl) return
-    window.scrollTo({ top: 0, behavior: 'instant' })
-    navigate(destUrl, { replace: true })
-  }, [destUrl])
-
   async function handleSave() {
+    if (savingRef.current) return
+    savingRef.current = true
     setLoading(true)
     setStatus(null)
     setAddedToCart(false)
@@ -99,13 +95,18 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 0 }) 
         })
       }
 
-      if (userIsPro) sessionStorage.setItem('proActiveTab', 'cotizaciones')
-      const dest = userIsPro ? '/panel-profesional' : '/mis-configuraciones'
-      setTimeout(() => setDestUrl(dest), 800)
+      const dest = userIsPro
+        ? { pathname: '/panel-profesional', state: { tab: 'cotizaciones' } }
+        : '/mis-configuraciones'
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: 'instant' })
+        navigate(dest, { replace: true })
+      }, 800)
 
     } catch (err) {
       setStatus('error')
       setMessage(err.message)
+      savingRef.current = false
     } finally {
       setLoading(false)
     }
