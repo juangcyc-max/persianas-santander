@@ -312,7 +312,7 @@ export async function generateBudgetPDF(customerData = {}, configuration = {}, {
       addPageHeader(doc, logoImg, "PRESUPUESTO", budgetNumber, today)
       addPageFooter(doc, [
         "Persianas Santander S.L.  ·  NIF: B39476726  ·  C/ Isla Oleo, Nave 9 - Pol. Nueva Montaña, 39011 Santander",
-        "942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com",
+        "IBAN: ES51 0182 6765 1102 0159 9053 (BBVA)  ·  942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com",
       ], i, pageCount)
     }
 
@@ -447,7 +447,7 @@ export async function generateAdminMultiBudgetPDF(customerData = {}, items = [],
       addPageHeader(doc, logoImg, "PRESUPUESTO", budgetNumber, today)
       addPageFooter(doc, [
         "Persianas Santander S.L.  ·  NIF: B39476726  ·  C/ Isla Oleo, Nave 9 - Pol. Nueva Montaña, 39011 Santander",
-        "942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com",
+        "IBAN: ES51 0182 6765 1102 0159 9053 (BBVA)  ·  942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com",
       ], i, pageCount)
     }
 
@@ -1313,7 +1313,7 @@ export async function generateOrderInvoicePDF({ order, invoice, proData = null }
       addPageHeader(doc, logoImg, 'FACTURA', iNum, today)
       addPageFooter(doc, [
         'Persianas Santander S.L.  ·  NIF: B39476726  ·  C/ Isla Oleo, Nave 9 - Pol. Nueva Montaña, 39011 Santander',
-        '942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com',
+        'IBAN: ES51 0182 6765 1102 0159 9053 (BBVA)  ·  942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com',
       ], i, pageCount)
     }
 
