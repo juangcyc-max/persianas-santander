@@ -374,6 +374,7 @@ function Configurator() {
         guide_type:         s.guide_type ?? null,
         width:              s.width ?? null,
         height:             s.height ?? null,
+        box_color_name:     s.box_color_name  ?? null,
         slat_color_name:    s.slat_color_name ?? null,
         installacion:       s.installacion,
         price_public:       s.basePrice,
