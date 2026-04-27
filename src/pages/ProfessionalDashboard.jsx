@@ -2029,7 +2029,7 @@ export default function ProfessionalDashboard() {
   const tabParam    = searchParams.get('tab')
   const newOrderId  = searchParams.get('new')
   const VALID_TABS  = TABS.map(t => t.id)
-  const resolveTab  = (p) => p === 'facturas' ? 'pedidos' : (VALID_TABS.includes(p) ? p : 'overview')
+  const resolveTab  = (p) => p === 'facturas' ? 'pedidos' : (VALID_TABS.includes(p) ? p : 'cotizaciones')
   const [activeTab,      setActiveTab]      = useState(() => {
     const stateTab = location.state?.tab
     if (stateTab && VALID_TABS.includes(stateTab)) return stateTab

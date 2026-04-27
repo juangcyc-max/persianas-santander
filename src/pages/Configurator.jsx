@@ -395,7 +395,8 @@ function Configurator() {
     setSavedAll(true)
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'instant' })
-      navigate('/mis-configuraciones', { replace: true })
+      if (isProfessional) navigate('/panel-profesional', { replace: true })
+      else navigate('/mis-configuraciones', { replace: true })
     }, 800)
   }
 
