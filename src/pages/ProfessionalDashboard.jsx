@@ -1422,7 +1422,7 @@ function ProConfigCard({ c, onDelete, deleting, isExpanded, onToggle }) {
           )}
         </div>
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-          <span className={`text-sm font-black ${added ? 'text-green-700' : 'text-red-700'}`}>{fmt(c.estimated_price)}</span>
+          <span className={`text-sm font-black ${added ? 'text-green-700' : 'text-red-700'}`}>{fmt(c.price_professional ? c.price_professional * 1.21 : c.estimated_price)}</span>
           <span className="text-xs text-gray-400">{fmtDate(c.created_at)}</span>
           <svg className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
             fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1499,7 +1499,7 @@ function ProGroupCard({ items, onDeleteGroup, deleting, isExpanded, onToggle }) 
   const [adding,  setAdding] = useState(false)
   const [confirm, setConfirm] = useState(false)
 
-  const total      = items.reduce((s, c) => s + (c.estimated_price ?? 0), 0)
+  const total      = items.reduce((s, c) => s + (c.price_professional ? c.price_professional * 1.21 : (c.estimated_price ?? 0)), 0)
   const inCart     = cartItems.length > 0 && items.every(c => cartItems.some(ci => ci.configuration_id === c.id))
   const isOrdered  = !inCart && items.every(c => orderedConfigIds.has(c.id))
   const allInCart  = inCart || isOrdered
@@ -1558,7 +1558,7 @@ function ProGroupCard({ items, onDeleteGroup, deleting, isExpanded, onToggle }) 
                   <p className="font-semibold text-gray-800 truncate">{blindLabel(c.blind_type)}</p>
                   {c.width && c.height && <p className="text-gray-400">{c.width} × {c.height} mm{c.mechanism ? ` · ${c.mechanism}` : ''}</p>}
                 </div>
-                <span className="font-bold text-gray-700 flex-shrink-0">{fmt(c.estimated_price)}</span>
+                <span className="font-bold text-gray-700 flex-shrink-0">{fmt(c.price_professional ? c.price_professional * 1.21 : c.estimated_price)}</span>
               </div>
             ))}
           </div>
