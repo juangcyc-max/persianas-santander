@@ -2028,6 +2028,11 @@ export default function ProfessionalDashboard() {
   const tabParam    = searchParams.get('tab')
   const newOrderId  = searchParams.get('new')
   const [activeTab,      setActiveTab]      = useState(tabParam === 'facturas' ? 'pedidos' : (tabParam ?? 'overview'))
+
+  useEffect(() => {
+    if (!tabParam) return
+    setActiveTab(tabParam === 'facturas' ? 'pedidos' : tabParam)
+  }, [tabParam])
   const [menuOpen,       setMenuOpen]       = useState(false)
   const [user,           setUser]           = useState(null)
   const [empresa,        setEmpresa]        = useState(null)
