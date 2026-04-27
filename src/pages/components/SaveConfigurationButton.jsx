@@ -18,8 +18,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 0 }) 
   useEffect(() => {
     if (!destUrl) return
     window.scrollTo({ top: 0, behavior: 'instant' })
-    const isPanel = destUrl === '/panel-profesional'
-    navigate(isPanel ? { pathname: '/panel-profesional', search: '?tab=cotizaciones' } : destUrl, { replace: true })
+    navigate(destUrl, { replace: true })
   }, [destUrl])
 
   async function handleSave() {
@@ -100,6 +99,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 0 }) 
         })
       }
 
+      if (userIsPro) sessionStorage.setItem('proActiveTab', 'cotizaciones')
       const dest = userIsPro ? '/panel-profesional' : '/mis-configuraciones'
       setTimeout(() => setDestUrl(dest), 800)
 

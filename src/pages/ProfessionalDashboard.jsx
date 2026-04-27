@@ -2029,7 +2029,14 @@ export default function ProfessionalDashboard() {
   const newOrderId  = searchParams.get('new')
   const VALID_TABS  = TABS.map(t => t.id)
   const resolveTab  = (p) => p === 'facturas' ? 'pedidos' : (VALID_TABS.includes(p) ? p : 'overview')
-  const [activeTab,      setActiveTab]      = useState(resolveTab(tabParam))
+  const [activeTab,      setActiveTab]      = useState(() => {
+    const stored = sessionStorage.getItem('proActiveTab')
+    if (stored && TABS.map(t => t.id).includes(stored)) {
+      sessionStorage.removeItem('proActiveTab')
+      return stored
+    }
+    return resolveTab(tabParam)
+  })
 
   useEffect(() => {
     if (!tabParam) return
