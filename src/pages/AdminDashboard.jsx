@@ -1016,7 +1016,7 @@ export default function AdminDashboard() {
             {activeTab === 'profesionales' && <AdminProfesionalesSection adminUser={user} />}
 
             {/* ── CLIENTES ── */}
-            {activeTab === 'clientes' && <AdminClientsSection />}
+            {activeTab === 'clientes' && <AdminClientsSection onUserDeleted={loadProNotif} />}
 
             {/* ── CONFIGURACIÓN ── */}
             {activeTab === 'configuracion' && <AdminConfigSection />}
@@ -3172,7 +3172,7 @@ function GAWebAnalytics() {
 }
 
 // ── SECCIÓN CLIENTES ADMIN (particulares + profesionales unificados) ──────
-function AdminClientsSection() {
+function AdminClientsSection({ onUserDeleted }) {
   const [clients,   setClients]   = useState([])
   const [proData,   setProData]   = useState({}) // user_id → professional_data
   const [loading,   setLoading]   = useState(true)
@@ -3222,7 +3222,7 @@ function AdminClientsSection() {
     setDeleteErr('')
     const { error } = await supabase.rpc('admin_delete_user', { target_user_id: userId })
     if (error) { setDeleteErr(error.message) }
-    else { setClients(prev => prev.filter(c => c.id !== userId)); setConfirm(null) }
+    else { setClients(prev => prev.filter(c => c.id !== userId)); setConfirm(null); onUserDeleted?.() }
     setDeleting(null)
   }
 
