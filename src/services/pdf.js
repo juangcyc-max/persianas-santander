@@ -1336,6 +1336,8 @@ export async function generateClientBudgetFromQuotePDF({
   quote    = {},
   proInfo  = {},
   marginPct = 0,
+  extrasAmount = 0,
+  clientComments = null,
   logoUrl   = null,
   returnBase64 = false,
   docType  = 'budget', // 'budget' | 'invoice'
@@ -1354,8 +1356,9 @@ export async function generateClientBudgetFromQuotePDF({
 
     const adminTotal  = parseFloat(quote.admin_total_con_iva ?? quote.total_con_iva ?? 0)
     const margin      = parseFloat(marginPct ?? quote.client_margin_pct ?? 0)
-    const clientTotal = adminTotal * (1 + margin / 100)
-    const scaleFactor = adminTotal > 0 ? clientTotal / adminTotal : 1
+    const extras      = parseFloat(extrasAmount ?? quote.extras_amount ?? 0) || 0
+    const clientTotal = adminTotal * (1 + margin / 100) + extras
+    const scaleFactor = adminTotal > 0 ? (clientTotal - extras) / adminTotal : 1
 
     // Cabecera azul
     doc.setFillColor(...brandColor)
@@ -1467,21 +1470,52 @@ export async function generateClientBudgetFromQuotePDF({
 
     y = doc.lastAutoTable.finalY + 6
 
+    // Comentarios para el cliente
+    const comments = clientComments ?? quote.client_comments ?? null
+    if (comments && comments.trim()) {
+      sectionLabel(doc, ML, y, 'Observaciones', brandColor)
+      y += 5
+      doc.setFillColor(...COLORS.grayBg)
+      const commentLines = doc.splitTextToSize(comments.trim(), W - 28 - 12)
+      const commentH = 10 + commentLines.length * 5 + 4
+      doc.roundedRect(ML, y, W - 28, commentH, 2, 2, 'F')
+      doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(...COLORS.dark)
+      commentLines.forEach((line, i) => {
+        doc.text(line, ML + 6, y + 9 + i * 5)
+      })
+      y += commentH + 8
+    }
+
     // Bloque totales
+    const baseClientSinExtras = adminTotal * (1 + margin / 100)
+    const totalRows = extras > 0 ? 4 : 3
+    const rowH = 6
+    const blockH = totalRows * rowH + 14
     const sinIva = clientTotal / 1.21
     const iva    = clientTotal - sinIva
     doc.setFillColor(...COLORS.grayBg)
-    doc.roundedRect(W - ML - 72, y, 72, 28, 2, 2, 'F')
+    doc.roundedRect(W - ML - 72, y, 72, blockH, 2, 2, 'F')
     doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(...COLORS.mid)
-    doc.text('Base imponible:',   W - ML - 66, y + 8)
-    doc.text('IVA (21%):',        W - ML - 66, y + 14)
+    let ty = y + 8
+    if (extras > 0) {
+      doc.text('Persianas:',        W - ML - 66, ty)
+      doc.text(formatCurrency(baseClientSinExtras), W - ML - 2, ty, { align: 'right' })
+      ty += rowH
+      doc.text('Trabajos adicionales:', W - ML - 66, ty)
+      doc.text(formatCurrency(extras), W - ML - 2, ty, { align: 'right' })
+      ty += rowH
+    }
+    doc.text('Base imponible:',   W - ML - 66, ty)
+    doc.text(formatCurrency(sinIva), W - ML - 2, ty, { align: 'right' })
+    ty += rowH
+    doc.text('IVA (21%):',        W - ML - 66, ty)
+    doc.text(formatCurrency(iva), W - ML - 2, ty, { align: 'right' })
+    ty += rowH + 2
     doc.setFont('helvetica', 'bold'); doc.setTextColor(...COLORS.dark)
-    doc.text('TOTAL:',            W - ML - 66, y + 22)
-    doc.text(formatCurrency(sinIva),     W - ML - 2, y + 8,  { align: 'right' })
-    doc.text(formatCurrency(iva),        W - ML - 2, y + 14, { align: 'right' })
+    doc.text('TOTAL:',            W - ML - 66, ty)
     doc.setFontSize(10)
-    doc.text(formatCurrency(clientTotal), W - ML - 2, y + 22, { align: 'right' })
-    y += 36
+    doc.text(formatCurrency(clientTotal), W - ML - 2, ty, { align: 'right' })
+    y += blockH + 8
 
     doc.setFontSize(7.5); doc.setFont('helvetica', 'italic'); doc.setTextColor(...COLORS.light)
     doc.text('Presupuesto válido durante 30 días desde la fecha de emisión. Precios con IVA incluido.', ML, y)

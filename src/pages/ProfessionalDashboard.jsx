@@ -759,15 +759,17 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
   const [deletingId,       setDeletingId]        = useState(null)
   const [confirmId,        setConfirmId]         = useState(null)
   const [downloadingId,    setDownloadingId]     = useState(null)
-  const [editMargin,       setEditMargin]        = useState({})
-  const [editWorkNotes,    setEditWorkNotes]     = useState({})
-  const [savingClient,     setSavingClient]      = useState({})
-  const [savedClient,      setSavedClient]       = useState({})
-  const [downloadingClient,setDownloadingClient] = useState({})
-  const [acceptingClient,  setAcceptingClient]   = useState({})
-  const [invoiceNums,      setInvoiceNums]       = useState({}) // id → string
-  const [generatingInv,    setGeneratingInv]     = useState({})
-  const [editClientInfo,   setEditClientInfo]    = useState({}) // id → {nombre,nif,direccion,email}
+  const [editMargin,         setEditMargin]         = useState({})
+  const [editWorkNotes,      setEditWorkNotes]      = useState({})
+  const [editExtras,         setEditExtras]         = useState({})
+  const [editClientComments, setEditClientComments] = useState({})
+  const [savingClient,       setSavingClient]       = useState({})
+  const [savedClient,        setSavedClient]        = useState({})
+  const [downloadingClient,  setDownloadingClient]  = useState({})
+  const [acceptingClient,    setAcceptingClient]    = useState({})
+  const [invoiceNums,        setInvoiceNums]        = useState({})
+  const [generatingInv,      setGeneratingInv]      = useState({})
+  const [editClientInfo,     setEditClientInfo]     = useState({})
 
   async function handleDelete(id) {
     setDeletingId(id)
@@ -788,24 +790,29 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
   async function handleGenerateInvoice(q) {
     setGeneratingInv(p => ({ ...p, [q.id]: true }))
     try {
-      const margin = parseFloat(q.client_margin_pct ?? editMargin[q.id] ?? 0)
-      const invNum = invoiceNums[q.id] || `FAC-${(q.id ?? '').slice(0, 8).toUpperCase()}`
+      const margin   = parseFloat(q.client_margin_pct ?? editMargin[q.id] ?? 0)
+      const extras   = parseFloat(editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)) || 0
+      const comments = editClientComments[q.id] !== undefined ? editClientComments[q.id] : (q.client_comments ?? null)
+      const invNum   = invoiceNums[q.id] || `FAC-${(q.id ?? '').slice(0, 8).toUpperCase()}`
       const doc = await generateClientInvoiceFromQuotePDF({
-        quote: q, proInfo: proInfo ?? {}, marginPct: margin, logoUrl, invoiceNumber: invNum,
+        quote: q, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, logoUrl, invoiceNumber: invNum,
       })
       doc?.save(`Factura_cliente_${invNum}.pdf`)
     } catch {}
     setGeneratingInv(p => ({ ...p, [q.id]: false }))
   }
 
-  async function handleSaveClientData(id, adminTotal, currentMarginPct, currentWorkNotes, currentClientInfo) {
+  async function handleSaveClientData(id, adminTotal, currentMarginPct, currentWorkNotes, currentClientInfo, currentExtras, currentClientComments) {
     setSavingClient(p => ({ ...p, [id]: true }))
     const margin      = parseFloat(editMargin[id] !== undefined ? editMargin[id] : (currentMarginPct ?? 0))
-    const clientTotal = parseFloat(adminTotal) * (1 + margin / 100)
+    const extras      = parseFloat(editExtras[id] !== undefined ? editExtras[id] : (currentExtras ?? 0)) || 0
+    const clientTotal = parseFloat(adminTotal) * (1 + margin / 100) + extras
     const notes       = editWorkNotes[id] !== undefined ? editWorkNotes[id] : (currentWorkNotes ?? null)
+    const comments    = editClientComments[id] !== undefined ? editClientComments[id] : (currentClientComments ?? null)
     const ci          = editClientInfo[id] !== undefined ? editClientInfo[id] : (currentClientInfo ?? null)
-    const updates     = { client_margin_pct: margin, client_total: clientTotal }
+    const updates     = { client_margin_pct: margin, client_total: clientTotal, extras_amount: extras }
     if (notes !== null) updates.work_notes = notes.trim() || null
+    if (comments !== null) updates.client_comments = comments.trim() || null
     if (ci !== null) updates.client_info = Object.values(ci).some(v => v?.trim()) ? ci : null
     const { error } = await supabase.from('pro_purchase_quotes').update(updates).eq('id', id)
     if (!error) {
@@ -826,9 +833,11 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
 
   async function handleDownloadClientPDF(q) {
     setDownloadingClient(p => ({ ...p, [q.id]: true }))
-    const margin = parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0))
+    const margin   = parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0))
+    const extras   = parseFloat(editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)) || 0
+    const comments = editClientComments[q.id] !== undefined ? editClientComments[q.id] : (q.client_comments ?? null)
     try {
-      const doc = await generateClientBudgetFromQuotePDF({ quote: q, proInfo: proInfo ?? {}, marginPct: margin, logoUrl })
+      const doc = await generateClientBudgetFromQuotePDF({ quote: q, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, logoUrl })
       doc?.save(`Presupuesto_${(q.id ?? '').slice(0, 8).toUpperCase()}.pdf`)
     } catch {}
     setDownloadingClient(p => ({ ...p, [q.id]: false }))
@@ -859,7 +868,8 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
           const isOpen     = expandedId === q.id
           const isAccepted = q.status === 'accepted' || q.status === 'modified'
           const clientMargin = parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0))
-          const clientTotal  = adminTotal * (1 + clientMargin / 100)
+          const extras       = parseFloat(editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)) || 0
+          const clientTotal  = adminTotal * (1 + clientMargin / 100) + extras
           const clientAccepted = q.client_status === 'accepted'
           return (
             <div key={q.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
@@ -945,23 +955,53 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
                     <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Presupuesto para tu cliente</p>
 
                     {/* Margen */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-medium text-gray-600">Tu margen:</span>
-                      <div className="relative">
-                        <input
-                          type="number" min="0" max="500" step="1"
-                          value={editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0)}
-                          onChange={e => setEditMargin(p => ({ ...p, [q.id]: e.target.value }))}
-                          className="w-16 px-2 py-1 pr-4 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-blue-300"
-                        />
-                        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-medium text-gray-600">Tu margen:</span>
+                        <div className="relative">
+                          <input
+                            type="number" min="0" max="500" step="1"
+                            value={editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0)}
+                            onChange={e => setEditMargin(p => ({ ...p, [q.id]: e.target.value }))}
+                            className="w-16 px-2 py-1 pr-4 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-blue-300"
+                          />
+                          <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                        </div>
+                        <span className="text-xs text-gray-400">o</span>
+                        <div className="relative">
+                          <input
+                            type="number" min="0" step="0.01"
+                            value={adminTotal > 0 ? (adminTotal * (parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0)) / 100)).toFixed(2) : '0.00'}
+                            onChange={e => {
+                              const eur = parseFloat(e.target.value) || 0
+                              const pct = adminTotal > 0 ? (eur / adminTotal) * 100 : 0
+                              setEditMargin(p => ({ ...p, [q.id]: pct.toFixed(4) }))
+                            }}
+                            className="w-20 px-2 py-1 pr-4 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-blue-300"
+                          />
+                          <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">€</span>
+                        </div>
                       </div>
-                      <span className="text-xs text-gray-400">→</span>
-                      <span className="text-sm font-black text-blue-700">{fmt(clientTotal)}</span>
-                      <button onClick={() => handleSaveClientData(q.id, adminTotal, q.client_margin_pct, q.work_notes, q.client_info)} disabled={savingClient[q.id] || savedClient[q.id]}
-                        className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${savedClient[q.id] ? 'bg-green-600 text-white' : 'bg-blue-700 hover:bg-blue-800 text-white'}`}>
-                        {savingClient[q.id] ? '…' : savedClient[q.id] ? '✓ Guardado' : 'Guardar'}
-                      </button>
+
+                      {/* Extras */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-medium text-gray-600">Trabajos extra:</span>
+                        <div className="relative">
+                          <input
+                            type="number" min="0" step="0.01"
+                            value={editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)}
+                            onChange={e => setEditExtras(p => ({ ...p, [q.id]: e.target.value }))}
+                            className="w-24 px-2 py-1 pr-4 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-blue-300"
+                          />
+                          <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">€</span>
+                        </div>
+                        <span className="text-xs text-gray-400">→ Total cliente:</span>
+                        <span className="text-sm font-black text-blue-700">{fmt(clientTotal)}</span>
+                        <button onClick={() => handleSaveClientData(q.id, adminTotal, q.client_margin_pct, q.work_notes, q.client_info, q.extras_amount, q.client_comments)} disabled={savingClient[q.id] || savedClient[q.id]}
+                          className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${savedClient[q.id] ? 'bg-green-600 text-white' : 'bg-blue-700 hover:bg-blue-800 text-white'}`}>
+                          {savingClient[q.id] ? '…' : savedClient[q.id] ? '✓ Guardado' : 'Guardar'}
+                        </button>
+                      </div>
                     </div>
 
                     {/* Datos del cliente final */}
@@ -985,6 +1025,20 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
                           />
                         )
                       })}
+                    </div>
+
+                    {/* Comentarios para el cliente — aparecen en el PDF */}
+                    <div>
+                      <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                        Comentarios para el cliente <span className="text-gray-400 font-normal">(aparecen en el presupuesto)</span>
+                      </label>
+                      <textarea
+                        value={editClientComments[q.id] !== undefined ? editClientComments[q.id] : (q.client_comments ?? '')}
+                        onChange={e => setEditClientComments(p => ({ ...p, [q.id]: e.target.value }))}
+                        placeholder="Descripción de los trabajos, condiciones, materiales, plazos de entrega…"
+                        rows={4}
+                        className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-200 resize-y bg-white"
+                      />
                     </div>
 
                     {/* Notas de trabajo — solo visibles internamente para el admin */}
