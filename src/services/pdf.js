@@ -1490,11 +1490,11 @@ export async function generateClientBudgetFromQuotePDF({
     const baseClientSinExtras = adminTotal * (1 + margin / 100)
     const totalRows = extras > 0 ? 4 : 3
     const rowH = 6
-    const blockH = totalRows * rowH + 14
+    const totalsBlockH = totalRows * rowH + 14
     const sinIva = clientTotal / 1.21
     const iva    = clientTotal - sinIva
     doc.setFillColor(...COLORS.grayBg)
-    doc.roundedRect(W - ML - 72, y, 72, blockH, 2, 2, 'F')
+    doc.roundedRect(W - ML - 72, y, 72, totalsBlockH, 2, 2, 'F')
     doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(...COLORS.mid)
     let ty = y + 8
     if (extras > 0) {
