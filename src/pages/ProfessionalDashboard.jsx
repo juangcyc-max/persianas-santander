@@ -1800,30 +1800,21 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscoun
     return sortOrder === 'asc' ? [...entries].reverse() : entries
   })()
 
-  function markDeleted(userId, ids) {
-    const key = `ps_del_${userId}`
-    const prev = JSON.parse(localStorage.getItem(key) ?? '[]')
-    localStorage.setItem(key, JSON.stringify([...new Set([...prev, ...ids])]))
-  }
 
   async function handleDelete(id) {
     setDeleting(id)
-    const { data: { user } } = await supabase.auth.getUser()
     await supabase.from('cart_items').delete().eq('configuration_id', id)
     await supabase.from('budgets').delete().eq('configuration_id', id)
     await supabase.from('blind_configurations').delete().eq('id', id)
-    if (user) markDeleted(user.id, [id])
     setConfiguraciones(prev => prev.filter(c => c.id !== id))
     setDeleting(null)
   }
 
   async function handleDeleteGroup(entryId, ids) {
     setDeleting(entryId)
-    const { data: { user } } = await supabase.auth.getUser()
     await supabase.from('cart_items').delete().in('configuration_id', ids)
     await supabase.from('budgets').delete().in('configuration_id', ids)
     await supabase.from('blind_configurations').delete().in('id', ids)
-    if (user) markDeleted(user.id, ids)
     setConfiguraciones(prev => prev.filter(c => !ids.includes(c.id)))
     setDeleting(null)
   }
@@ -1832,12 +1823,13 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscoun
     if (!window.confirm('¿Eliminar todas las configuraciones guardadas?')) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const ids = configuraciones.map(c => c.id)
+    const { data: all } = await supabase.from('blind_configurations').select('id').eq('user_id', user.id)
+    const ids = (all ?? []).map(c => c.id)
     if (!ids.length) return
     await supabase.from('cart_items').delete().in('configuration_id', ids)
     await supabase.from('budgets').delete().in('configuration_id', ids)
-    await supabase.from('blind_configurations').delete().in('id', ids)
-    markDeleted(user.id, ids)
+    await supabase.from('blind_configurations').delete().eq('user_id', user.id)
+    localStorage.removeItem(`ps_del_${user.id}`)
     setConfiguraciones([])
   }
 
@@ -2272,8 +2264,7 @@ export default function ProfessionalDashboard() {
       setGlobalDiscount(disc)
       const emp = empR.data ?? null
       setEmpresa(emp)
-      const deletedIds = JSON.parse(localStorage.getItem(`ps_del_${user.id}`) ?? '[]')
-      setConfiguraciones((configR.data ?? []).filter(c => !deletedIds.includes(c.id)))
+      setConfiguraciones(configR.data ?? [])
       setCotizaciones(cotR.data ?? [])
       setUnreadMsgs(unreadR.count ?? 0)
       setPedidos(pedR.data ?? [])
