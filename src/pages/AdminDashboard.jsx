@@ -2610,7 +2610,7 @@ function AdminInvoicesSection() {
     setLoading(true)
     const { data } = await supabase
       .from('invoices')
-      .select('*, orders(user_id, items, address, phone, profiles(email))')
+      .select('*, orders(user_id, items, address, phone, billing_data, profiles(email))')
       .order('created_at', { ascending: false })
     setInvoices(data ?? [])
     setLoading(false)
