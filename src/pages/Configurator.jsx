@@ -332,6 +332,7 @@ function Configurator() {
   }
 
   async function handleSaveAll() {
+    if (savingAll) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     setSavingAll(true)
@@ -370,6 +371,7 @@ function Configurator() {
         config_id:          s.id,
         blind_type:         s.blind_type,
         mechanism:          s.mechanism ?? null,
+        orientation:        s.orientation ?? null,
         motor_type:         s.motor_type ?? null,
         guide_type:         s.guide_type ?? null,
         width:              s.width ?? null,
