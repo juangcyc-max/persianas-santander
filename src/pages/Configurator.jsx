@@ -398,6 +398,7 @@ function Configurator() {
     savingAllRef.current = false
     setSavingAll(false)
     setSavedAll(true)
+    localStorage.removeItem(CART_KEY)
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'instant' })
       if (isProfessional) navigate('/panel-profesional', { replace: true })
