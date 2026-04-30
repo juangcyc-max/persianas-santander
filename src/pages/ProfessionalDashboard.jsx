@@ -1804,8 +1804,12 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscoun
     setDeleting(id)
     await supabase.from('cart_items').delete().eq('configuration_id', id)
     await supabase.from('budgets').delete().eq('configuration_id', id)
-    const { error } = await supabase.from('blind_configurations').delete().eq('id', id)
-    if (!error) setConfiguraciones(prev => prev.filter(c => c.id !== id))
+    const { data, error } = await supabase.from('blind_configurations').delete().eq('id', id).select('id')
+    if (!error && data?.length > 0) {
+      setConfiguraciones(prev => prev.filter(c => c.id !== id))
+    } else {
+      alert('No se pudo eliminar. Ejecuta esta política en Supabase:\nCREATE POLICY "del_own_configs" ON blind_configurations FOR DELETE USING (auth.uid() = user_id);')
+    }
     setDeleting(null)
   }
 
@@ -1813,8 +1817,12 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscoun
     setDeleting(entryId)
     await supabase.from('cart_items').delete().in('configuration_id', ids)
     await supabase.from('budgets').delete().in('configuration_id', ids)
-    const { error } = await supabase.from('blind_configurations').delete().in('id', ids)
-    if (!error) setConfiguraciones(prev => prev.filter(c => !ids.includes(c.id)))
+    const { data, error } = await supabase.from('blind_configurations').delete().in('id', ids).select('id')
+    if (!error && data?.length > 0) {
+      setConfiguraciones(prev => prev.filter(c => !ids.includes(c.id)))
+    } else {
+      alert('No se pudo eliminar. Ejecuta esta política en Supabase:\nCREATE POLICY "del_own_configs" ON blind_configurations FOR DELETE USING (auth.uid() = user_id);')
+    }
     setDeleting(null)
   }
 
