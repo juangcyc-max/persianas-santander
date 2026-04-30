@@ -358,20 +358,24 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null, { 
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p)
     doc.setFillColor(...C.grayBg)
-    doc.rect(0, H - 14, W, 14, 'F')
+    doc.rect(0, H - 18, W, 18, 'F')
     doc.setDrawColor(...C.border)
     doc.setLineWidth(0.2)
-    doc.line(0, H - 14, W, H - 14)
+    doc.line(0, H - 18, W, H - 18)
     doc.setTextColor(...C.light)
     doc.setFontSize(7.5)
     doc.setFont('helvetica', 'normal')
     doc.text(
       'Persianas Santander S.L.  ·  NIF: B39476726  ·  C/ Isla Oleo, Nave 9 - Pol. Nueva Montaña, 39011 Santander',
-      W / 2, H - 8, { align: 'center' }
+      W / 2, H - 12, { align: 'center' }
     )
     doc.text(
-      `942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com  ·  Pág. ${p}/${pages}`,
-      W / 2, H - 3.5, { align: 'center' }
+      'IBAN: ES51 0182 6765 1102 0159 9053 (BBVA)  ·  942 00 00 00  ·  info@persianassantander.com  ·  www.persianassantander.com',
+      W / 2, H - 7, { align: 'center' }
+    )
+    doc.text(
+      `Pág. ${p}/${pages}`,
+      W / 2, H - 2.5, { align: 'center' }
     )
   }
 
