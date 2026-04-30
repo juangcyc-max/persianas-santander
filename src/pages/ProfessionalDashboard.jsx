@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { useCart } from '../context/CartContext'
-import { generateGroupBudgetPDF, generateGroupInvoicePDF, generateOrderInvoicePDF, generateProQuotePDF, generateClientBudgetFromQuotePDF, generateClientInvoiceFromQuotePDF } from '../services/pdf'
+import { generateGroupBudgetPDF, generateGroupInvoicePDF, generateProQuotePDF, generateClientBudgetFromQuotePDF, generateClientInvoiceFromQuotePDF } from '../services/pdf'
+import { generateInvoicePDF } from '../services/invoicePDF'
 import { getProfessionalDiscountForUser } from '../services/settings'
 import { getProductPrices, DEFAULT_MOTOR_PRICES, DEFAULT_GUIDE_PRICE_PER_ML, DEFAULT_INSTALACION_PRICE, DEFAULT_INSTALACION_FIJA, DEFAULT_PRICES } from '../services/prices'
 import WAButton from '../shared/WAButton'
@@ -1892,7 +1893,7 @@ function PedidosTab({ pedidos, facturas, newOrderId, proData }) {
 
   async function handleDownload(order, invoice) {
     setDownloadingId(order.id)
-    await generateOrderInvoicePDF({ order, invoice, proData })
+    await generateInvoicePDF(invoice, order, proData ?? null)
     setDownloadingId(null)
   }
 
