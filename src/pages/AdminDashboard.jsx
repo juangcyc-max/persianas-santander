@@ -2540,6 +2540,35 @@ function AdminBudgetsSection() {
   )
 }
 
+// ── Helpers PDF facturas (módulo nivel) ──────────────────────────────────
+async function fetchEmpresa(inv) {
+  const userId = inv.orders?.user_id ?? inv.user_id
+  if (!userId) return null
+  const { data } = await supabase.from('professional_data').select('*').eq('user_id', userId).maybeSingle()
+  return data ?? null
+}
+
+async function buildOrderForPDF(inv) {
+  const order = inv.orders ?? {}
+  if (order.billing_data) return order
+  const userId = order.user_id ?? inv.user_id
+  if (!userId) return order
+  const { data: cd } = await supabase.from('client_data').select('*').eq('user_id', userId).maybeSingle()
+  if (!cd) return order
+  return {
+    ...order,
+    billing_data: {
+      nombre:        cd.nombre,
+      apellidos:     cd.apellidos,
+      dni_nif:       cd.dni_nif,
+      direccion:     cd.direccion,
+      codigo_postal: cd.codigo_postal,
+      ciudad:        cd.ciudad,
+      email:         order.profiles?.email,
+    },
+  }
+}
+
 // ── SECCIÓN FACTURAS ADMIN ────────────────────────────────────────────────
 function SendInvoiceRowButton({ inv }) {
   const [sending, setSending] = useState(false)
@@ -2553,7 +2582,8 @@ function SendInvoiceRowButton({ inv }) {
     setSending(true); setErr(false)
     try {
       const empresa   = await fetchEmpresa(inv)
-      const pdfBase64 = await generateInvoicePDF(inv, inv.orders ?? {}, empresa, { returnBase64: true })
+      const orderData = empresa ? (inv.orders ?? {}) : await buildOrderForPDF(inv)
+      const pdfBase64 = await generateInvoicePDF(inv, orderData, empresa, { returnBase64: true })
       await sendInvoiceEmail({
         userEmail: clientEmail,
         invoice:   inv,
@@ -2657,13 +2687,6 @@ function AdminInvoicesSection() {
   async function handlePaymentStatus(invoiceId, newStatus) {
     await supabase.from('invoices').update({ payment_status: newStatus }).eq('id', invoiceId)
     setInvoices(prev => prev.map(i => i.id === invoiceId ? { ...i, payment_status: newStatus } : i))
-  }
-
-  async function fetchEmpresa(inv) {
-    const userId = inv.orders?.user_id ?? inv.user_id
-    if (!userId) return null
-    const { data } = await supabase.from('professional_data').select('*').eq('user_id', userId).maybeSingle()
-    return data ?? null
   }
 
   const fmt = (n) => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(n ?? 0)
@@ -2802,7 +2825,7 @@ function AdminInvoicesSection() {
                       Pagada
                     </button>
                     <button
-                      onClick={async () => { const empresa = await fetchEmpresa(inv); generateInvoicePDF(inv, inv.orders ?? {}, empresa) }}
+                      onClick={async () => { const empresa = await fetchEmpresa(inv); const orderData = empresa ? (inv.orders ?? {}) : await buildOrderForPDF(inv); generateInvoicePDF(inv, orderData, empresa) }}
                       className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -2885,7 +2908,7 @@ function AdminInvoicesSection() {
                       </td>
                       <td className="px-2 py-2 sm:px-4 sm:py-3">
                         <button
-                          onClick={async () => { const empresa = await fetchEmpresa(inv); generateInvoicePDF(inv, inv.orders ?? {}, empresa) }}
+                          onClick={async () => { const empresa = await fetchEmpresa(inv); const orderData = empresa ? (inv.orders ?? {}) : await buildOrderForPDF(inv); generateInvoicePDF(inv, orderData, empresa) }}
                           className="inline-flex items-center gap-1 text-xs font-semibold text-red-700 hover:text-red-800">
                           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
