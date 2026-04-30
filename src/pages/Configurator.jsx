@@ -338,6 +338,19 @@ function Configurator() {
     setSavingAll(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { savingAllRef.current = false; setSavingAll(false); return }
+
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString()
+    const { data: recentSaves } = await supabase
+      .from('blind_configurations')
+      .select('id')
+      .eq('user_id', user.id)
+      .gte('created_at', fiveMinAgo)
+      .limit(1)
+    if (recentSaves && recentSaves.length > 0) {
+      const ok = window.confirm('Ya guardaste configuraciones hace menos de 5 minutos. ¿Quieres guardar de nuevo?')
+      if (!ok) { savingAllRef.current = false; setSavingAll(false); return }
+    }
+
     const groupId = `${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
     const savedConfigs = []
     for (let idx = 0; idx < items.length; idx++) {
