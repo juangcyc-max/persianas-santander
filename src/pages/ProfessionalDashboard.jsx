@@ -1773,8 +1773,8 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscoun
 
   async function handleDelete(id) {
     setDeleting(id)
-    // Eliminar de cart_items primero para evitar FK constraint
     await supabase.from('cart_items').delete().eq('configuration_id', id)
+    await supabase.from('budgets').delete().eq('configuration_id', id)
     const { error } = await supabase.from('blind_configurations').delete().eq('id', id)
     if (!error) setConfiguraciones(prev => prev.filter(c => c.id !== id))
     setDeleting(null)
@@ -1782,8 +1782,8 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscoun
 
   async function handleDeleteGroup(entryId, ids) {
     setDeleting(entryId)
-    // Eliminar de cart_items primero para evitar FK constraint
-    for (const id of ids) await supabase.from('cart_items').delete().eq('configuration_id', id)
+    await supabase.from('cart_items').delete().in('configuration_id', ids)
+    await supabase.from('budgets').delete().in('configuration_id', ids)
     const { error } = await supabase.from('blind_configurations').delete().in('id', ids)
     if (!error) setConfiguraciones(prev => prev.filter(c => !ids.includes(c.id)))
     setDeleting(null)
