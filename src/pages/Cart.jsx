@@ -194,15 +194,35 @@ export default function Cart() {
         }, { onConflict: 'user_id' })
       }
 
-      const billingData = !isProfessional ? {
-        nombre:        sanitizeText(billingNombre),
-        apellidos:     sanitizeText(billingApellidos),
-        dni_nif:       sanitizeText(billingDni),
-        direccion:     sanitizeText(billingDireccion),
-        codigo_postal: sanitizeText(billingCp),
-        ciudad:        sanitizeText(billingCiudad),
-        email:         user.email,
-      } : null
+      let billingData = null
+      if (!isProfessional) {
+        billingData = {
+          nombre:        sanitizeText(billingNombre),
+          apellidos:     sanitizeText(billingApellidos),
+          dni_nif:       sanitizeText(billingDni),
+          direccion:     sanitizeText(billingDireccion),
+          codigo_postal: sanitizeText(billingCp),
+          ciudad:        sanitizeText(billingCiudad),
+          email:         user.email,
+        }
+      } else {
+        // Para profesionales: guardar sus datos de empresa en billing_data
+        // (pueden leer sus propios datos, el admin no puede)
+        const { data: proRpc } = await supabase.rpc('get_professional_data', { p_user_id: user.id })
+        const pd = proRpc?.[0] ?? null
+        if (pd) {
+          billingData = {
+            nombre:        pd.razon_social  ?? '',
+            apellidos:     '',
+            dni_nif:       pd.cif_nif       ?? '',
+            direccion:     pd.direccion_fiscal ?? '',
+            codigo_postal: pd.codigo_postal ?? '',
+            ciudad:        pd.ciudad        ?? '',
+            email:         pd.email_facturacion ?? user.email,
+            es_empresa:    true,
+          }
+        }
+      }
 
       const orderData = {
         user_id:        user.id,

@@ -166,7 +166,7 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null, { 
     doc.setTextColor(...C.mid)
     if (bd) {
       ;[
-        bd.dni_nif ? `DNI/NIF: ${bd.dni_nif}` : null,
+        bd.dni_nif ? `${bd.es_empresa ? 'CIF/NIF' : 'DNI/NIF'}: ${bd.dni_nif}` : null,
         bd.direccion || null,
         [bd.codigo_postal, bd.ciudad].filter(Boolean).join(' ') || null,
         order?.phone || null,
