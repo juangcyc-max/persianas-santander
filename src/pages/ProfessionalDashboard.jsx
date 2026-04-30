@@ -1553,7 +1553,12 @@ function ProConfigCard({ c, onDelete, deleting, isExpanded, onToggle, globalDisc
         <div className={`px-4 pb-4 pt-3 border-t space-y-3 ${added ? 'border-green-100' : 'border-gray-100'}`}>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
             {c.width && c.height && <span>{c.width} × {c.height} mm</span>}
-            {c.mechanism && <span>{c.mechanism}</span>}
+            {c.mechanism && <span>
+              {c.mechanism}
+              {c.mechanism === 'cinta' && c.orientation ? ` (${c.orientation})` : ''}
+              {c.mechanism === 'motor' && c.motor_type ? ` · ${c.motor_type}` : ''}
+            </span>}
+            {c.guide_type && c.guide_type !== 'none' && <span>guía {c.guide_type}</span>}
             {c.slat_color_name && <span>{c.slat_color_name}</span>}
           </div>
 
@@ -1673,7 +1678,13 @@ function ProGroupCard({ items, onDeleteGroup, deleting, isExpanded, onToggle, gl
                 <span className={`w-5 h-5 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-[10px] ${allInCart ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{i + 1}</span>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-800 truncate">{blindLabel(c.blind_type)}</p>
-                  {c.width && c.height && <p className="text-gray-400">{c.width} × {c.height} mm{c.mechanism ? ` · ${c.mechanism}` : ''}</p>}
+                  {c.width && c.height && <p className="text-gray-400">
+                    {c.width} × {c.height} mm
+                    {c.mechanism ? ` · ${c.mechanism}` : ''}
+                    {c.mechanism === 'cinta' && c.orientation ? ` (${c.orientation})` : ''}
+                    {c.mechanism === 'motor' && c.motor_type ? ` · ${c.motor_type}` : ''}
+                    {c.guide_type && c.guide_type !== 'none' ? ` · guía ${c.guide_type}` : ''}
+                  </p>}
                 </div>
                 <span className="font-bold text-gray-700 flex-shrink-0">{fmt((c.estimated_price ?? 0) * (1 - globalDiscount / 100))}</span>
               </div>
@@ -1762,6 +1773,8 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscoun
 
   async function handleDelete(id) {
     setDeleting(id)
+    // Eliminar de cart_items primero para evitar FK constraint
+    await supabase.from('cart_items').delete().eq('configuration_id', id)
     const { error } = await supabase.from('blind_configurations').delete().eq('id', id)
     if (!error) setConfiguraciones(prev => prev.filter(c => c.id !== id))
     setDeleting(null)
@@ -1769,6 +1782,8 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscoun
 
   async function handleDeleteGroup(entryId, ids) {
     setDeleting(entryId)
+    // Eliminar de cart_items primero para evitar FK constraint
+    for (const id of ids) await supabase.from('cart_items').delete().eq('configuration_id', id)
     const { error } = await supabase.from('blind_configurations').delete().in('id', ids)
     if (!error) setConfiguraciones(prev => prev.filter(c => !ids.includes(c.id)))
     setDeleting(null)
