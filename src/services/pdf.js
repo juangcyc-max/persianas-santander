@@ -17,6 +17,13 @@ const COLORS = {
   blue:      [30, 80, 160],
 }
 
+const PDF_TEMPLATES = {
+  azul:    { brand: [30, 80, 160],   accent: [60, 110, 190],  clientBg: [240, 245, 255] },
+  verde:   { brand: [20, 110, 65],   accent: [40, 140, 85],   clientBg: [240, 250, 244] },
+  grafito: { brand: [50, 55, 68],    accent: [75, 80, 95],    clientBg: [245, 245, 248] },
+  ciruela: { brand: [95, 40, 130],   accent: [115, 60, 150],  clientBg: [248, 242, 255] },
+}
+
 const LABELS = {
   productType: {
     laminada:                    'Paño Laminado',
@@ -1347,6 +1354,7 @@ export async function generateClientBudgetFromQuotePDF({
   returnBase64 = false,
   docType  = 'budget', // 'budget' | 'invoice'
   invoiceNumber = null,
+  templateId = 'azul',
 } = {}) {
   try {
     const doc   = new jsPDF({ unit: 'mm', format: 'a4' })
@@ -1357,7 +1365,8 @@ export async function generateClientBudgetFromQuotePDF({
     const bNum       = isInvoice
       ? (invoiceNumber ?? `FAC-${(quote.id ?? '').slice(0, 8).toUpperCase()}`)
       : `PRES-${(quote.id ?? '').slice(0, 8).toUpperCase()}`
-    const brandColor = COLORS.blue
+    const tpl        = PDF_TEMPLATES[templateId] ?? PDF_TEMPLATES.azul
+    const brandColor = tpl.brand
 
     const adminTotal      = parseFloat(quote.admin_total_con_iva ?? quote.total_con_iva ?? 0)
     const margin          = parseFloat(marginPct ?? quote.client_margin_pct ?? 0)
@@ -1368,10 +1377,9 @@ export async function generateClientBudgetFromQuotePDF({
     const clientTotal     = clientSinIva * (1 + ivaRate / 100) + extras
     const scaleFactor     = adminTotal > 0 ? clientBase21 / adminTotal : 1
 
-    // Cabecera azul
     doc.setFillColor(...brandColor)
     doc.rect(0, 0, W, 32, 'F')
-    doc.setFillColor(60, 110, 190)
+    doc.setFillColor(...tpl.accent)
     doc.rect(0, 32, W, 1.5, 'F')
 
     // Logo o nombre empresa
@@ -1426,7 +1434,7 @@ export async function generateClientBudgetFromQuotePDF({
     ].filter(Boolean)
     if (ci.nombre || ciLines.length > 0) {
       const ciH = 10 + (ci.nombre ? 6 : 0) + ciLines.length * 5.5 + 4
-      doc.setFillColor(240, 245, 255)
+      doc.setFillColor(...tpl.clientBg)
       doc.roundedRect(ML, y, W - 28, ciH, 2, 2, 'F')
       sectionLabel(doc, ML + 6, y + 8, 'Datos del cliente', brandColor)
       let cy = y + 15

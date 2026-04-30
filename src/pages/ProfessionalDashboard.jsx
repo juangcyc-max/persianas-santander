@@ -30,6 +30,13 @@ const BLIND_LABELS = {
 }
 const blindLabel = (t) => BLIND_LABELS[t] ?? t ?? '—'
 
+const TEMPLATE_OPTS = [
+  { id: 'azul',    label: 'Azul',    color: '#1e50a0' },
+  { id: 'verde',   label: 'Verde',   color: '#146e41' },
+  { id: 'grafito', label: 'Grafito', color: '#323744' },
+  { id: 'ciruela', label: 'Ciruela', color: '#5f2882' },
+]
+
 // ── Lógica de precios para presupuestos profesionales ─────────────────────
 const PRO_BLIND_TYPES = [
   { value: 'laminada',                    label: 'Paño Laminado'               },
@@ -810,6 +817,7 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
   const [acceptingClient,    setAcceptingClient]    = useState({})
   const [invoiceNums,        setInvoiceNums]        = useState({})
   const [generatingInv,      setGeneratingInv]      = useState({})
+  const [editTemplate,       setEditTemplate]       = useState({})
   const [editClientInfo,     setEditClientInfo]     = useState({})
 
   async function handleDelete(id) {
@@ -836,8 +844,9 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
       const comments = editClientComments[q.id] !== undefined ? editClientComments[q.id] : (q.client_comments ?? null)
       const ivaPct   = parseFloat(editIvaPct[q.id] !== undefined ? editIvaPct[q.id] : (q.iva_pct ?? 21))
       const invNum   = invoiceNums[q.id] || `FAC-${(q.id ?? '').slice(0, 8).toUpperCase()}`
+      const tpl = editTemplate[q.id] ?? 'azul'
       const doc = await generateClientInvoiceFromQuotePDF({
-        quote: q, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, ivaPct, logoUrl, invoiceNumber: invNum,
+        quote: q, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, ivaPct, logoUrl, invoiceNumber: invNum, templateId: tpl,
       })
       doc?.save(`Factura_cliente_${invNum}.pdf`)
     } catch {}
@@ -881,7 +890,8 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
     const comments = editClientComments[q.id] !== undefined ? editClientComments[q.id] : (q.client_comments ?? null)
     const ivaPct   = parseFloat(editIvaPct[q.id] !== undefined ? editIvaPct[q.id] : (q.iva_pct ?? 21))
     try {
-      const doc = await generateClientBudgetFromQuotePDF({ quote: q, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, ivaPct, logoUrl })
+      const tpl = editTemplate[q.id] ?? 'azul'
+      const doc = await generateClientBudgetFromQuotePDF({ quote: q, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, ivaPct, logoUrl, templateId: tpl })
       doc?.save(`Presupuesto_${(q.id ?? '').slice(0, 8).toUpperCase()}.pdf`)
     } catch {}
     setDownloadingClient(p => ({ ...p, [q.id]: false }))
@@ -1117,6 +1127,24 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
                         rows={2}
                         className="w-full px-3 py-2 text-xs rounded-xl border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-200 resize-none bg-white"
                       />
+                    </div>
+
+                    {/* Selector de plantilla PDF */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs text-gray-400 shrink-0">Plantilla:</span>
+                      {TEMPLATE_OPTS.map(t => {
+                        const sel = (editTemplate[q.id] ?? 'azul') === t.id
+                        return (
+                          <button key={t.id}
+                            onClick={() => setEditTemplate(p => ({ ...p, [q.id]: t.id }))}
+                            title={t.label}
+                            style={sel ? { backgroundColor: t.color, borderColor: t.color } : {}}
+                            className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg border transition-all ${sel ? 'text-white' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'}`}>
+                            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sel ? 'rgba(255,255,255,0.5)' : t.color }} />
+                            {t.label}
+                          </button>
+                        )
+                      })}
                     </div>
 
                     {/* Acciones cliente */}
