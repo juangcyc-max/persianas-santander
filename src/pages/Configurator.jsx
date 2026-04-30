@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../services/supabase/client'
 import { getProfessionalDiscount, getProfessionalDiscountForUser } from '../services/settings'
@@ -99,6 +99,7 @@ function Configurator() {
   const [items,     setItems]     = useState([])
   const [savingAll, setSavingAll] = useState(false)
   const [savedAll,  setSavedAll]  = useState(false)
+  const savingAllRef = useRef(false)
 
   useEffect(() => {
     localStorage.setItem(CART_KEY, JSON.stringify({
@@ -332,10 +333,11 @@ function Configurator() {
   }
 
   async function handleSaveAll() {
-    if (savingAll) return
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+    if (savingAllRef.current) return
+    savingAllRef.current = true
     setSavingAll(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { savingAllRef.current = false; setSavingAll(false); return }
     const groupId = `${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`
     const savedConfigs = []
     for (let idx = 0; idx < items.length; idx++) {
@@ -393,6 +395,7 @@ function Configurator() {
       })
     }
 
+    savingAllRef.current = false
     setSavingAll(false)
     setSavedAll(true)
     setTimeout(() => {
