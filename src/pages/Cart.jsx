@@ -179,6 +179,12 @@ export default function Cart() {
     setError('')
 
     try {
+      // Garantizar que el perfil existe (el trigger puede fallar en algunos registros)
+      await supabase.from('profiles').upsert(
+        { id: user.id, email: user.email },
+        { onConflict: 'id', ignoreDuplicates: true }
+      )
+
       // Guardar/actualizar datos de facturación del cliente particular
       if (!isProfessional) {
         await supabase.from('client_data').upsert({
