@@ -163,6 +163,7 @@ function AddItemModal({ userId, onAdd, onClose, onConfigSaved }) {
   const [height,       setHeight]       = useState('')
   const [mechanism,    setMechanism]    = useState('muelle')
   const [motorType,    setMotorType]    = useState('mecanico')
+  const [orientation,  setOrientation]  = useState('derecha')
   const [guideType,    setGuideType]    = useState('none')
   const [colorGroup,   setColorGroup]   = useState('Grupo Base')
   const [installacion, setInstallacion] = useState(false)
@@ -202,9 +203,10 @@ function AddItemModal({ userId, onAdd, onClose, onConfigSaved }) {
     setSaving(true)
     const w = parseFloat(width) || null
     const h = parseFloat(height) || null
-    const mechFinal      = isSoloMot ? 'motor' : mechanism
-    const motorFinal     = (mechanism === 'motor' || requiresMotor || isSoloMot) ? motorType : null
-    const guideFinal     = guideType !== 'none' ? guideType : null
+    const mechFinal        = isSoloMot ? 'motor' : mechanism
+    const motorFinal       = (mechanism === 'motor' || requiresMotor || isSoloMot) ? motorType : null
+    const orientationFinal = mechFinal === 'cinta' ? orientation : null
+    const guideFinal       = guideType !== 'none' ? guideType : null
     const colorFinal     = (!isSoloMot && !isSoloGuia) ? colorGroup : null
     const costPrice      = parseFloat(price) / 1.21
 
@@ -213,6 +215,7 @@ function AddItemModal({ userId, onAdd, onClose, onConfigSaved }) {
       blind_type:      blindType,
       mechanism:       mechFinal,
       motor_type:      motorFinal,
+      orientation:     orientationFinal,
       guide_type:      guideFinal,
       width:           isSoloMot ? null : w,
       height:          h,
@@ -229,6 +232,7 @@ function AddItemModal({ userId, onAdd, onClose, onConfigSaved }) {
       blind_type:      blindType,
       mechanism:       mechFinal,
       motor_type:      motorFinal,
+      orientation:     orientationFinal,
       guide_type:      guideFinal,
       width:           isSoloMot ? null : w,
       height:          h,
@@ -296,6 +300,26 @@ function AddItemModal({ userId, onAdd, onClose, onConfigSaved }) {
                       mechanism === id ? 'border-red-600 bg-red-50 text-red-700'
                       : disabled ? 'border-gray-100 bg-gray-50 text-gray-300 cursor-not-allowed'
                       : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                    }`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Orientación cinta */}
+          {mechanism === 'cinta' && !isSoloMot && !isSoloGuia && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Orientación de cinta</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'derecha',   label: 'Derecha' },
+                  { id: 'izquierda', label: 'Izquierda' },
+                ].map(({ id, label }) => (
+                  <button key={id} type="button" onClick={() => setOrientation(id)}
+                    className={`py-2 px-3 rounded-xl border-2 text-sm font-semibold transition-all ${
+                      orientation === id ? 'border-red-600 bg-red-50 text-red-700' : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}>
                     {label}
                   </button>
