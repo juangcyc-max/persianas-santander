@@ -822,6 +822,13 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
 
   async function handleDelete(id) {
     setDeletingId(id)
+    const quote = cotizaciones.find(q => q.id === id)
+    const configIds = (quote?.items ?? []).map(i => i.config_id).filter(Boolean)
+    if (configIds.length > 0) {
+      await supabase.from('cart_items').delete().in('configuration_id', configIds)
+      await supabase.from('blind_configurations').delete().in('id', configIds)
+      setConfiguraciones(prev => prev.filter(c => !configIds.includes(c.id)))
+    }
     await supabase.from('pro_purchase_quotes').delete().eq('id', id)
     setDeletingId(null); setConfirmId(null)
     onDelete?.(id)
