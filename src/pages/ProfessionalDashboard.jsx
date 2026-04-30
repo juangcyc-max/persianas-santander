@@ -825,7 +825,6 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
     const quote = cotizaciones.find(q => q.id === id)
     const configIds = (quote?.items ?? []).map(i => i.config_id).filter(Boolean)
     if (configIds.length > 0) {
-      await supabase.from('cart_items').delete().in('configuration_id', configIds)
       await supabase.from('blind_configurations').delete().in('id', configIds)
       setConfiguraciones(prev => prev.filter(c => !configIds.includes(c.id)))
     }
@@ -1810,8 +1809,6 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscoun
 
   async function handleDelete(id) {
     setDeleting(id)
-    await supabase.from('cart_items').delete().eq('configuration_id', id)
-    await supabase.from('budgets').delete().eq('configuration_id', id)
     await supabase.from('blind_configurations').delete().eq('id', id)
     setConfiguraciones(prev => prev.filter(c => c.id !== id))
     setDeleting(null)
@@ -1819,8 +1816,6 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscoun
 
   async function handleDeleteGroup(entryId, ids) {
     setDeleting(entryId)
-    await supabase.from('cart_items').delete().in('configuration_id', ids)
-    await supabase.from('budgets').delete().in('configuration_id', ids)
     await supabase.from('blind_configurations').delete().in('id', ids)
     setConfiguraciones(prev => prev.filter(c => !ids.includes(c.id)))
     setDeleting(null)
@@ -1830,13 +1825,7 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscoun
     if (!window.confirm('¿Eliminar todas las configuraciones guardadas?')) return
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data: all } = await supabase.from('blind_configurations').select('id').eq('user_id', user.id)
-    const ids = (all ?? []).map(c => c.id)
-    if (!ids.length) return
-    await supabase.from('cart_items').delete().in('configuration_id', ids)
-    await supabase.from('budgets').delete().in('configuration_id', ids)
     await supabase.from('blind_configurations').delete().eq('user_id', user.id)
-    localStorage.removeItem(`ps_del_${user.id}`)
     setConfiguraciones([])
   }
 
