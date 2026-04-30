@@ -299,9 +299,19 @@ function OrderModal({ order, onClose, onUpdate }) {
                       {({'laminada':'Paño laminado','autoblocante':'Paño autoblocante','blocking':'Bloqueante','sistema_mini_cajon_pvc':'Sistema Mini Cajón PVC','sistema_mini_cajon_aluminio':'Sistema Mini Cajón Aluminio','sistema_mini_autoblocante':'Sistema Mini Autoblocante','solo_guias':'Solo guías','solo_motor':'Solo motor','mosquitera_enrollable':'Mosquitera Enrollable','sistema_mini_pvc':'Sistema Mini PVC','sistema_mini_aluminio':'Sistema Mini Aluminio','motor_mas_guias':'Motor + Guías','pano_mas_guias':'Paño + Guías','normal':'Estándar'})[item.blind_type] ?? item.blind_type ?? '—'}
                       {item.quantity > 1 && ` ×${item.quantity}`}
                     </span>
-                    <span className="text-gray-500 ml-2">{item.width}×{item.height}mm · {item.mechanism}</span>
-                    <br />
-                    <span className="text-xs text-gray-400">Caja: {item.box_color_name} · Lamas: {item.slat_color_name}</span>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {item.width && item.height ? `${item.width}×${item.height} mm` : ''}
+                      {item.mechanism ? ` · ${item.mechanism}` : ''}
+                      {item.mechanism === 'cinta' && item.orientation ? ` (${item.orientation})` : ''}
+                      {item.mechanism === 'motor' && item.motor_type ? ` · ${item.motor_type}` : ''}
+                      {item.guide_type && item.guide_type !== 'none' ? ` · guía ${item.guide_type}` : ''}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {['sistema_mini_cajon_pvc','sistema_mini_cajon_aluminio','sistema_mini_autoblocante'].includes(item.blind_type)
+                        ? [item.box_color_name ? `Cajón: ${item.box_color_name}` : '', item.slat_color_name ? `Lamas: ${item.slat_color_name}` : ''].filter(Boolean).join(' · ')
+                        : item.blind_type !== 'solo_motor' && item.slat_color_name ? `Color: ${item.slat_color_name}` : ''}
+                      {item.installacion ? ' · Con instalación' : ''}
+                    </p>
                   </div>
                   <span className="font-bold text-gray-900">{fmt(item.estimated_price * item.quantity)}</span>
                 </div>
@@ -1887,7 +1897,7 @@ function AdminProQuoteModal({ quote, proData, onClose, onUpdated }) {
                       {it.width && it.height ? `${it.width}×${it.height} mm` : ''}
                       {it.mechanism ? ` · ${it.mechanism}` : ''}
                       {it.mechanism === 'cinta' && it.orientation ? ` (${it.orientation})` : ''}
-                      {it.motor_type ? ` · motor ${it.motor_type}` : ''}
+                      {it.mechanism === 'motor' && it.motor_type ? ` · ${it.motor_type}` : ''}
                       {it.guide_type && it.guide_type !== 'none' ? ` · guía ${it.guide_type}` : ''}
                     </p>
                     <p className="text-xs text-gray-400">
