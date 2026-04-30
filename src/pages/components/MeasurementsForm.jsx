@@ -6,8 +6,7 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
   const minSize = isBigSistema ? 701 : 301
   const maxSize = isBigSistema ? 5001 : 3001
 
-  const snapNoZero = (n) => (n % 10 === 0 ? n + 1 : n)
-  const clamp = (n) => snapNoZero(Math.min(maxSize, Math.max(minSize, n)))
+  const clamp = (n) => Math.min(maxSize, Math.max(minSize, n))
 
   // Estado local de texto para permitir escritura libre
   const [widthText,  setWidthText]  = useState(String(width))
@@ -116,7 +115,7 @@ function MeasurementsForm({ productType, width, height, onWidthChange, onHeightC
                   max={maxSize}
                   step={1}
                   value={value}
-                  onChange={e => onChange(snapNoZero(Number(e.target.value)))}
+                  onChange={e => onChange(clamp(Number(e.target.value)))}
                   className="w-full h-1.5 rounded-full appearance-none cursor-pointer bg-gray-200
                              [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
                              [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-red-600
