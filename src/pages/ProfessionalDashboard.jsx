@@ -931,9 +931,9 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
                             {it.guide_type && it.guide_type !== 'none' ? ` · guía ${it.guide_type}` : ''}
                           </p>
                           <p className="text-xs text-gray-400">
-                            {it.box_color_name ? `Cajón: ${it.box_color_name}` : ''}
-                            {it.box_color_name && it.slat_color_name ? ' · ' : ''}
-                            {it.slat_color_name ? `Lamas: ${it.slat_color_name}` : ''}
+                            {['sistema_mini_cajon_pvc','sistema_mini_cajon_aluminio','sistema_mini_autoblocante'].includes(it.blind_type)
+                              ? [it.box_color_name ? `Cajón: ${it.box_color_name}` : '', it.slat_color_name ? `Lamas: ${it.slat_color_name}` : ''].filter(Boolean).join(' · ')
+                              : it.blind_type !== 'solo_motor' && it.slat_color_name ? `Color: ${it.slat_color_name}` : ''}
                             {it.installacion ? ' · Con instalación' : ''}
                           </p>
                         </div>
