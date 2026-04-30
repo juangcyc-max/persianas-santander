@@ -2544,8 +2544,8 @@ function AdminBudgetsSection() {
 async function fetchEmpresa(inv) {
   const userId = inv.orders?.user_id ?? inv.user_id
   if (!userId) return null
-  const { data } = await supabase.from('professional_data').select('*').eq('user_id', userId).maybeSingle()
-  return data ?? null
+  const { data } = await supabase.rpc('get_professional_data', { p_user_id: userId })
+  return data?.[0] ?? null
 }
 
 async function buildOrderForPDF(inv) {
