@@ -926,7 +926,15 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
                           <p className="text-xs text-gray-400">
                             {it.width && it.height ? `${it.width}×${it.height} mm` : ''}
                             {it.mechanism ? ` · ${it.mechanism}` : ''}
+                            {it.mechanism === 'cinta' && it.orientation ? ` (${it.orientation})` : ''}
+                            {it.motor_type ? ` · motor ${it.motor_type}` : ''}
                             {it.guide_type && it.guide_type !== 'none' ? ` · guía ${it.guide_type}` : ''}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {it.box_color_name ? `Cajón: ${it.box_color_name}` : ''}
+                            {it.box_color_name && it.slat_color_name ? ' · ' : ''}
+                            {it.slat_color_name ? `Lamas: ${it.slat_color_name}` : ''}
+                            {it.installacion ? ' · Con instalación' : ''}
                           </p>
                         </div>
                         <span className="font-bold text-gray-700 flex-shrink-0">{fmt(it.price_professional * 1.21)}</span>

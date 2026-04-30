@@ -78,6 +78,7 @@ function SaveConfigurationButton({ configuration, onSuccess, proDiscount = 0 }) 
             config_id:          saved.id,
             blind_type:         blindType,
             mechanism:          configuration.mechanism ?? null,
+            orientation:        configuration.orientation ?? null,
             motor_type:         configuration.motorType ?? null,
             guide_type:         configuration.guideType ?? null,
             width:              configuration.width ?? null,
