@@ -927,7 +927,7 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
                             {it.width && it.height ? `${it.width}×${it.height} mm` : ''}
                             {it.mechanism ? ` · ${it.mechanism}` : ''}
                             {it.mechanism === 'cinta' && it.orientation ? ` (${it.orientation})` : ''}
-                            {it.motor_type ? ` · motor ${it.motor_type}` : ''}
+                            {it.mechanism === 'motor' && it.motor_type ? ` · ${it.motor_type}` : ''}
                             {it.guide_type && it.guide_type !== 'none' ? ` · guía ${it.guide_type}` : ''}
                           </p>
                           <p className="text-xs text-gray-400">
