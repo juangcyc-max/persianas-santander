@@ -1828,13 +1828,34 @@ function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscoun
     setDeleting(null)
   }
 
+  async function handleDeleteAll() {
+    if (!window.confirm('¿Eliminar todas las configuraciones guardadas?')) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const ids = configuraciones.map(c => c.id)
+    if (!ids.length) return
+    await supabase.from('cart_items').delete().in('configuration_id', ids)
+    await supabase.from('budgets').delete().in('configuration_id', ids)
+    await supabase.from('blind_configurations').delete().in('id', ids)
+    markDeleted(user.id, ids)
+    setConfiguraciones([])
+  }
+
   return (
     <div className="space-y-4">
       <SectionHeader title="Configuraciones guardadas" action={
-        <Link to="/configurador"
-          className="flex items-center gap-2 text-sm font-bold bg-red-700 text-white px-4 py-2 rounded-xl hover:bg-red-800 transition-colors">
-          + Nueva configuración
-        </Link>
+        <div className="flex items-center gap-2">
+          {configuraciones.length > 0 && (
+            <button onClick={handleDeleteAll}
+              className="text-xs font-semibold text-gray-400 hover:text-red-600 transition-colors px-2 py-2">
+              Eliminar todas
+            </button>
+          )}
+          <Link to="/configurador"
+            className="flex items-center gap-2 text-sm font-bold bg-red-700 text-white px-4 py-2 rounded-xl hover:bg-red-800 transition-colors">
+            + Nueva configuración
+          </Link>
+        </div>
       } />
 
       {configuraciones.length > 0 && (
