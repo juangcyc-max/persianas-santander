@@ -417,6 +417,7 @@ function ProjectModal({ project: initial, userId, empresa, logoUrl, onSave, onDe
   const [invoiceNumber,setInvoiceNumber]= useState(`F-${Date.now().toString().slice(-6)}`)
   const [showInvNum,   setShowInvNum]   = useState(false)
   const [saved,        setSaved]        = useState(false)
+  const [ivaPct,       setIvaPct]       = useState(initial.iva_pct ?? 21)
 
   const items    = project.items ?? []
   const total    = items.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
@@ -451,8 +452,8 @@ function ProjectModal({ project: initial, userId, empresa, logoUrl, onSave, onDe
   async function handleBudget() {
     setGenerating('budget')
     const bNum = `PRO-${Date.now().toString().slice(-6)}`
-    const updated = { ...project, budget_number: bNum }
-    await generateGroupBudgetPDF({ project: updated, empresa, logoUrl })
+    const updated = { ...project, budget_number: bNum, iva_pct: ivaPct }
+    await generateGroupBudgetPDF({ project: updated, empresa, logoUrl, ivaPct })
     await onSave({ ...updated, status: project.status === 'draft' ? 'sent' : project.status })
     setProject(updated)
     setGenerating(null)
@@ -460,7 +461,8 @@ function ProjectModal({ project: initial, userId, empresa, logoUrl, onSave, onDe
 
   async function handleInvoice() {
     setGenerating('invoice')
-    await generateGroupInvoicePDF({ project, empresa, logoUrl, invoiceNumber })
+    await generateGroupInvoicePDF({ project: { ...project, iva_pct: ivaPct }, empresa, logoUrl, invoiceNumber, ivaPct })
+    await onSave({ ...project, iva_pct: ivaPct })
     setGenerating(null)
     setShowInvNum(false)
   }
@@ -587,6 +589,19 @@ function ProjectModal({ project: initial, userId, empresa, logoUrl, onSave, onDe
               </div>
             )}
           </div>
+
+          {/* Tipo IVA */}
+          {items.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-medium text-gray-500">Tipo IVA para PDF:</span>
+              {[21, 10, 4, 0].map(pct => (
+                <button key={pct} onClick={() => setIvaPct(pct)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${ivaPct === pct ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'}`}>
+                  {pct}%
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Acciones */}
           <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-gray-100">
@@ -763,6 +778,7 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
   const [editWorkNotes,      setEditWorkNotes]      = useState({})
   const [editExtras,         setEditExtras]         = useState({})
   const [editClientComments, setEditClientComments] = useState({})
+  const [editIvaPct,         setEditIvaPct]         = useState({})
   const [savingClient,       setSavingClient]       = useState({})
   const [savedClient,        setSavedClient]        = useState({})
   const [downloadingClient,  setDownloadingClient]  = useState({})
@@ -793,24 +809,26 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
       const margin   = parseFloat(q.client_margin_pct ?? editMargin[q.id] ?? 0)
       const extras   = parseFloat(editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)) || 0
       const comments = editClientComments[q.id] !== undefined ? editClientComments[q.id] : (q.client_comments ?? null)
+      const ivaPct   = parseFloat(editIvaPct[q.id] !== undefined ? editIvaPct[q.id] : (q.iva_pct ?? 21))
       const invNum   = invoiceNums[q.id] || `FAC-${(q.id ?? '').slice(0, 8).toUpperCase()}`
       const doc = await generateClientInvoiceFromQuotePDF({
-        quote: q, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, logoUrl, invoiceNumber: invNum,
+        quote: q, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, ivaPct, logoUrl, invoiceNumber: invNum,
       })
       doc?.save(`Factura_cliente_${invNum}.pdf`)
     } catch {}
     setGeneratingInv(p => ({ ...p, [q.id]: false }))
   }
 
-  async function handleSaveClientData(id, adminTotal, currentMarginPct, currentWorkNotes, currentClientInfo, currentExtras, currentClientComments) {
+  async function handleSaveClientData(id, adminTotal, currentMarginPct, currentWorkNotes, currentClientInfo, currentExtras, currentClientComments, currentIvaPct) {
     setSavingClient(p => ({ ...p, [id]: true }))
     const margin      = parseFloat(editMargin[id] !== undefined ? editMargin[id] : (currentMarginPct ?? 0))
     const extras      = parseFloat(editExtras[id] !== undefined ? editExtras[id] : (currentExtras ?? 0)) || 0
+    const ivaPct      = parseFloat(editIvaPct[id] !== undefined ? editIvaPct[id] : (currentIvaPct ?? 21))
     const clientTotal = parseFloat(adminTotal) * (1 + margin / 100) + extras
     const notes       = editWorkNotes[id] !== undefined ? editWorkNotes[id] : (currentWorkNotes ?? null)
     const comments    = editClientComments[id] !== undefined ? editClientComments[id] : (currentClientComments ?? null)
     const ci          = editClientInfo[id] !== undefined ? editClientInfo[id] : (currentClientInfo ?? null)
-    const updates     = { client_margin_pct: margin, client_total: clientTotal, extras_amount: extras }
+    const updates     = { client_margin_pct: margin, client_total: clientTotal, extras_amount: extras, iva_pct: ivaPct }
     if (notes !== null) updates.work_notes = notes.trim() || null
     if (comments !== null) updates.client_comments = comments.trim() || null
     if (ci !== null) updates.client_info = Object.values(ci).some(v => v?.trim()) ? ci : null
@@ -836,8 +854,9 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
     const margin   = parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0))
     const extras   = parseFloat(editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)) || 0
     const comments = editClientComments[q.id] !== undefined ? editClientComments[q.id] : (q.client_comments ?? null)
+    const ivaPct   = parseFloat(editIvaPct[q.id] !== undefined ? editIvaPct[q.id] : (q.iva_pct ?? 21))
     try {
-      const doc = await generateClientBudgetFromQuotePDF({ quote: q, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, logoUrl })
+      const doc = await generateClientBudgetFromQuotePDF({ quote: q, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, ivaPct, logoUrl })
       doc?.save(`Presupuesto_${(q.id ?? '').slice(0, 8).toUpperCase()}.pdf`)
     } catch {}
     setDownloadingClient(p => ({ ...p, [q.id]: false }))
@@ -997,7 +1016,19 @@ function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, on
                         </div>
                         <span className="text-xs text-gray-400">→ Total cliente:</span>
                         <span className="text-sm font-black text-blue-700">{fmt(clientTotal)}</span>
-                        <button onClick={() => handleSaveClientData(q.id, adminTotal, q.client_margin_pct, q.work_notes, q.client_info, q.extras_amount, q.client_comments)} disabled={savingClient[q.id] || savedClient[q.id]}
+                      </div>
+
+                      {/* IVA */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs font-medium text-gray-600">IVA:</span>
+                        {[21, 10, 4, 0].map(pct => (
+                          <button key={pct}
+                            onClick={() => setEditIvaPct(p => ({ ...p, [q.id]: pct }))}
+                            className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition-colors ${(editIvaPct[q.id] !== undefined ? editIvaPct[q.id] : (q.iva_pct ?? 21)) === pct ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'}`}>
+                            {pct}%
+                          </button>
+                        ))}
+                        <button onClick={() => handleSaveClientData(q.id, adminTotal, q.client_margin_pct, q.work_notes, q.client_info, q.extras_amount, q.client_comments, q.iva_pct)} disabled={savingClient[q.id] || savedClient[q.id]}
                           className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${savedClient[q.id] ? 'bg-green-600 text-white' : 'bg-blue-700 hover:bg-blue-800 text-white'}`}>
                           {savingClient[q.id] ? '…' : savedClient[q.id] ? '✓ Guardado' : 'Guardar'}
                         </button>

@@ -62,6 +62,7 @@ function OrderModal({ order, onClose, onUpdate }) {
   const [existingInvoice,   setExistingInvoice]   = useState(null)
   const [proformaTotal,     setProformaTotal]     = useState('')
   const [savingProforma,    setSavingProforma]    = useState(false)
+  const [ivaPct,            setIvaPct]            = useState(21)
 
   useEffect(() => { loadInvoice() }, [])
 
@@ -77,9 +78,10 @@ function OrderModal({ order, onClose, onUpdate }) {
 
   // Crea el registro de factura en BD (sin descargar PDF)
   async function createInvoiceRecord() {
-    const isProformaOrder = order.installacion !== false   // con instalación → proforma
+    const isProformaOrder = order.installacion !== false
     const totalSinIva     = (order.total_with_iva ?? 0) / 1.21
-    const iva             = (order.total_with_iva ?? 0) - totalSinIva
+    const ivaAmount       = totalSinIva * ivaPct / 100
+    const totalConIva     = totalSinIva * (1 + ivaPct / 100)
     const invoiceNum      = `${isProformaOrder ? 'PRO' : 'FAC'}-${Date.now().toString().slice(-8)}`
 
     const { data: inv, error } = await supabase
@@ -90,8 +92,9 @@ function OrderModal({ order, onClose, onUpdate }) {
         invoice_number:     invoiceNum,
         payment_status:     'pending_payment',
         total_without_iva:  totalSinIva,
-        iva:                iva,
-        total_with_iva:     order.total_with_iva,
+        iva:                ivaAmount,
+        total_with_iva:     totalConIva,
+        iva_pct:            ivaPct,
         items:              order.items,
       })
       .select()
@@ -415,6 +418,19 @@ function OrderModal({ order, onClose, onUpdate }) {
             {/* ── SECCIÓN FACTURA ── */}
             <div className="border-t border-gray-100 pt-4 space-y-3">
               <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Facturación</p>
+
+              {/* Selector tipo IVA */}
+              {!existingInvoice && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-medium text-gray-500">Tipo IVA:</span>
+                  {[21, 10, 4, 0].map(pct => (
+                    <button key={pct} onClick={() => setIvaPct(pct)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-colors ${ivaPct === pct ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-600 border-gray-300 hover:border-green-400'}`}>
+                      {pct}%
+                    </button>
+                  ))}
+                </div>
+              )}
 
               {!existingInvoice ? (
                 <button onClick={handleGenerateInvoice} disabled={generatingInvoice}

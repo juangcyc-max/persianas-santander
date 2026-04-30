@@ -111,7 +111,7 @@ function addPageFooter(doc, footerLines, page, pageCount) {
   doc.text(line2, W / 2, H - 3.5, { align: 'center' })
 }
 
-function addPriceBlock(doc, y, breakdown, isPro, proDiscount, brandColor = COLORS.red) {
+function addPriceBlock(doc, y, breakdown, isPro, proDiscount, brandColor = COLORS.red, ivaPct = 21) {
   const W = doc.internal.pageSize.width
   const H = doc.internal.pageSize.height
 
@@ -151,7 +151,7 @@ function addPriceBlock(doc, y, breakdown, isPro, proDiscount, brandColor = COLOR
   doc.text("Base imponible", col1, ly)
   doc.text(formatCurrency(subtotalSinIva), col2, ly, { align: "right" })
   ly += 7
-  doc.text("IVA (21%)", col1, ly)
+  doc.text(`IVA (${ivaPct}%)`, col1, ly)
   doc.text(formatCurrency(iva), col2, ly, { align: "right" })
   ly += 7
 
@@ -880,6 +880,7 @@ export async function generateGroupBudgetPDF({
   empresa = {},
   logoUrl = null,
   returnBase64 = false,
+  ivaPct = 21,
 } = {}) {
   try {
     const doc    = new jsPDF()
@@ -1001,9 +1002,10 @@ export async function generateGroupBudgetPDF({
     y = doc.lastAutoTable.finalY + 8
 
     // ── BLOQUE PRECIO ───────────────────────────────────────────────────────
-    const totalConIva   = items.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
-    const subtotalSinIva = totalConIva / 1.21
-    const iva = totalConIva - subtotalSinIva
+    const baseTotal21    = items.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
+    const subtotalSinIva = baseTotal21 / 1.21
+    const totalConIva    = subtotalSinIva * (1 + ivaPct / 100)
+    const iva            = totalConIva - subtotalSinIva
 
     y = addPriceBlock(doc, y, {
       subtotalSinIva,
@@ -1011,7 +1013,7 @@ export async function generateGroupBudgetPDF({
       totalConIva,
       finalPrice: totalConIva,
       discount: 0,
-    }, false, 0)
+    }, false, 0, COLORS.blue, ivaPct)
 
     // ── CONDICIONES ─────────────────────────────────────────────────────────
     if (y > H - 60) { doc.addPage(); y = 38 }
@@ -1071,6 +1073,7 @@ export async function generateGroupInvoicePDF({
   empresa = {},
   logoUrl = null,
   invoiceNumber = null,
+  ivaPct = 21,
 } = {}) {
   try {
     const doc    = new jsPDF()
@@ -1181,10 +1184,11 @@ export async function generateGroupInvoicePDF({
     y = doc.lastAutoTable.finalY + 8
 
     // ── PRECIO ──────────────────────────────────────────────────────────────
-    const totalConIva    = items.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
-    const subtotalSinIva = totalConIva / 1.21
-    const iva = totalConIva - subtotalSinIva
-    y = addPriceBlock(doc, y, { subtotalSinIva, iva, totalConIva, finalPrice: totalConIva, discount: 0 }, false, 0)
+    const baseTotal21Inv = items.reduce((s, it) => s + (Number(it.client_price) || 0), 0)
+    const subtotalSinIva = baseTotal21Inv / 1.21
+    const totalConIva    = subtotalSinIva * (1 + ivaPct / 100)
+    const iva            = totalConIva - subtotalSinIva
+    y = addPriceBlock(doc, y, { subtotalSinIva, iva, totalConIva, finalPrice: totalConIva, discount: 0 }, false, 0, COLORS.blue, ivaPct)
 
     // ── PIE ─────────────────────────────────────────────────────────────────
     const pageCount = doc.internal.getNumberOfPages()
@@ -1338,6 +1342,7 @@ export async function generateClientBudgetFromQuotePDF({
   marginPct = 0,
   extrasAmount = 0,
   clientComments = null,
+  ivaPct   = 21,
   logoUrl   = null,
   returnBase64 = false,
   docType  = 'budget', // 'budget' | 'invoice'
@@ -1354,11 +1359,14 @@ export async function generateClientBudgetFromQuotePDF({
       : `PRES-${(quote.id ?? '').slice(0, 8).toUpperCase()}`
     const brandColor = COLORS.blue
 
-    const adminTotal  = parseFloat(quote.admin_total_con_iva ?? quote.total_con_iva ?? 0)
-    const margin      = parseFloat(marginPct ?? quote.client_margin_pct ?? 0)
-    const extras      = parseFloat(extrasAmount ?? quote.extras_amount ?? 0) || 0
-    const clientTotal = adminTotal * (1 + margin / 100) + extras
-    const scaleFactor = adminTotal > 0 ? (clientTotal - extras) / adminTotal : 1
+    const adminTotal      = parseFloat(quote.admin_total_con_iva ?? quote.total_con_iva ?? 0)
+    const margin          = parseFloat(marginPct ?? quote.client_margin_pct ?? 0)
+    const extras          = parseFloat(extrasAmount ?? quote.extras_amount ?? 0) || 0
+    const ivaRate         = parseFloat(ivaPct ?? quote.iva_pct ?? 21)
+    const clientBase21    = adminTotal * (1 + margin / 100)   // precio con 21% IVA
+    const clientSinIva    = clientBase21 / 1.21               // base sin IVA
+    const clientTotal     = clientSinIva * (1 + ivaRate / 100) + extras
+    const scaleFactor     = adminTotal > 0 ? clientBase21 / adminTotal : 1
 
     // Cabecera azul
     doc.setFillColor(...brandColor)
@@ -1487,32 +1495,31 @@ export async function generateClientBudgetFromQuotePDF({
     }
 
     // Bloque totales
-    const baseClientSinExtras = adminTotal * (1 + margin / 100)
-    const totalRows = extras > 0 ? 4 : 3
-    const rowH = 6
-    const totalsBlockH = totalRows * rowH + 14
-    const sinIva = clientTotal / 1.21
-    const iva    = clientTotal - sinIva
+    const persianasConIva = clientSinIva * (1 + ivaRate / 100)
+    const ivaAmount       = clientSinIva * ivaRate / 100
+    const totalRows       = extras > 0 ? 4 : 3
+    const rowH            = 6
+    const totalsBlockH    = totalRows * rowH + 14
     doc.setFillColor(...COLORS.grayBg)
     doc.roundedRect(W - ML - 72, y, 72, totalsBlockH, 2, 2, 'F')
     doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(...COLORS.mid)
     let ty = y + 8
     if (extras > 0) {
-      doc.text('Persianas:',        W - ML - 66, ty)
-      doc.text(formatCurrency(baseClientSinExtras), W - ML - 2, ty, { align: 'right' })
+      doc.text('Persianas:',           W - ML - 66, ty)
+      doc.text(formatCurrency(persianasConIva), W - ML - 2, ty, { align: 'right' })
       ty += rowH
       doc.text('Trabajos adicionales:', W - ML - 66, ty)
-      doc.text(formatCurrency(extras), W - ML - 2, ty, { align: 'right' })
+      doc.text(formatCurrency(extras),  W - ML - 2, ty, { align: 'right' })
       ty += rowH
     }
-    doc.text('Base imponible:',   W - ML - 66, ty)
-    doc.text(formatCurrency(sinIva), W - ML - 2, ty, { align: 'right' })
+    doc.text('Base imponible:',        W - ML - 66, ty)
+    doc.text(formatCurrency(clientSinIva), W - ML - 2, ty, { align: 'right' })
     ty += rowH
-    doc.text('IVA (21%):',        W - ML - 66, ty)
-    doc.text(formatCurrency(iva), W - ML - 2, ty, { align: 'right' })
+    doc.text(`IVA (${ivaRate}%):`,     W - ML - 66, ty)
+    doc.text(formatCurrency(ivaAmount), W - ML - 2, ty, { align: 'right' })
     ty += rowH + 2
     doc.setFont('helvetica', 'bold'); doc.setTextColor(...COLORS.dark)
-    doc.text('TOTAL:',            W - ML - 66, ty)
+    doc.text('TOTAL:',                 W - ML - 66, ty)
     doc.setFontSize(10)
     doc.text(formatCurrency(clientTotal), W - ML - 2, ty, { align: 'right' })
     y += blockH + 8

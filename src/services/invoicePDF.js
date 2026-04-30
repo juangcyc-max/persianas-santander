@@ -245,6 +245,7 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null, { 
   const totalNoIva  = Number(invoice.total_without_iva || 0)
   const iva         = Number(invoice.iva || 0)
   const total       = Number(invoice.total_with_iva || 0)
+  const ivaPct      = Number(invoice.iva_pct ?? 21)
   const isPro       = order?.user_type === 'professional'
   const proDiscount = invoice.pro_discount ?? null
 
@@ -305,7 +306,7 @@ export async function generateInvoicePDF(invoice, order = {}, empresa = null, { 
   doc.text('Base imponible', boxX + 6, ty)
   doc.text(fmt(totalNoIva),  boxX + boxW - 5, ty, { align: 'right' })
   ty += 8
-  doc.text('IVA (21%)',      boxX + 6, ty)
+  doc.text(`IVA (${ivaPct}%)`, boxX + 6, ty)
   doc.text(fmt(iva),         boxX + boxW - 5, ty, { align: 'right' })
   ty += 5
 
