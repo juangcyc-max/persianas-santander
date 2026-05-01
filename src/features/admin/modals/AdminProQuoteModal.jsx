@@ -56,6 +56,69 @@ export default function AdminProQuoteModal({ quote, proData, onClose, onUpdated 
       })
     }
 
+    // Auto-generar pedido + factura en la primera aceptación (ambas partes OK)
+    if ((status === 'accepted' || status === 'modified') && quote.status === 'pending') {
+      const finalPrice  = parseFloat(adminPrice)
+      const totalSinIva = finalPrice / 1.21
+      const origTotal   = quote.total_con_iva || finalPrice
+      const ratio       = origTotal > 0 ? finalPrice / origTotal : 1
+
+      const orderItems = (quote.items ?? []).map(it => ({
+        configuration_id: it.config_id       ?? null,
+        quantity:         1,
+        blind_type:       it.blind_type,
+        width:            it.width            ?? null,
+        height:           it.height           ?? null,
+        mechanism:        it.mechanism        ?? null,
+        motor_type:       it.motor_type       ?? null,
+        guide_type:       it.guide_type       ?? null,
+        estimated_price:  (it.price_professional * 1.21) * ratio,
+        box_color_name:   it.box_color_name   ?? null,
+        slat_color_name:  it.slat_color_name  ?? null,
+      }))
+
+      const billingData = proData?.razon_social ? {
+        nombre:        proData.razon_social    ?? '',
+        apellidos:     '',
+        dni_nif:       proData.cif_nif         ?? '',
+        direccion:     proData.direccion_fiscal ?? '',
+        codigo_postal: proData.codigo_postal   ?? '',
+        ciudad:        proData.ciudad          ?? '',
+        email:         proData.email           ?? '',
+        es_empresa:    true,
+      } : null
+
+      const { data: newOrder } = await supabase.from('orders').insert({
+        user_id:        quote.user_id,
+        user_type:      'professional',
+        items:          orderItems,
+        total_price:    totalSinIva,
+        total_with_iva: finalPrice,
+        status:         'pending',
+        installacion:   (quote.items ?? []).some(it => it.installacion),
+        address:        null,
+        phone:          null,
+        preferred_date: null,
+        preferred_time: null,
+        notes:          null,
+        billing_data:   billingData,
+      }).select('id').single()
+
+      if (newOrder?.id) {
+        await supabase.from('invoices').insert({
+          order_id:          newOrder.id,
+          user_id:           quote.user_id,
+          invoice_number:    `FAC-${Date.now().toString().slice(-8)}`,
+          payment_status:    'pending_payment',
+          total_without_iva: totalSinIva,
+          iva:               finalPrice - totalSinIva,
+          total_with_iva:    finalPrice,
+          items:             orderItems,
+          pro_discount:      quote.discount_pct ?? null,
+        })
+      }
+    }
+
     setSaving(false)
     onUpdated()
     onClose()
