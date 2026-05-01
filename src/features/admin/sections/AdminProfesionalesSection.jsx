@@ -23,7 +23,7 @@ export default function AdminProfesionalesSection({ adminUser }) {
 
   async function loadAll() {
     setLoading(true)
-    const { data: qs } = await supabase.from('pro_purchase_quotes').select('*').eq('client_status', 'accepted').order('created_at', { ascending: false })
+    const { data: qs } = await supabase.from('pro_purchase_quotes').select('*').order('created_at', { ascending: false })
     const quotes = qs ?? []
     setQuotes(quotes)
 
@@ -94,8 +94,9 @@ export default function AdminProfesionalesSection({ adminUser }) {
       const matchSearch = !search || name.includes(search.toLowerCase()) || (proData[q.user_id]?.email ?? '').toLowerCase().includes(search.toLowerCase())
       const d = q.created_at ? q.created_at.slice(0, 10) : ''
       const matchDate = (!dateFrom || d >= dateFrom) && (!dateTo || d <= dateTo)
-      const matchType = typeFilter === 'all' || (q.items ?? []).some(it => it.blind_type === typeFilter)
-      return matchStatus && matchSearch && matchDate && matchType
+      const matchType   = typeFilter === 'all' || (q.items ?? []).some(it => it.blind_type === typeFilter)
+      const matchClient = q.client_status === 'accepted'
+      return matchClient && matchStatus && matchSearch && matchDate && matchType
     })
     return [...base].sort((a, b) => {
       let cmp = 0
