@@ -23,7 +23,7 @@ export default function AdminProfesionalesSection({ adminUser }) {
 
   async function loadAll() {
     setLoading(true)
-    const { data: qs } = await supabase.from('pro_purchase_quotes').select('*').order('created_at', { ascending: false })
+    const { data: qs } = await supabase.from('pro_purchase_quotes').select('*').eq('client_status', 'accepted').order('created_at', { ascending: false })
     const quotes = qs ?? []
     setQuotes(quotes)
 
