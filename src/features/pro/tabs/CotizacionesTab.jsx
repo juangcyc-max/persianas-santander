@@ -49,14 +49,16 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
   async function handleGenerateInvoice(q) {
     setGeneratingInv(p => ({ ...p, [q.id]: true }))
     try {
-      const margin   = parseFloat(q.client_margin_pct ?? editMargin[q.id] ?? 0)
-      const extras   = parseFloat(editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)) || 0
-      const comments = editClientComments[q.id] !== undefined ? editClientComments[q.id] : (q.client_comments ?? null)
-      const ivaPct   = parseFloat(editIvaPct[q.id] !== undefined ? editIvaPct[q.id] : (q.iva_pct ?? 21))
-      const invNum   = invoiceNums[q.id] || `FAC-${(q.id ?? '').slice(0, 8).toUpperCase()}`
-      const tpl = editTemplate[q.id] ?? 'azul'
+      const margin      = parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0))
+      const extras      = parseFloat(editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)) || 0
+      const comments    = editClientComments[q.id] !== undefined ? editClientComments[q.id] : (q.client_comments ?? null)
+      const ivaPct      = parseFloat(editIvaPct[q.id] !== undefined ? editIvaPct[q.id] : (q.iva_pct ?? 21))
+      const invNum      = invoiceNums[q.id] || `FAC-${(q.id ?? '').slice(0, 8).toUpperCase()}`
+      const tpl         = editTemplate[q.id] ?? 'azul'
+      const clientInfo  = editClientInfo[q.id] !== undefined ? editClientInfo[q.id] : (q.client_info ?? null)
+      const quoteForPDF = { ...q, client_info: clientInfo }
       const doc = await generateClientInvoiceFromQuotePDF({
-        quote: q, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, ivaPct, logoUrl, invoiceNumber: invNum, templateId: tpl,
+        quote: quoteForPDF, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, ivaPct, logoUrl, invoiceNumber: invNum, templateId: tpl,
       })
       doc?.save(`Factura_cliente_${invNum}.pdf`)
     } catch {}
@@ -95,13 +97,15 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
 
   async function handleDownloadClientPDF(q) {
     setDownloadingClient(p => ({ ...p, [q.id]: true }))
-    const margin   = parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0))
-    const extras   = parseFloat(editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)) || 0
-    const comments = editClientComments[q.id] !== undefined ? editClientComments[q.id] : (q.client_comments ?? null)
-    const ivaPct   = parseFloat(editIvaPct[q.id] !== undefined ? editIvaPct[q.id] : (q.iva_pct ?? 21))
+    const margin      = parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0))
+    const extras      = parseFloat(editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)) || 0
+    const comments    = editClientComments[q.id] !== undefined ? editClientComments[q.id] : (q.client_comments ?? null)
+    const ivaPct      = parseFloat(editIvaPct[q.id] !== undefined ? editIvaPct[q.id] : (q.iva_pct ?? 21))
+    const clientInfo  = editClientInfo[q.id] !== undefined ? editClientInfo[q.id] : (q.client_info ?? null)
+    const quoteForPDF = { ...q, client_info: clientInfo }
     try {
       const tpl = editTemplate[q.id] ?? 'azul'
-      const doc = await generateClientBudgetFromQuotePDF({ quote: q, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, ivaPct, logoUrl, templateId: tpl })
+      const doc = await generateClientBudgetFromQuotePDF({ quote: quoteForPDF, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, ivaPct, logoUrl, templateId: tpl })
       doc?.save(`Presupuesto_${(q.id ?? '').slice(0, 8).toUpperCase()}.pdf`)
     } catch {}
     setDownloadingClient(p => ({ ...p, [q.id]: false }))
