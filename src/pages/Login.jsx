@@ -42,7 +42,7 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password })
     if (error) {
       if (error.message === 'Invalid login credentials') {
         setError('Email o contraseña incorrectos.')
@@ -52,7 +52,8 @@ export default function Login() {
         setError(error.message)
       }
     } else {
-      navigate('/inicio')
+      const userType = data.user?.user_metadata?.user_type
+      navigate(userType === 'professional' ? '/panel-profesional' : '/inicio', { replace: true })
     }
     setLoading(false)
   }

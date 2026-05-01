@@ -102,8 +102,8 @@ export default function Register() {
   // ── Validaciones ─────────────────────────────────────────────────────
   const validateStep1 = () => {
     const e = {}
-    if (!email.trim())                                      e.email    = 'El email es obligatorio'
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))    e.email    = 'Email no válido'
+    if (!email.trim())                                           e.email    = 'El email es obligatorio'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) e.email    = 'Email no válido'
     if (!password)                                          e.password = 'La contraseña es obligatoria'
     else if (password.length < 6)                           e.password = 'Mínimo 6 caracteres'
     if (password !== confirm)                               e.confirm  = 'Las contraseñas no coinciden'
@@ -136,13 +136,13 @@ export default function Register() {
 
   // ── Submit final ──────────────────────────────────────────────────────
   const handleSubmit = async (e2Data = null) => {
-    if (!consume()) { setErrors({ _global: `Espera ${secondsLeft}s antes de volver a registrarte.` }); return }
+    if (!consume()) { setErrors({ _global: `Demasiados intentos. Espera ${secondsLeft} segundos antes de volver a intentarlo.` }); return }
     setLoading(true)
     setErrors({})
     try {
       // 1. Crear usuario en Supabase Auth con metadata
       const { data, error: authError } = await supabase.auth.signUp({
-        email,
+        email: email.trim(),
         password,
         options: {
           data: {
@@ -152,25 +152,32 @@ export default function Register() {
       })
       if (authError) throw authError
 
+      // Supabase devuelve identities vacío si el email ya está registrado
+      if (data.user && data.user.identities?.length === 0) {
+        throw new Error('Este email ya tiene una cuenta. Inicia sesión o usa "¿Olvidaste tu contraseña?".')
+      }
+
       const userId = data.user?.id
       if (!userId) throw new Error('No se pudo obtener el ID de usuario')
 
-      // 2. Crear perfil
-      await supabase.from('profiles').upsert({
+      // 2. Crear perfil (best-effort — puede existir ya por trigger de BD)
+      const { error: profileError } = await supabase.from('profiles').upsert({
         id:        userId,
-        email:     sanitizeText(email),
+        email:     sanitizeText(email.trim()),
         user_type: accType === 'professional' ? 'professional' : 'public',
-      }).then(() => {})
+      })
+      if (profileError) console.error('Profile upsert error:', profileError)
 
-      // 3. Si es profesional, guardar datos de empresa
+      // 3. Si es profesional, guardar datos de empresa (crítico)
       if (accType === 'professional' && e2Data) {
         const sanitizedE2 = Object.fromEntries(
           Object.entries(e2Data).map(([k, v]) => [k, typeof v === 'string' ? sanitizeText(v) : v])
         )
-        await supabase.from('professional_data').upsert({
+        const { error: proError } = await supabase.from('professional_data').upsert({
           user_id: userId,
           ...sanitizedE2,
-        }).then(() => {})
+        })
+        if (proError) throw new Error('No se pudieron guardar los datos de empresa. Inténtalo de nuevo.')
       }
 
       setSuccess(true)
