@@ -6,7 +6,7 @@ import SectionHeader from '../components/SectionHeader'
 import ProConfigCard from '../components/ProConfigCard'
 import ProGroupCard from '../components/ProGroupCard'
 
-export default function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscount = 0 }) {
+export default function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscount = 0, hideHeader = false }) {
   const [search,     setSearch]    = useState('')
   const [deleting,   setDeleting]  = useState(null)
   const [sortOrder,  setSortOrder] = useState('desc')
@@ -56,7 +56,7 @@ export default function ConfiguracionesTab({ configuraciones, setConfiguraciones
 
   return (
     <div className="space-y-4">
-      <SectionHeader title="Configuraciones guardadas" action={
+      {!hideHeader && <SectionHeader title="Configuraciones guardadas" action={
         <div className="flex items-center gap-2">
           {configuraciones.length > 0 && (
             <button onClick={handleDeleteAll}
@@ -69,7 +69,7 @@ export default function ConfiguracionesTab({ configuraciones, setConfiguraciones
             + Nueva configuración
           </Link>
         </div>
-      } />
+      } />}
 
       {configuraciones.length > 0 && (
         <div className="flex gap-2">

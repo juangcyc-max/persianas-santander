@@ -124,7 +124,7 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
         <p className="text-sm text-gray-400">Cuando guardes una configuración se generará tu cotización de compra y el presupuesto para tu cliente.</p>
       </div>
       <div className="pt-2">
-        <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} globalDiscount={globalDiscount} />
+        <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} globalDiscount={globalDiscount} hideHeader />
       </div>
     </div>
   )
@@ -459,7 +459,7 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
 
       {/* ── Configuraciones guardadas ── */}
       <div className="pt-2">
-        <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} globalDiscount={globalDiscount} />
+        <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} globalDiscount={globalDiscount} hideHeader />
       </div>
     </div>
   )
