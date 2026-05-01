@@ -12,6 +12,7 @@ import PedidosTab from '../features/pro/tabs/PedidosTab'
 import FacturasTab from '../features/pro/tabs/FacturasTab'
 import ProyectosTab from '../features/pro/tabs/ProyectosTab'
 import EmpresaTab from '../features/pro/tabs/EmpresaTab'
+import ConfiguracionesTab from '../features/pro/tabs/ConfiguracionesTab'
 
 // ── Página principal ──────────────────────────────────────────────────────
 export default function ProfessionalDashboard() {
@@ -304,6 +305,11 @@ export default function ProfessionalDashboard() {
             {/* ── EMPRESA ── */}
             {activeTab === 'empresa' && (
               <EmpresaTab empresa={empresa} setEmpresa={setEmpresa} user={user} logoUrl={logoUrl} setLogoUrl={setLogoUrl} />
+            )}
+
+            {/* ── CONFIGURACIONES ── */}
+            {activeTab === 'configuraciones' && (
+              <ConfiguracionesTab userId={user.id} />
             )}
           </main>
         </div>
