@@ -166,7 +166,7 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
               </button>
 
               {isOpen && (
-                <div className="px-4 pb-5 pt-1 border-t border-gray-100 space-y-3">
+                <div className="px-3 sm:px-4 pb-5 pt-1 border-t border-gray-100 space-y-3">
 
                   {/* ── SECCIÓN 1: Tu compra a Santander ── */}
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wide pt-1">Tu compra a Persianas Santander</p>
@@ -236,46 +236,50 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
                     {/* Margen */}
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-medium text-gray-600">Tu margen:</span>
-                        <div className="relative">
-                          <input
-                            type="number" min="0" max="500" step="1"
-                            value={editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0)}
-                            onChange={e => setEditMargin(p => ({ ...p, [q.id]: e.target.value }))}
-                            className="w-16 px-2 py-1 pr-4 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-blue-300"
-                          />
-                          <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
-                        </div>
-                        <span className="text-xs text-gray-400">o</span>
-                        <div className="relative">
-                          <input
-                            type="number" min="0" step="0.01"
-                            value={adminTotal > 0 ? (adminTotal * (parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0)) / 100)).toFixed(2) : '0.00'}
-                            onChange={e => {
-                              const eur = parseFloat(e.target.value) || 0
-                              const pct = adminTotal > 0 ? (eur / adminTotal) * 100 : 0
-                              setEditMargin(p => ({ ...p, [q.id]: pct.toFixed(4) }))
-                            }}
-                            className="w-20 px-2 py-1 pr-4 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-blue-300"
-                          />
-                          <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">€</span>
+                        <span className="text-xs font-medium text-gray-600 shrink-0">Tu margen:</span>
+                        <div className="flex items-center gap-2">
+                          <div className="relative">
+                            <input
+                              type="number" min="0" max="500" step="1"
+                              value={editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0)}
+                              onChange={e => setEditMargin(p => ({ ...p, [q.id]: e.target.value }))}
+                              className="w-16 px-2 py-1 pr-4 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-blue-300"
+                            />
+                            <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">%</span>
+                          </div>
+                          <span className="text-xs text-gray-400">o</span>
+                          <div className="relative">
+                            <input
+                              type="number" min="0" step="0.01"
+                              value={adminTotal > 0 ? (adminTotal * (parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0)) / 100)).toFixed(2) : '0.00'}
+                              onChange={e => {
+                                const eur = parseFloat(e.target.value) || 0
+                                const pct = adminTotal > 0 ? (eur / adminTotal) * 100 : 0
+                                setEditMargin(p => ({ ...p, [q.id]: pct.toFixed(4) }))
+                              }}
+                              className="w-20 px-2 py-1 pr-4 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-blue-300"
+                            />
+                            <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">€</span>
+                          </div>
                         </div>
                       </div>
 
                       {/* Extras */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-medium text-gray-600">Trabajos extra:</span>
-                        <div className="relative">
-                          <input
-                            type="number" min="0" step="0.01"
-                            value={editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)}
-                            onChange={e => setEditExtras(p => ({ ...p, [q.id]: e.target.value }))}
-                            className="w-24 px-2 py-1 pr-4 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-blue-300"
-                          />
-                          <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">€</span>
+                      <div className="flex items-center gap-x-2 gap-y-1 flex-wrap">
+                        <span className="text-xs font-medium text-gray-600 shrink-0">Trabajos extra:</span>
+                        <div className="flex items-center gap-2 flex-1">
+                          <div className="relative">
+                            <input
+                              type="number" min="0" step="0.01"
+                              value={editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)}
+                              onChange={e => setEditExtras(p => ({ ...p, [q.id]: e.target.value }))}
+                              className="w-24 px-2 py-1 pr-4 rounded-lg border border-gray-300 text-xs font-bold text-center focus:outline-none focus:ring-1 focus:ring-blue-300"
+                            />
+                            <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs text-gray-400">€</span>
+                          </div>
+                          <span className="text-xs text-gray-400 shrink-0">→ Total:</span>
+                          <span className="text-sm font-black text-blue-700 shrink-0">{fmt(clientTotal)}</span>
                         </div>
-                        <span className="text-xs text-gray-400">→ Total cliente:</span>
-                        <span className="text-sm font-black text-blue-700">{fmt(clientTotal)}</span>
                       </div>
 
                       {/* IVA */}
@@ -369,9 +373,9 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
                     </div>
 
                     {/* Acciones cliente */}
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <button onClick={() => handleDownloadClientPDF(q)} disabled={downloadingClient[q.id]}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-white border border-blue-200 hover:bg-blue-50 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                        className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-semibold text-blue-700 bg-white border border-blue-200 hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
                         {downloadingClient[q.id]
                           ? <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
                           : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -380,13 +384,13 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
                       </button>
 
                       {clientAccepted ? (
-                        <div className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        <div className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg">
+                          <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                           Cliente aceptó · {fmtDate(q.client_accepted_at)}
                         </div>
                       ) : (
                         <button onClick={() => handleClientAccepted(q.id)} disabled={acceptingClient[q.id]}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                          className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
                           {acceptingClient[q.id]
                             ? <span className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
                             : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
@@ -398,17 +402,19 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
 
                     {/* Factura para cliente — cuando el cliente ha aceptado el presupuesto */}
                     {clientAccepted && (
-                      <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-blue-100 mt-1">
-                        <span className="text-xs text-blue-600 font-medium">Factura cliente:</span>
-                        <input
-                          type="text"
-                          value={invoiceNums[q.id] ?? `FAC-${(q.id ?? '').slice(0, 8).toUpperCase()}`}
-                          onChange={e => setInvoiceNums(p => ({ ...p, [q.id]: e.target.value }))}
-                          className="w-36 border border-blue-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-blue-300 bg-white"
-                          placeholder="Nº factura"
-                        />
+                      <div className="flex flex-col gap-2 pt-2 border-t border-blue-100 mt-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-blue-600 font-medium shrink-0">Nº factura:</span>
+                          <input
+                            type="text"
+                            value={invoiceNums[q.id] ?? `FAC-${(q.id ?? '').slice(0, 8).toUpperCase()}`}
+                            onChange={e => setInvoiceNums(p => ({ ...p, [q.id]: e.target.value }))}
+                            className="flex-1 min-w-0 border border-blue-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-blue-300 bg-white"
+                            placeholder="Nº factura"
+                          />
+                        </div>
                         <button onClick={() => handleGenerateInvoice(q)} disabled={generatingInv[q.id]}
-                          className="flex items-center gap-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                          className="w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
                           {generatingInv[q.id]
                             ? <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                             : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -420,10 +426,10 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
                   </div>
 
                   {/* Acciones generales */}
-                  <div className="flex items-center justify-between pt-1 flex-wrap gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-1 gap-2">
                     {isAccepted && (
                       <button onClick={() => handleDownload(q)} disabled={downloadingId === q.id}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
+                        className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
                         {downloadingId === q.id
                           ? <span className="w-3.5 h-3.5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
                           : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
@@ -431,7 +437,7 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
                         PDF cotización Santander
                       </button>
                     )}
-                    <div className="ml-auto">
+                    <div className={isAccepted ? 'sm:ml-auto' : 'ml-auto'}>
                       {confirmId === q.id ? (
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-red-600 font-medium">¿Eliminar?</span>
