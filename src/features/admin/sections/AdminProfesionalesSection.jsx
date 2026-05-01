@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../../services/supabase/client'
-import { fmt, fmtDate, PRO_QUOTE_STATUS } from '../constants'
+import { fmt, fmtDate, PRO_QUOTE_STATUS, BLIND_LABELS_ADMIN } from '../constants'
 import AdminChatConversation from '../components/AdminChatConversation'
 import AdminProQuoteModal from '../modals/AdminProQuoteModal'
 
@@ -10,6 +10,12 @@ export default function AdminProfesionalesSection({ adminUser }) {
   const [loading,      setLoading]      = useState(true)
   const [selected,     setSelected]     = useState(null)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [search,       setSearch]       = useState('')
+  const [dateFrom,     setDateFrom]     = useState('')
+  const [dateTo,       setDateTo]       = useState('')
+  const [typeFilter,   setTypeFilter]   = useState('all')
+  const [sortCol,      setSortCol]      = useState('date')
+  const [sortDir,      setSortDir]      = useState('desc')
   const [chatPro,      setChatPro]      = useState(null)
   const [unreadMap,    setUnreadMap]    = useState({})
 
@@ -62,7 +68,44 @@ export default function AdminProfesionalesSection({ adminUser }) {
     return d?.razon_social ?? d?.email ?? userId.slice(0, 8).toUpperCase()
   }
 
-  const filtered = quotes.filter(q => statusFilter === 'all' || q.status === statusFilter)
+  const allTypes = useMemo(() => {
+    const types = new Set()
+    quotes.forEach(q => (q.items ?? []).forEach(it => { if (it.blind_type) types.add(it.blind_type) }))
+    return [...types].sort()
+  }, [quotes])
+
+  function toggleSort(col) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('desc') }
+  }
+
+  function SortIcon({ col }) {
+    if (sortCol !== col) return <svg className="w-3 h-3 text-gray-300 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+    return sortDir === 'asc'
+      ? <svg className="w-3 h-3 text-red-600 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+      : <svg className="w-3 h-3 text-red-600 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+  }
+
+  const STATUS_ORDER = { pending: 0, modified: 1, accepted: 2, rejected: 3 }
+  const filtered = useMemo(() => {
+    const base = quotes.filter(q => {
+      const name = getProName(q.user_id).toLowerCase()
+      const matchStatus = statusFilter === 'all' || q.status === statusFilter
+      const matchSearch = !search || name.includes(search.toLowerCase()) || (proData[q.user_id]?.email ?? '').toLowerCase().includes(search.toLowerCase())
+      const d = q.created_at ? q.created_at.slice(0, 10) : ''
+      const matchDate = (!dateFrom || d >= dateFrom) && (!dateTo || d <= dateTo)
+      const matchType = typeFilter === 'all' || (q.items ?? []).some(it => it.blind_type === typeFilter)
+      return matchStatus && matchSearch && matchDate && matchType
+    })
+    return [...base].sort((a, b) => {
+      let cmp = 0
+      if (sortCol === 'date')   cmp = (a.created_at ?? '') < (b.created_at ?? '') ? -1 : 1
+      if (sortCol === 'status') cmp = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9)
+      if (sortCol === 'total')  cmp = ((a.admin_total_con_iva ?? a.total_con_iva ?? 0) - (b.admin_total_con_iva ?? b.total_con_iva ?? 0))
+      return sortDir === 'asc' ? cmp : -cmp
+    })
+  }, [quotes, statusFilter, search, dateFrom, dateTo, typeFilter, sortCol, sortDir, proData])
+
   const proIds   = [...new Set(quotes.map(q => q.user_id).filter(Boolean))]
 
   return (
@@ -73,13 +116,51 @@ export default function AdminProfesionalesSection({ adminUser }) {
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <p className="text-sm font-semibold text-gray-700">Cotizaciones de compra</p>
-          <div className="flex items-center gap-2">
+          <button onClick={loadAll} className="text-xs text-red-600 hover:underline">Actualizar</button>
+        </div>
+
+        {/* Filtros */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input type="text" value={search} onChange={e => setSearch(e.target.value)}
+                placeholder="Buscar por profesional o email..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 focus:border-red-400 bg-white" />
+            </div>
+            <div className="flex items-end gap-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-500">Desde</label>
+                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                  className="px-2.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 bg-white" />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-gray-500">Hasta</label>
+                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                  className="px-2.5 py-2 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-red-200 bg-white" />
+              </div>
+              {(dateFrom || dateTo) && (
+                <button onClick={() => { setDateFrom(''); setDateTo('') }} className="text-gray-400 hover:text-red-600 pb-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="flex gap-2 flex-wrap">
             <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)}
               className="px-3 py-2 rounded-xl border border-gray-300 text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400">
-              <option value="all">Todos</option>
+              <option value="all">Todos los estados</option>
               {Object.entries(PRO_QUOTE_STATUS).map(([k, { label }]) => <option key={k} value={k}>{label}</option>)}
             </select>
-            <button onClick={loadAll} className="text-xs text-red-600 hover:underline">Actualizar</button>
+            {allTypes.length > 0 && (
+              <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-gray-300 text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-red-100 focus:border-red-400">
+                <option value="all">Todos los productos</option>
+                {allTypes.map(t => <option key={t} value={t}>{BLIND_LABELS_ADMIN[t] ?? t}</option>)}
+              </select>
+            )}
           </div>
         </div>
 
@@ -128,9 +209,19 @@ export default function AdminProfesionalesSection({ adminUser }) {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    {['Profesional', 'Persianas', 'Descuento', 'Total', 'Estado', 'Fecha', ''].map(h => (
+                    {['Profesional', 'Persianas', 'Descuento'].map(h => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                     ))}
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap cursor-pointer select-none hover:text-gray-700" onClick={() => toggleSort('total')}>
+                      Total<SortIcon col="total" />
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap cursor-pointer select-none hover:text-gray-700" onClick={() => toggleSort('status')}>
+                      Estado<SortIcon col="status" />
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap cursor-pointer select-none hover:text-gray-700" onClick={() => toggleSort('date')}>
+                      Fecha<SortIcon col="date" />
+                    </th>
+                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">

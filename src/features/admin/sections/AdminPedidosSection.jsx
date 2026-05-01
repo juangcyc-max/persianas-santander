@@ -15,6 +15,8 @@ export default function AdminPedidosSection({ onPendingCountChange }) {
   const [page,         setPage]         = useState(1)
   const [dateFrom,     setDateFrom]     = useState('')
   const [dateTo,       setDateTo]       = useState('')
+  const [sortCol,      setSortCol]      = useState('date')
+  const [sortDir,      setSortDir]      = useState('desc')
 
   useEffect(() => { loadOrders() }, [])
 
@@ -57,13 +59,35 @@ export default function AdminPedidosSection({ onPendingCountChange }) {
     return matchFilter && matchSearch && (!dateFrom || d >= dateFrom) && (!dateTo || d <= dateTo)
   })
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const STATUS_ORDER = { pending: 0, confirmed: 1, completed: 2, cancelled: 3 }
+  const sorted = [...filtered].sort((a, b) => {
+    let cmp = 0
+    if (sortCol === 'date')   cmp = (a.created_at ?? '') < (b.created_at ?? '') ? -1 : 1
+    if (sortCol === 'status') cmp = (STATUS_ORDER[a.status] ?? 9) - (STATUS_ORDER[b.status] ?? 9)
+    if (sortCol === 'total')  cmp = (a.total_with_iva ?? 0) - (b.total_with_iva ?? 0)
+    return sortDir === 'asc' ? cmp : -cmp
+  })
+
+  function toggleSort(col) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('desc') }
+    setPage(1)
+  }
+
+  function SortIcon({ col }) {
+    if (sortCol !== col) return <svg className="w-3 h-3 text-gray-300 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>
+    return sortDir === 'asc'
+      ? <svg className="w-3 h-3 text-red-600 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+      : <svg className="w-3 h-3 text-red-600 inline ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+  }
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
   const safePage   = Math.min(page, totalPages)
-  const paginated  = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+  const paginated  = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   function exportCSV() {
     const headers = ['ID', 'Email', 'Tipo', 'Fecha', 'Total', 'Estado']
-    const rows = filtered.map(o => [
+    const rows = sorted.map(o => [
       o.id.slice(0,8).toUpperCase(),
       o.profiles?.email ?? '',
       o.user_type === 'professional' ? 'Profesional' : 'Particular',
@@ -176,9 +200,20 @@ export default function AdminPedidosSection({ onPendingCountChange }) {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    {['ID','Cliente','Tipo','Fecha','Cita','Total','Estado',''].map(h => (
+                    {['ID','Cliente','Tipo'].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">{h}</th>
                     ))}
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap cursor-pointer select-none hover:text-gray-700" onClick={() => toggleSort('date')}>
+                      Fecha<SortIcon col="date" />
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap">Cita</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap cursor-pointer select-none hover:text-gray-700" onClick={() => toggleSort('total')}>
+                      Total<SortIcon col="total" />
+                    </th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap cursor-pointer select-none hover:text-gray-700" onClick={() => toggleSort('status')}>
+                      Estado<SortIcon col="status" />
+                    </th>
+                    <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -226,7 +261,7 @@ export default function AdminPedidosSection({ onPendingCountChange }) {
       {/* Paginación */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-2">
-          <p className="text-xs text-gray-400">Página {safePage} de {totalPages} · {filtered.length} pedidos</p>
+          <p className="text-xs text-gray-400">Página {safePage} de {totalPages} · {sorted.length} pedidos</p>
           <div className="flex items-center gap-1">
             <button onClick={() => setPage(1)} disabled={safePage === 1} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 disabled:opacity-30">
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
