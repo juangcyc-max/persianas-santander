@@ -329,7 +329,11 @@ export default function ProfessionalDashboard() {
 
             {/* ── CONFIGURACIONES ── */}
             {activeTab === 'configuraciones' && (
-              <ConfiguracionesTab userId={user.id} />
+              <ConfiguracionesTab
+                configuraciones={configuraciones}
+                setConfiguraciones={setConfiguraciones}
+                globalDiscount={globalDiscount}
+              />
             )}
           </main>
         </div>
