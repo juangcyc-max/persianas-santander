@@ -5,6 +5,13 @@ import { fmt, fmtDate, blindLabel, QUOTE_STATUS, TEMPLATE_OPTS } from '../consta
 import SectionHeader from '../components/SectionHeader'
 import ConfiguracionesTab from './ConfiguracionesTab'
 
+const TIME_SLOTS = ['08:00','09:00','10:00','11:00','12:00','13:00','16:00','17:00','18:00','19:00']
+
+const tomorrowStr = () => {
+  const d = new Date(); d.setDate(d.getDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
 export default function CotizacionesTab({ cotizaciones, configuraciones, setConfiguraciones, onDelete, onUpdate, proInfo, logoUrl, globalDiscount = 0 }) {
   const [expandedId,       setExpandedId]       = useState(null)
   const [deletingId,       setDeletingId]        = useState(null)
@@ -23,6 +30,9 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
   const [generatingInv,      setGeneratingInv]      = useState({})
   const [editTemplate,       setEditTemplate]       = useState({})
   const [editClientInfo,     setEditClientInfo]     = useState({})
+  const [installModal,       setInstallModal]       = useState(null) // quote id
+  const [installForm,        setInstallForm]        = useState({ address: '', phone: '', date: '', time: '', notes: '' })
+  const [savingInstall,      setSavingInstall]      = useState(false)
 
   async function handleDelete(id) {
     setDeletingId(id)
@@ -87,12 +97,38 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
     setSavingClient(p => ({ ...p, [id]: false }))
   }
 
-  async function handleClientAccepted(id) {
+  function openClientAccepted(q) {
+    const hasInstall = (q.items ?? []).some(it => it.installacion)
+    if (hasInstall) {
+      const ci = q.client_info ?? {}
+      setInstallForm({ address: ci.direccion ?? '', phone: '', date: '', time: '', notes: '' })
+      setInstallModal(q.id)
+    } else {
+      confirmClientAccepted(q.id, null)
+    }
+  }
+
+  async function confirmClientAccepted(id, installData) {
     setAcceptingClient(p => ({ ...p, [id]: true }))
     const now = new Date().toISOString()
-    await supabase.from('pro_purchase_quotes').update({ client_status: 'accepted', client_accepted_at: now }).eq('id', id)
-    onUpdate?.(id, { client_status: 'accepted', client_accepted_at: now })
+    const updates = { client_status: 'accepted', client_accepted_at: now, ...(installData ?? {}) }
+    await supabase.from('pro_purchase_quotes').update(updates).eq('id', id)
+    onUpdate?.(id, updates)
     setAcceptingClient(p => ({ ...p, [id]: false }))
+    setInstallModal(null)
+    setSavingInstall(false)
+  }
+
+  async function handleInstallSubmit() {
+    setSavingInstall(true)
+    const installData = {
+      install_address: installForm.address.trim() || null,
+      install_phone:   installForm.phone.trim()   || null,
+      install_date:    installForm.date            || null,
+      install_time:    installForm.time            || null,
+      install_notes:   installForm.notes.trim()    || null,
+    }
+    await confirmClientAccepted(installModal, installData)
   }
 
   async function handleDownloadClientPDF(q) {
@@ -389,7 +425,7 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
                           Cliente aceptó · {fmtDate(q.client_accepted_at)}
                         </div>
                       ) : (
-                        <button onClick={() => handleClientAccepted(q.id)} disabled={acceptingClient[q.id]}
+                        <button onClick={() => openClientAccepted(q)} disabled={acceptingClient[q.id]}
                           className="w-full sm:w-auto flex items-center justify-center gap-1.5 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors disabled:opacity-50">
                           {acceptingClient[q.id]
                             ? <span className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
@@ -467,6 +503,86 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
       <div className="pt-2">
         <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} globalDiscount={globalDiscount} hideHeader />
       </div>
+
+      {/* ── Modal datos de instalación ── */}
+      {installModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && setInstallModal(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <div>
+                <h3 className="font-bold text-gray-900">Datos de instalación</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Persianas Santander necesita estos datos para coordinar la instalación</p>
+              </div>
+              <button onClick={() => setInstallModal(null)} className="p-2 rounded-xl hover:bg-gray-100">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Dirección de instalación <span className="text-red-500">*</span></label>
+                <input type="text" value={installForm.address}
+                  onChange={e => setInstallForm(f => ({ ...f, address: e.target.value }))}
+                  placeholder="Calle, número, piso, ciudad…"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Teléfono de contacto <span className="text-red-500">*</span></label>
+                <input type="tel" value={installForm.phone}
+                  onChange={e => setInstallForm(f => ({ ...f, phone: e.target.value }))}
+                  placeholder="600 000 000"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Día preferido <span className="text-red-500">*</span></label>
+                  <input type="date" value={installForm.date} min={tomorrowStr()}
+                    onChange={e => setInstallForm(f => ({ ...f, date: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400" />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 mb-1.5">Hora preferida <span className="text-red-500">*</span></label>
+                  <select value={installForm.time}
+                    onChange={e => setInstallForm(f => ({ ...f, time: e.target.value }))}
+                    className="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 bg-white">
+                    <option value="">Seleccionar</option>
+                    {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-600 mb-1.5">Notas adicionales <span className="text-gray-400 font-normal">(opcional)</span></label>
+                <textarea rows={3} value={installForm.notes}
+                  onChange={e => setInstallForm(f => ({ ...f, notes: e.target.value }))}
+                  placeholder="Planta, acceso difícil, características especiales…"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400 resize-none" />
+              </div>
+
+              <div className="flex gap-3 pt-1 border-t border-gray-100">
+                <button onClick={() => setInstallModal(null)}
+                  className="flex-1 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleInstallSubmit}
+                  disabled={savingInstall || !installForm.address.trim() || !installForm.phone.trim() || !installForm.date || !installForm.time}
+                  className="flex-1 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
+                  {savingInstall
+                    ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    : <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                  }
+                  {savingInstall ? 'Guardando…' : 'Confirmar aceptación'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
