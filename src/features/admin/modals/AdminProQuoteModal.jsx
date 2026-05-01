@@ -3,17 +3,30 @@ import { supabase } from '../../../services/supabase/client'
 import { generateProQuotePDF } from '../../../services/pdf'
 import { fmt, fmtDate, PRO_QUOTE_STATUS, BLIND_LABELS_ADMIN } from '../constants'
 
-export default function AdminProQuoteModal({ quote, proData, onClose, onUpdated }) {
-  const [status,      setStatus]      = useState(quote.status)
-  const [adminPrice,  setAdminPrice]  = useState(quote.admin_total_con_iva ?? quote.total_con_iva ?? 0)
-  const [notes,       setNotes]       = useState(quote.admin_notes ?? '')
-  const [saving,      setSaving]      = useState(false)
-  const [deleting,    setDeleting]    = useState(false)
-  const [confirmDel,  setConfirmDel]  = useState(false)
-  const [downloading, setDownloading] = useState(false)
+const TIME_SLOTS = ['08:00','09:00','10:00','11:00','12:00','13:00','16:00','17:00','18:00','19:00']
 
-  const isModified     = parseFloat(adminPrice) !== parseFloat(quote.total_con_iva)
-  const clientAccepted = quote.client_status === 'accepted'
+const tomorrow = () => {
+  const d = new Date(); d.setDate(d.getDate() + 1)
+  return d.toISOString().slice(0, 10)
+}
+
+export default function AdminProQuoteModal({ quote, proData, onClose, onUpdated }) {
+  const [status,          setStatus]          = useState(quote.status)
+  const [adminPrice,      setAdminPrice]      = useState(quote.admin_total_con_iva ?? quote.total_con_iva ?? 0)
+  const [notes,           setNotes]           = useState(quote.admin_notes ?? '')
+  const [saving,          setSaving]          = useState(false)
+  const [deleting,        setDeleting]        = useState(false)
+  const [confirmDel,      setConfirmDel]      = useState(false)
+  const [downloading,     setDownloading]     = useState(false)
+  const [installAddress,  setInstallAddress]  = useState(proData?.direccion_fiscal ?? '')
+  const [installPhone,    setInstallPhone]    = useState(proData?.telefono ?? '')
+  const [installDate,     setInstallDate]     = useState('')
+  const [installTime,     setInstallTime]     = useState('')
+  const [installNotes,    setInstallNotes]    = useState('')
+
+  const isModified      = parseFloat(adminPrice) !== parseFloat(quote.total_con_iva)
+  const clientAccepted  = quote.client_status === 'accepted'
+  const hasInstallacion = (quote.items ?? []).some(it => it.installacion)
 
   async function handleSave() {
     setSaving(true)
@@ -95,12 +108,12 @@ export default function AdminProQuoteModal({ quote, proData, onClose, onUpdated 
         total_price:    totalSinIva,
         total_with_iva: finalPrice,
         status:         'pending',
-        installacion:   (quote.items ?? []).some(it => it.installacion),
-        address:        null,
-        phone:          null,
-        preferred_date: null,
-        preferred_time: null,
-        notes:          null,
+        installacion:   hasInstallacion,
+        address:        hasInstallacion ? (installAddress.trim() || null) : null,
+        phone:          hasInstallacion ? (installPhone.trim() || null)   : null,
+        preferred_date: hasInstallacion ? (installDate || null)           : null,
+        preferred_time: hasInstallacion ? (installTime || null)           : null,
+        notes:          hasInstallacion ? (installNotes.trim() || null)   : null,
         billing_data:   billingData,
       }).select('id').single()
 
@@ -252,6 +265,45 @@ export default function AdminProQuoteModal({ quote, proData, onClose, onUpdated 
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
               </div>
               <p className="text-xs text-gray-400 mt-1">Sin IVA: {fmt(parseFloat(adminPrice || 0) / 1.21)}</p>
+            </div>
+          )}
+
+          {hasInstallacion && (status === 'accepted' || status === 'modified') && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-4 space-y-3">
+              <p className="text-xs font-bold text-blue-700 uppercase tracking-wide">Datos de instalación</p>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Dirección de instalación</label>
+                <input type="text" value={installAddress} onChange={e => setInstallAddress(e.target.value)}
+                  placeholder="Calle, número, piso…"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-300" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Teléfono de contacto</label>
+                <input type="tel" value={installPhone} onChange={e => setInstallPhone(e.target.value)}
+                  placeholder="600 000 000"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-300" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Fecha preferida</label>
+                  <input type="date" value={installDate} min={tomorrow()} onChange={e => setInstallDate(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-300" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Hora preferida</label>
+                  <select value={installTime} onChange={e => setInstallTime(e.target.value)}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-300 bg-white">
+                    <option value="">Seleccionar</option>
+                    {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Notas de instalación</label>
+                <textarea rows={2} value={installNotes} onChange={e => setInstallNotes(e.target.value)}
+                  placeholder="Planta, acceso, condiciones especiales…"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-300 resize-none" />
+              </div>
             </div>
           )}
 
