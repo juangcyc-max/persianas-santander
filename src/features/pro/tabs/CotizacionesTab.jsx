@@ -288,16 +288,20 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
                             {pct}%
                           </button>
                         ))}
-                        <button onClick={() => handleSaveClientData(q.id, adminTotal, q.client_margin_pct, q.work_notes, q.client_info, q.extras_amount, q.client_comments, q.iva_pct)} disabled={savingClient[q.id] || savedClient[q.id]}
-                          className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${savedClient[q.id] ? 'bg-green-600 text-white' : 'bg-blue-700 hover:bg-blue-800 text-white'}`}>
-                          {savingClient[q.id] ? '…' : savedClient[q.id] ? '✓ Guardado' : 'Guardar'}
-                        </button>
                       </div>
                     </div>
 
                     {/* Datos del cliente final */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-semibold text-gray-600 block">Datos del cliente final</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-gray-600">Datos del cliente final</label>
+                        <button
+                          onClick={() => handleSaveClientData(q.id, adminTotal, q.client_margin_pct, q.work_notes, q.client_info, q.extras_amount, q.client_comments, q.iva_pct)}
+                          disabled={savingClient[q.id] || savedClient[q.id]}
+                          className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${savedClient[q.id] ? 'bg-green-600 text-white' : 'bg-blue-700 hover:bg-blue-800 text-white'}`}>
+                          {savingClient[q.id] ? '…' : savedClient[q.id] ? '✓ Guardado' : 'Guardar'}
+                        </button>
+                      </div>
                       {[
                         { key: 'nombre',    placeholder: 'Nombre o razón social' },
                         { key: 'nif',       placeholder: 'NIF / DNI' },
@@ -392,8 +396,8 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
                       )}
                     </div>
 
-                    {/* Factura para cliente — solo cuando ambos han aceptado */}
-                    {clientAccepted && isAccepted && (
+                    {/* Factura para cliente — cuando el cliente ha aceptado el presupuesto */}
+                    {clientAccepted && (
                       <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-blue-100 mt-1">
                         <span className="text-xs text-blue-600 font-medium">Factura cliente:</span>
                         <input
