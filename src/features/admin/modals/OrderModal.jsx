@@ -185,7 +185,7 @@ export default function OrderModal({ order, onClose, onUpdate }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-400">Email:</span> <span className="text-gray-900 font-medium">{order.profiles?.email ?? '—'}</span></div>
               <div><span className="text-gray-400">Tipo:</span> <span className={`font-bold ${order.user_type === 'professional' ? 'text-blue-600' : 'text-gray-900'}`}>{order.user_type === 'professional' ? 'Profesional' : 'Particular'}</span></div>
-              {isParticular && <>
+              {tieneInstalacion && <>
                 <div><span className="text-gray-400">Teléfono:</span> <span className="text-gray-900 font-medium">{order.phone ?? '—'}</span></div>
                 <div><span className="text-gray-400">Dirección:</span> <span className="text-gray-900 font-medium">{order.address ?? '—'}</span></div>
                 <div><span className="text-gray-400">Día preferido:</span> <span className="text-gray-900 font-medium">{fmtDate(order.preferred_date)}</span></div>
@@ -251,7 +251,7 @@ export default function OrderModal({ order, onClose, onUpdate }) {
               </div>
             )}
 
-            {isParticular && tieneInstalacion && (
+            {tieneInstalacion && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1.5">Fecha confirmada</label>
@@ -301,7 +301,7 @@ export default function OrderModal({ order, onClose, onUpdate }) {
                 {emailSent ? '✓ Enviado' : existingInvoice ? 'Enviar factura' : 'Email cliente'}
               </button>
 
-              {isParticular && tieneInstalacion && calendarUrl && (
+              {tieneInstalacion && calendarUrl && (
                 <a href={calendarUrl} target="_blank" rel="noreferrer"
                   className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-sm rounded-xl transition-colors">
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
@@ -315,7 +315,7 @@ export default function OrderModal({ order, onClose, onUpdate }) {
               )}
             </div>
 
-            {isParticular && tieneInstalacion && !calendarUrl && (
+            {tieneInstalacion && !calendarUrl && (
               <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
                 Asigna fecha y hora confirmada para generar el enlace de Google Calendar
               </p>
