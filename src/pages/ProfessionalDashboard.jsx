@@ -14,6 +14,7 @@ import ProyectosTab from '../features/pro/tabs/ProyectosTab'
 import EmpresaTab from '../features/pro/tabs/EmpresaTab'
 import ConfiguracionesTab from '../features/pro/tabs/ConfiguracionesTab'
 import PresupuestosClienteTab from '../features/pro/tabs/PresupuestosClienteTab'
+import FacturasClienteTab from '../features/pro/tabs/FacturasClienteTab'
 
 // ── Página principal ──────────────────────────────────────────────────────
 export default function ProfessionalDashboard() {
@@ -313,6 +314,24 @@ export default function ProfessionalDashboard() {
               <PresupuestosClienteTab
                 cotizaciones={cotizaciones}
                 onUpdate={(id, updates) => setCotizaciones(prev => prev.map(q => q.id === id ? { ...q, ...updates } : q))}
+                logoUrl={logoUrl}
+                proInfo={{
+                  razon_social:     empresa?.razon_social     ?? null,
+                  cif_nif:          empresa?.cif_nif          ?? null,
+                  direccion_fiscal: empresa?.direccion_fiscal ?? null,
+                  codigo_postal:    empresa?.codigo_postal    ?? null,
+                  ciudad:           empresa?.ciudad           ?? null,
+                  provincia:        empresa?.provincia        ?? null,
+                  telefono:         empresa?.telefono         ?? null,
+                  email:            empresa?.email_facturacion ?? user?.email ?? null,
+                }}
+              />
+            )}
+
+            {/* ── MIS FACTURAS ── */}
+            {activeTab === 'facturas' && (
+              <FacturasClienteTab
+                cotizaciones={cotizaciones}
                 logoUrl={logoUrl}
                 proInfo={{
                   razon_social:     empresa?.razon_social     ?? null,

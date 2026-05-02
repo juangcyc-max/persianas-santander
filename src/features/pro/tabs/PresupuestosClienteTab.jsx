@@ -93,6 +93,12 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
           clientComments: comments, ivaPct: iva, logoUrl, invoiceNumber: invNum, templateId: template,
         })
         doc?.save(`Factura_${invNum}.pdf`)
+        if (get(q, 'budgetStatus') !== 'facturado') {
+          const { supabase } = await import('../../../services/supabase/client')
+          await supabase.from('pro_purchase_quotes').update({ budget_status: 'facturado' }).eq('id', q.id)
+          onUpdate?.(q.id, { budget_status: 'facturado' })
+          set(q.id, 'budgetStatus', 'facturado')
+        }
       } else {
         const doc = await generateClientBudgetFromQuotePDF({
           quote: quoteForPDF, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras,
