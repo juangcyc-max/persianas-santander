@@ -180,49 +180,65 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
           const clientName = ci?.nombre || '—'
           const canInvoice = budgetSt === 'aceptado' || budgetSt === 'facturado'
 
+          const isExpanded = expandedId === q.id
+
           return (
             <div key={q.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
 
-              {/* Fila principal */}
-              <div className="px-4 py-3.5 flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${stObj.cls}`}>{stObj.label}</span>
-                    <span className="text-xs text-gray-400 font-mono">{budgetNum}</span>
-                    <span className="text-xs text-gray-400 hidden sm:inline">{fmtDate(q.created_at)}</span>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-800 truncate">{clientName}</p>
+              {/* Cabecera colapsable */}
+              <button
+                onClick={() => {
+                  setExpandedId(prev => prev === q.id ? null : q.id)
+                  if (expandedId !== q.id) setEditingId(null)
+                }}
+                className="w-full px-4 py-3 flex items-center justify-between text-left"
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${stObj.cls}`}>{stObj.label}</span>
+                  <span className="text-sm font-semibold text-gray-800 truncate">{clientName}</span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-base font-black text-blue-700">{fmt(total)}</span>
-                  <button
-                    onClick={() => handleDownload(q, 'budget')}
-                    disabled={downloading[`${q.id}-budget`]}
-                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-50 transition-colors">
-                    {downloading[`${q.id}-budget`]
-                      ? <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                      : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>}
-                    PDF
-                  </button>
-                  {canInvoice && (
-                    <button onClick={() => handleDownload(q, 'invoice')} disabled={downloading[`${q.id}-invoice`]}
-                      className="flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800 disabled:opacity-50 transition-colors">
-                      {downloading[`${q.id}-invoice`]
-                        ? <span className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                        : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
-                      FAC
-                    </button>
-                  )}
-                  <button onClick={() => setEditingId(isEditing ? null : q.id)}
-                    className={`text-xs font-semibold px-2.5 py-1 rounded-lg border transition-colors ${isEditing ? 'bg-gray-100 text-gray-700 border-gray-300' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'}`}>
-                    {isEditing ? 'Cerrar' : 'Editar'}
-                  </button>
+                <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                  <span className="text-sm font-black text-blue-700">{fmt(total)}</span>
+                  <span className="text-xs text-gray-400">{fmtDate(q.created_at)}</span>
+                  <svg className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
                 </div>
-              </div>
+              </button>
 
-              {/* Formulario de edición */}
-              {isEditing && (
-                <div className="px-4 pb-5 pt-1 border-t border-gray-100 space-y-4">
+              {/* Detalle expandido */}
+              {isExpanded && (
+                <div className="px-4 pb-4 pt-3 border-t border-gray-100 space-y-3">
+                  <p className="text-xs text-gray-400 font-mono">{budgetNum}</p>
+
+                  {/* Acciones */}
+                  <div className="flex gap-2 flex-wrap">
+                    <button onClick={() => handleDownload(q, 'budget')} disabled={downloading[`${q.id}-budget`]}
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-50 transition-colors">
+                      {downloading[`${q.id}-budget`]
+                        ? <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                        : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>}
+                      Presupuesto PDF
+                    </button>
+                    {canInvoice && (
+                      <button onClick={() => handleDownload(q, 'invoice')} disabled={downloading[`${q.id}-invoice`]}
+                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-purple-50 text-purple-700 hover:bg-purple-100 disabled:opacity-50 transition-colors">
+                        {downloading[`${q.id}-invoice`]
+                          ? <span className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                          : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                        Factura PDF
+                      </button>
+                    )}
+                    <button onClick={() => setEditingId(isEditing ? null : q.id)}
+                      className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${isEditing ? 'bg-gray-100 text-gray-700 border-gray-300' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'}`}>
+                      {isEditing ? 'Cerrar edición' : 'Editar'}
+                    </button>
+                  </div>
+
+                  {/* Formulario de edición */}
+                  {isEditing && (
+                  <div className="space-y-4 pt-2 border-t border-gray-100">
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -334,6 +350,8 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
                       Cancelar
                     </button>
                   </div>
+                  </div>
+                  )}
                 </div>
               )}
             </div>
