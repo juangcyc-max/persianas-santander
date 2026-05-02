@@ -102,29 +102,31 @@ export default function ProGroupCard({ items, onDeleteGroup, deleting, isExpande
                   <><svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>Añadir todo a la cesta</>
                 )}
               </button>
-              <div className="flex justify-end">
-                {confirm ? (
-                  <div className="flex gap-1.5">
-                    <button onClick={() => setConfirm(false)}
-                      className="text-xs font-semibold py-2 px-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
-                      Cancelar
-                    </button>
-                    <button onClick={onDeleteGroup} disabled={!!deleting}
-                      className="text-xs font-bold py-2 px-3 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors flex items-center gap-1.5">
-                      {deleting ? <Spinner small /> : null}
+              {onDeleteGroup && (
+                <div className="flex justify-end">
+                  {confirm ? (
+                    <div className="flex gap-1.5">
+                      <button onClick={() => setConfirm(false)}
+                        className="text-xs font-semibold py-2 px-3 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 transition-colors">
+                        Cancelar
+                      </button>
+                      <button onClick={onDeleteGroup} disabled={!!deleting}
+                        className="text-xs font-bold py-2 px-3 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-60 transition-colors flex items-center gap-1.5">
+                        {deleting ? <Spinner small /> : null}
+                        Eliminar grupo
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setConfirm(true)}
+                      className="text-xs font-semibold py-2 px-3 rounded-lg border border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-600 hover:bg-red-50 transition-colors flex items-center gap-1.5">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                       Eliminar grupo
                     </button>
-                  </div>
-                ) : (
-                  <button onClick={() => setConfirm(true)}
-                    className="text-xs font-semibold py-2 px-3 rounded-lg border border-gray-200 text-gray-500 hover:border-red-200 hover:text-red-600 hover:bg-red-50 transition-colors flex items-center gap-1.5">
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Eliminar grupo
-                  </button>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>

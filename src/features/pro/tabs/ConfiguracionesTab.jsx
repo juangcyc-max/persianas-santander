@@ -6,7 +6,7 @@ import SectionHeader from '../components/SectionHeader'
 import ProConfigCard from '../components/ProConfigCard'
 import ProGroupCard from '../components/ProGroupCard'
 
-export default function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscount = 0, hideHeader = false }) {
+export default function ConfiguracionesTab({ configuraciones, setConfiguraciones, globalDiscount = 0, hideHeader = false, readOnly = false }) {
   const [search,     setSearch]    = useState('')
   const [deleting,   setDeleting]  = useState(null)
   const [sortOrder,  setSortOrder] = useState('desc')
@@ -58,7 +58,7 @@ export default function ConfiguracionesTab({ configuraciones, setConfiguraciones
     <div className="space-y-4">
       {!hideHeader && <SectionHeader title="Configuraciones guardadas" action={
         <div className="flex items-center gap-2">
-          {configuraciones.length > 0 && (
+          {configuraciones.length > 0 && !readOnly && (
             <button onClick={handleDeleteAll}
               className="text-xs font-semibold text-gray-400 hover:text-red-600 transition-colors px-2 py-2">
               Eliminar todas
@@ -119,7 +119,7 @@ export default function ConfiguracionesTab({ configuraciones, setConfiguraciones
               <ProGroupCard
                 key={cardKey}
                 items={entry.items}
-                onDeleteGroup={() => handleDeleteGroup(entry.id, entry.items.map(c => c.id))}
+                onDeleteGroup={readOnly ? undefined : () => handleDeleteGroup(entry.id, entry.items.map(c => c.id))}
                 deleting={deleting === entry.id ? entry.id : null}
                 isExpanded={expandedId === cardKey}
                 onToggle={() => setExpandedId(prev => prev === cardKey ? null : cardKey)}
@@ -129,7 +129,7 @@ export default function ConfiguracionesTab({ configuraciones, setConfiguraciones
               <ProConfigCard
                 key={cardKey}
                 c={entry.item}
-                onDelete={handleDelete}
+                onDelete={readOnly ? undefined : handleDelete}
                 deleting={deleting}
                 isExpanded={expandedId === cardKey}
                 onToggle={() => setExpandedId(prev => prev === cardKey ? null : cardKey)}

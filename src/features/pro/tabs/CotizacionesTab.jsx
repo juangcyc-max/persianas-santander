@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { supabase } from '../../../services/supabase/client'
 import { generateProQuotePDF, generateClientBudgetFromQuotePDF, generateClientInvoiceFromQuotePDF } from '../../../services/pdf'
 import { fmt, fmtDate, blindLabel, QUOTE_STATUS, TEMPLATE_OPTS } from '../constants'
@@ -33,6 +33,8 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
   const [installModal,       setInstallModal]       = useState(null) // quote id
   const [installForm,        setInstallForm]        = useState({ address: '', phone: '', date: '', time: '', notes: '' })
   const [savingInstall,      setSavingInstall]      = useState(false)
+  const [sortDir,            setSortDir]            = useState('desc')
+  const [statusFilter,       setStatusFilter]       = useState('all')
 
   async function handleDelete(id) {
     setDeletingId(id)
@@ -164,16 +166,61 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
         <p className="text-sm text-gray-400">Cuando guardes una configuración se generará tu cotización de compra y el presupuesto para tu cliente.</p>
       </div>
       <div className="pt-2">
-        <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} globalDiscount={globalDiscount} hideHeader />
+        <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} globalDiscount={globalDiscount} hideHeader readOnly />
       </div>
     </div>
   )
 
+  const displayed = useMemo(() => {
+    let list = [...cotizaciones]
+    if (statusFilter !== 'all') list = list.filter(q => q.status === statusFilter)
+    list.sort((a, b) => {
+      const diff = new Date(a.created_at) - new Date(b.created_at)
+      return sortDir === 'desc' ? -diff : diff
+    })
+    return list
+  }, [cotizaciones, statusFilter, sortDir])
+
+  const statusOpts = [
+    { value: 'all',      label: 'Todas' },
+    { value: 'pending',  label: 'Pendientes' },
+    { value: 'accepted', label: 'Aceptadas' },
+    { value: 'modified', label: 'Modificadas' },
+    { value: 'rejected', label: 'Rechazadas' },
+  ]
+
   return (
     <div className="space-y-4">
       <SectionHeader title="Cotizaciones y presupuestos" />
+
+      {cotizaciones.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {statusOpts.map(opt => (
+            <button key={opt.value} onClick={() => setStatusFilter(opt.value)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+                statusFilter === opt.value
+                  ? 'bg-red-700 text-white border-red-700'
+                  : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+              }`}>
+              {opt.label}
+            </button>
+          ))}
+          <button onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
+            className="ml-auto px-3 py-1.5 text-xs font-semibold rounded-xl border bg-white text-gray-600 border-gray-300 hover:bg-gray-50 flex items-center gap-1.5 transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+            {sortDir === 'desc' ? 'Recientes' : 'Antiguas'}
+          </button>
+        </div>
+      )}
+
       <div className="space-y-3">
-        {cotizaciones.map(q => {
+        {displayed.length === 0 && cotizaciones.length > 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+            <p className="text-sm text-gray-400">No hay cotizaciones con ese estado.</p>
+          </div>
+        ) : displayed.map(q => {
           const st         = QUOTE_STATUS[q.status] ?? QUOTE_STATUS.pending
           const adminTotal = q.admin_total_con_iva ?? q.total_con_iva ?? 0
           const isOpen     = expandedId === q.id
@@ -505,7 +552,7 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
 
       {/* ── Configuraciones guardadas ── */}
       <div className="pt-2">
-        <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} globalDiscount={globalDiscount} hideHeader />
+        <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} globalDiscount={globalDiscount} hideHeader readOnly />
       </div>
 
       {/* ── Modal datos de instalación ── */}

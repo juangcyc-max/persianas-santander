@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { supabase } from '../../../services/supabase/client'
 import { fmt, fmtDate, TEMPLATE_OPTS } from '../constants'
 import { generateClientBudgetFromQuotePDF, generateClientInvoiceFromQuotePDF } from '../../../services/pdf'
@@ -16,11 +16,14 @@ function autoNum(q) {
 }
 
 export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo, logoUrl }) {
-  const [expandedId, setExpandedId] = useState(null)
-  const [edits,      setEdits]      = useState({})
-  const [saving,     setSaving]     = useState({})
-  const [saved,      setSaved]      = useState({})
-  const [downloading,setDownloading]= useState({})
+  const [expandedId,  setExpandedId]  = useState(null)
+  const [editingId,   setEditingId]   = useState(null)
+  const [edits,       setEdits]       = useState({})
+  const [saving,      setSaving]      = useState({})
+  const [saved,       setSaved]       = useState({})
+  const [downloading, setDownloading] = useState({})
+  const [sortDir,     setSortDir]     = useState('desc')
+  const [statusFilter,setStatusFilter]= useState('all')
 
   function get(q, key) {
     if (edits[q.id]?.[key] !== undefined) return edits[q.id][key]
@@ -110,6 +113,16 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
     setDownloading(p => ({ ...p, [key]: false }))
   }
 
+  const displayed = useMemo(() => {
+    let list = [...cotizaciones]
+    if (statusFilter !== 'all') list = list.filter(q => (q.budget_status ?? 'borrador') === statusFilter)
+    list.sort((a, b) => {
+      const diff = new Date(a.created_at) - new Date(b.created_at)
+      return sortDir === 'desc' ? -diff : diff
+    })
+    return list
+  }, [cotizaciones, statusFilter, sortDir])
+
   if (cotizaciones.length === 0) return (
     <div className="space-y-4">
       <SectionHeader title="Mis presupuestos" />
@@ -123,43 +136,94 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
   return (
     <div className="space-y-4">
       <SectionHeader title="Mis presupuestos" />
+
+      {cotizaciones.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap">
+          {[
+            { value: 'all',       label: 'Todos' },
+            { value: 'borrador',  label: 'Borrador' },
+            { value: 'enviado',   label: 'Enviado' },
+            { value: 'aceptado',  label: 'Aceptado' },
+            { value: 'facturado', label: 'Facturado' },
+          ].map(opt => (
+            <button key={opt.value} onClick={() => setStatusFilter(opt.value)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+                statusFilter === opt.value
+                  ? 'bg-red-700 text-white border-red-700'
+                  : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+              }`}>
+              {opt.label}
+            </button>
+          ))}
+          <button onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
+            className="ml-auto px-3 py-1.5 text-xs font-semibold rounded-xl border bg-white text-gray-600 border-gray-300 hover:bg-gray-50 flex items-center gap-1.5 transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+            </svg>
+            {sortDir === 'desc' ? 'Recientes' : 'Antiguas'}
+          </button>
+        </div>
+      )}
+
       <div className="space-y-3">
-        {[...cotizaciones].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).map(q => {
-          const isOpen      = expandedId === q.id
-          const total       = clientTotal(q)
-          const ci          = get(q, 'clientInfo')
-          const budgetNum   = get(q, 'budgetNumber')
-          const budgetSt    = get(q, 'budgetStatus')
-          const stObj       = BUDGET_STATUS_OPTS.find(s => s.value === budgetSt) ?? BUDGET_STATUS_OPTS[0]
-          const clientName  = ci?.nombre || '—'
-          const canInvoice  = budgetSt === 'aceptado' || budgetSt === 'facturado'
+        {displayed.length === 0 && cotizaciones.length > 0 ? (
+          <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
+            <p className="text-sm text-gray-400">No hay presupuestos con ese estado.</p>
+          </div>
+        ) : displayed.map(q => {
+          const isEditing  = editingId === q.id
+          const total      = clientTotal(q)
+          const ci         = get(q, 'clientInfo')
+          const budgetNum  = get(q, 'budgetNumber')
+          const budgetSt   = get(q, 'budgetStatus')
+          const stObj      = BUDGET_STATUS_OPTS.find(s => s.value === budgetSt) ?? BUDGET_STATUS_OPTS[0]
+          const clientName = ci?.nombre || '—'
+          const canInvoice = budgetSt === 'aceptado' || budgetSt === 'facturado'
 
           return (
             <div key={q.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
 
-              {/* Cabecera */}
-              <button onClick={() => setExpandedId(isOpen ? null : q.id)}
-                className="w-full px-4 py-4 flex items-center gap-3 text-left hover:bg-gray-50 transition-colors">
+              {/* Fila principal */}
+              <div className="px-4 py-3.5 flex items-center gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap mb-0.5">
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${stObj.cls}`}>{stObj.label}</span>
                     <span className="text-xs text-gray-400 font-mono">{budgetNum}</span>
                     <span className="text-xs text-gray-400 hidden sm:inline">{fmtDate(q.created_at)}</span>
                   </div>
                   <p className="text-sm font-semibold text-gray-800 truncate">{clientName}</p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <span className="text-base font-black text-blue-700">{fmt(total)}</span>
-                  <svg className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+                  <button
+                    onClick={() => handleDownload(q, 'budget')}
+                    disabled={downloading[`${q.id}-budget`]}
+                    className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-50 transition-colors">
+                    {downloading[`${q.id}-budget`]
+                      ? <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                      : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>}
+                    PDF
+                  </button>
+                  {canInvoice && (
+                    <button onClick={() => handleDownload(q, 'invoice')} disabled={downloading[`${q.id}-invoice`]}
+                      className="flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800 disabled:opacity-50 transition-colors">
+                      {downloading[`${q.id}-invoice`]
+                        ? <span className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                        : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
+                      FAC
+                    </button>
+                  )}
+                  <button onClick={() => setEditingId(isEditing ? null : q.id)}
+                    className={`text-xs font-semibold px-2.5 py-1 rounded-lg border transition-colors ${isEditing ? 'bg-gray-100 text-gray-700 border-gray-300' : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'}`}>
+                    {isEditing ? 'Cerrar' : 'Editar'}
+                  </button>
                 </div>
-              </button>
+              </div>
 
-              {isOpen && (
+              {/* Formulario de edición */}
+              {isEditing && (
                 <div className="px-4 pb-5 pt-1 border-t border-gray-100 space-y-4">
 
-                  {/* Nº presupuesto + estado */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-gray-400 block mb-1">Nº presupuesto</label>
@@ -177,7 +241,6 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
                     </div>
                   </div>
 
-                  {/* Datos del cliente */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-gray-600 block">Datos del cliente</label>
                     {[
@@ -194,7 +257,6 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
                     ))}
                   </div>
 
-                  {/* Margen / extras / IVA */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs text-gray-500 w-16">Margen:</span>
@@ -236,7 +298,6 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
                     </div>
                   </div>
 
-                  {/* Observaciones */}
                   <div>
                     <label className="text-xs font-semibold text-gray-500 mb-1 block">
                       Observaciones <span className="font-normal text-gray-400">(aparecen en el PDF)</span>
@@ -249,7 +310,6 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
                     />
                   </div>
 
-                  {/* Plantilla */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs text-gray-400">Plantilla:</span>
                     {TEMPLATE_OPTS.map(t => {
@@ -265,28 +325,14 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
                     })}
                   </div>
 
-                  {/* Acciones */}
-                  <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-gray-100">
+                  <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
                     <button onClick={() => handleSave(q)} disabled={saving[q.id] || saved[q.id]}
-                      className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${saved[q.id] ? 'bg-green-600 text-white' : 'bg-blue-700 hover:bg-blue-800 text-white'}`}>
-                      {saving[q.id] ? '…' : saved[q.id] ? '✓ Guardado' : 'Guardar'}
+                      className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-colors disabled:opacity-50 ${saved[q.id] ? 'bg-green-600 text-white' : 'bg-blue-700 hover:bg-blue-800 text-white'}`}>
+                      {saving[q.id] ? '…' : saved[q.id] ? '✓ Guardado' : 'Guardar cambios'}
                     </button>
-                    <button onClick={() => handleDownload(q, 'budget')} disabled={downloading[`${q.id}-budget`]}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-white border border-blue-200 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50">
-                      {downloading[`${q.id}-budget`]
-                        ? <span className="w-3 h-3 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                        : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>}
-                      PDF presupuesto
+                    <button onClick={() => setEditingId(null)} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+                      Cancelar
                     </button>
-                    {canInvoice && (
-                      <button onClick={() => handleDownload(q, 'invoice')} disabled={downloading[`${q.id}-invoice`]}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50">
-                        {downloading[`${q.id}-invoice`]
-                          ? <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
-                        PDF factura
-                      </button>
-                    )}
                   </div>
                 </div>
               )}
