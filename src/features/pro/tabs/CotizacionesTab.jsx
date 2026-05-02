@@ -71,6 +71,10 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
         quote: quoteForPDF, proInfo: proInfo ?? {}, marginPct: margin, extrasAmount: extras, clientComments: comments, ivaPct, logoUrl, invoiceNumber: invNum, templateId: tpl,
       })
       doc?.save(`Factura_cliente_${invNum}.pdf`)
+      if ((q.budget_status ?? 'borrador') !== 'facturado') {
+        await supabase.from('pro_purchase_quotes').update({ budget_status: 'facturado', budget_number: invNum.replace(/^FAC-/i, 'PRES-') }).eq('id', q.id)
+        onUpdate?.(q.id, { budget_status: 'facturado', budget_number: invNum.replace(/^FAC-/i, 'PRES-') })
+      }
     } catch {}
     setGeneratingInv(p => ({ ...p, [q.id]: false }))
   }
