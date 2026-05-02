@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { fmt, fmtDate, TEMPLATE_OPTS } from '../constants'
+import { useState, useEffect } from 'react'
+import { supabase } from '../../../services/supabase/client'
+import { fmt, fmtDate } from '../constants'
 import { generateClientInvoiceFromQuotePDF } from '../../../services/pdf'
 import SectionHeader from '../components/SectionHeader'
 
@@ -8,12 +9,27 @@ function autoNum(q) {
   return base.replace(/^PRES-/i, 'FAC-')
 }
 
-export default function FacturasClienteTab({ cotizaciones, proInfo, logoUrl }) {
+export default function FacturasClienteTab({ proInfo, logoUrl }) {
+  const [facturas,    setFacturas]    = useState([])
+  const [loading,     setLoading]     = useState(true)
   const [downloading, setDownloading] = useState({})
 
-  const facturas = [...cotizaciones]
-    .filter(q => q.budget_status === 'facturado')
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+  useEffect(() => {
+    async function load() {
+      setLoading(true)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setLoading(false); return }
+      const { data } = await supabase
+        .from('pro_purchase_quotes')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('budget_status', 'facturado')
+        .order('created_at', { ascending: false })
+      setFacturas(data ?? [])
+      setLoading(false)
+    }
+    load()
+  }, [])
 
   async function handleDownload(q) {
     setDownloading(p => ({ ...p, [q.id]: true }))
@@ -38,6 +54,15 @@ export default function FacturasClienteTab({ cotizaciones, proInfo, logoUrl }) {
     } catch {}
     setDownloading(p => ({ ...p, [q.id]: false }))
   }
+
+  if (loading) return (
+    <div className="space-y-4">
+      <SectionHeader title="Mis facturas" />
+      <div className="bg-white rounded-2xl border border-gray-200 p-12 flex justify-center">
+        <span className="w-6 h-6 border-2 border-red-300 border-t-red-700 rounded-full animate-spin" />
+      </div>
+    </div>
+  )
 
   if (facturas.length === 0) return (
     <div className="space-y-4">

@@ -331,7 +331,6 @@ export default function ProfessionalDashboard() {
             {/* ── MIS FACTURAS ── */}
             {activeTab === 'facturas' && (
               <FacturasClienteTab
-                cotizaciones={cotizaciones}
                 logoUrl={logoUrl}
                 proInfo={{
                   razon_social:     empresa?.razon_social     ?? null,
