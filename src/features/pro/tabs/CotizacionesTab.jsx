@@ -153,24 +153,6 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
     setDownloadingClient(p => ({ ...p, [q.id]: false }))
   }
 
-  if (cotizaciones.length === 0) return (
-    <div className="space-y-4">
-      <SectionHeader title="Cotizaciones y presupuestos" />
-      <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-        <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
-          </svg>
-        </div>
-        <p className="font-semibold text-gray-700 mb-1">Sin cotizaciones todavía</p>
-        <p className="text-sm text-gray-400">Cuando guardes una configuración se generará tu cotización de compra y el presupuesto para tu cliente.</p>
-      </div>
-      <div className="pt-2">
-        <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} globalDiscount={globalDiscount} hideHeader readOnly />
-      </div>
-    </div>
-  )
-
   const displayed = useMemo(() => {
     let list = [...cotizaciones]
     if (statusFilter !== 'all') list = list.filter(q => q.status === statusFilter)
@@ -188,6 +170,24 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
     { value: 'modified', label: 'Modificadas' },
     { value: 'rejected', label: 'Rechazadas' },
   ]
+
+  if (cotizaciones.length === 0) return (
+    <div className="space-y-4">
+      <SectionHeader title="Cotizaciones y presupuestos" />
+      <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
+        <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <svg className="w-7 h-7 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z" />
+          </svg>
+        </div>
+        <p className="font-semibold text-gray-700 mb-1">Sin cotizaciones todavía</p>
+        <p className="text-sm text-gray-400">Cuando guardes una configuración se generará tu cotización de compra y el presupuesto para tu cliente.</p>
+      </div>
+      <div className="pt-2">
+        <ConfiguracionesTab configuraciones={configuraciones ?? []} setConfiguraciones={setConfiguraciones} globalDiscount={globalDiscount} hideHeader readOnly />
+      </div>
+    </div>
+  )
 
   return (
     <div className="space-y-4">
