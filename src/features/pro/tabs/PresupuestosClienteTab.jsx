@@ -69,14 +69,13 @@ export default function PresupuestosClienteTab({ cotizaciones, papelera = [], se
     return admin * (1 + margin / 100) + extras
   }
 
-  async function handleSave(q) {
-    setSaving(p => ({ ...p, [q.id]: true }))
-    const margin       = parseFloat(get(q, 'margin')) || 0
-    const extras       = parseFloat(get(q, 'extras')) || 0
-    const iva          = parseFloat(get(q, 'iva'))    || 21
-    const ci           = get(q, 'clientInfo')
-    const adminTotal   = parseFloat(q.admin_total_con_iva ?? q.total_con_iva ?? 0)
-    const updates = {
+  function buildUpdates(q) {
+    const margin     = parseFloat(get(q, 'margin')) || 0
+    const extras     = parseFloat(get(q, 'extras')) || 0
+    const iva        = parseFloat(get(q, 'iva'))    || 21
+    const ci         = get(q, 'clientInfo')
+    const adminTotal = parseFloat(q.admin_total_con_iva ?? q.total_con_iva ?? 0)
+    return {
       client_margin_pct: margin,
       client_total:      adminTotal * (1 + margin / 100) + extras,
       extras_amount:     extras,
@@ -86,6 +85,11 @@ export default function PresupuestosClienteTab({ cotizaciones, papelera = [], se
       budget_number:     get(q, 'budgetNumber') || autoNum(q),
       budget_status:     get(q, 'budgetStatus'),
     }
+  }
+
+  async function handleSave(q) {
+    setSaving(p => ({ ...p, [q.id]: true }))
+    const updates = buildUpdates(q)
     const { error } = await supabase.from('pro_purchase_quotes').update(updates).eq('id', q.id)
     if (!error) {
       onUpdate?.(q.id, updates)
@@ -99,13 +103,13 @@ export default function PresupuestosClienteTab({ cotizaciones, papelera = [], se
     const key = `${q.id}-${type}`
     setDownloading(p => ({ ...p, [key]: true }))
     try {
-      const margin      = parseFloat(get(q, 'margin')) || 0
-      const extras      = parseFloat(get(q, 'extras')) || 0
-      const iva         = parseFloat(get(q, 'iva'))    || 21
-      const ci          = get(q, 'clientInfo')
-      const comments    = get(q, 'comments')
-      const template    = get(q, 'template')
-      const budgetNum   = get(q, 'budgetNumber')
+      const margin    = parseFloat(get(q, 'margin')) || 0
+      const extras    = parseFloat(get(q, 'extras')) || 0
+      const iva       = parseFloat(get(q, 'iva'))    || 21
+      const ci        = get(q, 'clientInfo')
+      const comments  = get(q, 'comments')
+      const template  = get(q, 'template')
+      const budgetNum = get(q, 'budgetNumber')
       const quoteForPDF = { ...q, client_info: ci }
       if (type === 'invoice') {
         const invNum = budgetNum.replace(/^PRES-/i, 'FAC-')
@@ -115,7 +119,6 @@ export default function PresupuestosClienteTab({ cotizaciones, papelera = [], se
         })
         doc?.save(`Factura_${invNum}.pdf`)
         if (get(q, 'budgetStatus') !== 'facturado') {
-          const { supabase } = await import('../../../services/supabase/client')
           await supabase.from('pro_purchase_quotes').update({ budget_status: 'facturado' }).eq('id', q.id)
           onUpdate?.(q.id, { budget_status: 'facturado' })
           set(q.id, 'budgetStatus', 'facturado')
@@ -126,21 +129,13 @@ export default function PresupuestosClienteTab({ cotizaciones, papelera = [], se
           clientComments: comments, ivaPct: iva, logoUrl, templateId: template,
         })
         doc?.save(`Presupuesto_${budgetNum}.pdf`)
-        const adminTotal = parseFloat(q.admin_total_con_iva ?? q.total_con_iva ?? 0)
-        const updates = {
-          client_margin_pct: margin,
-          client_total:      adminTotal * (1 + margin / 100) + extras,
-          extras_amount:     extras,
-          iva_pct:           iva,
-          client_comments:   comments || null,
-          client_info:       Object.values(ci).some(v => v?.trim?.()) ? ci : null,
-          budget_number:     budgetNum || autoNum(q),
-          budget_status:     get(q, 'budgetStatus'),
-        }
+        const updates = buildUpdates(q)
         await supabase.from('pro_purchase_quotes').update(updates).eq('id', q.id)
         onUpdate?.(q.id, updates)
       }
-    } catch {}
+    } catch (err) {
+      console.error('handleDownload error:', err)
+    }
     setDownloading(p => ({ ...p, [key]: false }))
   }
 
@@ -154,6 +149,70 @@ export default function PresupuestosClienteTab({ cotizaciones, papelera = [], se
     return list
   }, [cotizaciones, statusFilter, sortDir])
 
+  const papeleraSection = papelera.length > 0 && (
+    <div>
+      <button
+        onClick={() => setPapeleraOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-500 hover:bg-gray-100 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+          Papelera ({papelera.length})
+        </div>
+        <svg className={`w-4 h-4 transition-transform ${papeleraOpen ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {papeleraOpen && (
+        <div className="mt-2 space-y-2">
+          <p className="text-xs text-gray-400 px-1">Los presupuestos eliminados se borran definitivamente tras 30 días.</p>
+          {papelera.map(q => {
+            const clientName  = q.client_info?.nombre || '—'
+            const total       = parseFloat(q.client_total ?? q.admin_total_con_iva ?? q.total_con_iva ?? 0)
+            const deletedDate = new Date(q.deleted_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
+            const isPerm      = deletingPerm === q.id
+            const isRes       = restoring === q.id
+            return (
+              <div key={q.id} className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-700 truncate">{clientName}</p>
+                  <p className="text-xs text-gray-400 font-mono">{q.budget_number || autoNum(q)}</p>
+                  <p className="text-xs text-gray-400">Eliminado el {deletedDate} · {fmt(total)}</p>
+                </div>
+                <div className="flex gap-2 flex-shrink-0">
+                  <button onClick={() => handleRestore(q.id)} disabled={isRes || isPerm}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50 transition-colors">
+                    {isRes
+                      ? <span className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
+                      : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>}
+                    Restaurar
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (window.confirm('¿Eliminar definitivamente este presupuesto? Esta acción no se puede deshacer.')) {
+                        handleDeletePermanent(q.id)
+                      }
+                    }}
+                    disabled={isPerm || isRes}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50 transition-colors">
+                    {isPerm
+                      ? <span className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                      : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+
   if (cotizaciones.length === 0) return (
     <div className="space-y-4">
       <SectionHeader title="Mis presupuestos" />
@@ -161,6 +220,7 @@ export default function PresupuestosClienteTab({ cotizaciones, papelera = [], se
         <p className="font-semibold text-gray-700 mb-1">Sin presupuestos todavía</p>
         <p className="text-sm text-gray-400">Crea configuraciones de persianas para generar cotizaciones y presupuestos para tus clientes.</p>
       </div>
+      {papeleraSection}
     </div>
   )
 
@@ -168,36 +228,34 @@ export default function PresupuestosClienteTab({ cotizaciones, papelera = [], se
     <div className="space-y-4">
       <SectionHeader title="Mis presupuestos" />
 
-      {cotizaciones.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
-          {[
-            { value: 'all',       label: 'Todos' },
-            { value: 'borrador',  label: 'Borrador' },
-            { value: 'enviado',   label: 'Enviado' },
-            { value: 'aceptado',  label: 'Aceptado' },
-            { value: 'facturado', label: 'Facturado' },
-          ].map(opt => (
-            <button key={opt.value} onClick={() => setStatusFilter(opt.value)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
-                statusFilter === opt.value
-                  ? 'bg-red-700 text-white border-red-700'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
-              }`}>
-              {opt.label}
-            </button>
-          ))}
-          <button onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
-            className="ml-auto px-3 py-1.5 text-xs font-semibold rounded-xl border bg-white text-gray-600 border-gray-300 hover:bg-gray-50 flex items-center gap-1.5 transition-colors">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
-            </svg>
-            {sortDir === 'desc' ? 'Recientes' : 'Antiguas'}
+      <div className="flex items-center gap-2 flex-wrap">
+        {[
+          { value: 'all',       label: 'Todos' },
+          { value: 'borrador',  label: 'Borrador' },
+          { value: 'enviado',   label: 'Enviado' },
+          { value: 'aceptado',  label: 'Aceptado' },
+          { value: 'facturado', label: 'Facturado' },
+        ].map(opt => (
+          <button key={opt.value} onClick={() => setStatusFilter(opt.value)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-colors ${
+              statusFilter === opt.value
+                ? 'bg-red-700 text-white border-red-700'
+                : 'bg-white text-gray-600 border-gray-300 hover:border-gray-400'
+            }`}>
+            {opt.label}
           </button>
-        </div>
-      )}
+        ))}
+        <button onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
+          className="ml-auto px-3 py-1.5 text-xs font-semibold rounded-xl border bg-white text-gray-600 border-gray-300 hover:bg-gray-50 flex items-center gap-1.5 transition-colors">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
+          </svg>
+          {sortDir === 'desc' ? 'Recientes' : 'Antiguas'}
+        </button>
+      </div>
 
       <div className="space-y-3">
-        {displayed.length === 0 && cotizaciones.length > 0 ? (
+        {displayed.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-200 p-8 text-center">
             <p className="text-sm text-gray-400">No hay presupuestos con ese estado.</p>
           </div>
@@ -210,7 +268,6 @@ export default function PresupuestosClienteTab({ cotizaciones, papelera = [], se
           const stObj      = BUDGET_STATUS_OPTS.find(s => s.value === budgetSt) ?? BUDGET_STATUS_OPTS[0]
           const clientName = ci?.nombre || '—'
           const canInvoice = budgetSt === 'aceptado' || budgetSt === 'facturado'
-
           const isExpanded = expandedId === q.id
 
           return (
@@ -390,70 +447,7 @@ export default function PresupuestosClienteTab({ cotizaciones, papelera = [], se
         })}
       </div>
 
-      {/* Papelera */}
-      {papelera.length > 0 && (
-        <div>
-          <button
-            onClick={() => setPapeleraOpen(o => !o)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-semibold text-gray-500 hover:bg-gray-100 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Papelera ({papelera.length})
-            </div>
-            <svg className={`w-4 h-4 transition-transform ${papeleraOpen ? 'rotate-180' : ''}`}
-              fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {papeleraOpen && (
-            <div className="mt-2 space-y-2">
-              <p className="text-xs text-gray-400 px-1">Los presupuestos eliminados se borran definitivamente tras 30 días.</p>
-              {papelera.map(q => {
-                const clientName  = q.client_info?.nombre || '—'
-                const total       = parseFloat(q.client_total ?? q.admin_total_con_iva ?? q.total_con_iva ?? 0)
-                const deletedDate = new Date(q.deleted_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })
-                const isPerm      = deletingPerm === q.id
-                const isRes       = restoring === q.id
-                return (
-                  <div key={q.id} className="bg-white border border-gray-200 rounded-xl px-4 py-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-700 truncate">{clientName}</p>
-                      <p className="text-xs text-gray-400 font-mono">{q.budget_number || autoNum(q)}</p>
-                      <p className="text-xs text-gray-400">Eliminado el {deletedDate} · {fmt(total)}</p>
-                    </div>
-                    <div className="flex gap-2 flex-shrink-0">
-                      <button onClick={() => handleRestore(q.id)} disabled={isRes || isPerm}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-green-50 text-green-700 hover:bg-green-100 disabled:opacity-50 transition-colors">
-                        {isRes
-                          ? <span className="w-3 h-3 border-2 border-green-400 border-t-transparent rounded-full animate-spin" />
-                          : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" /></svg>}
-                        Restaurar
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm('¿Eliminar definitivamente este presupuesto? Esta acción no se puede deshacer.')) {
-                            handleDeletePermanent(q.id)
-                          }
-                        }}
-                        disabled={isPerm || isRes}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50 transition-colors">
-                        {isPerm
-                          ? <span className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                          : <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>}
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
+      {papeleraSection}
     </div>
   )
 }
