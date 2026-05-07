@@ -34,7 +34,7 @@ export function useProData() {
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('invoices').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         getProfessionalDiscountForUser(user.id),
-        supabase.from('pro_purchase_quotes').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('pro_purchase_quotes').select('*').eq('user_id', user.id).is('deleted_at', null).order('created_at', { ascending: false }),
         supabase.from('pro_messages').select('id', { count: 'exact', head: true }).eq('professional_user_id', user.id).eq('sender_role', 'admin').eq('read_by_professional', false),
       ])
 

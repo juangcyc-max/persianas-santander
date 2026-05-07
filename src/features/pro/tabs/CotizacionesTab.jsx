@@ -44,7 +44,7 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
       await supabase.from('blind_configurations').delete().in('id', configIds)
       setConfiguraciones(prev => prev.filter(c => !configIds.includes(c.id)))
     }
-    await supabase.from('pro_purchase_quotes').delete().eq('id', id)
+    await supabase.from('pro_purchase_quotes').update({ deleted_at: new Date().toISOString() }).eq('id', id)
     setDeletingId(null); setConfirmId(null)
     onDelete?.(id)
   }
