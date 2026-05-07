@@ -42,7 +42,7 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
       setPapelera(data ?? [])
     }
     loadPapelera()
-  }, [])
+  }, [cotizaciones.length])
 
   async function handleRestore(id) {
     setRestoring(id)
