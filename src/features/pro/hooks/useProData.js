@@ -18,6 +18,7 @@ export function useProData() {
   const [loading,        setLoading]        = useState(true)
   const [globalDiscount, setGlobalDiscount] = useState(0)
   const [showEmpresaModal, setShowEmpresaModal] = useState(false)
+  const [papelera,         setPapelera]         = useState([])
 
   const empresaCompleta = useCallback((e) => e && REQUIRED_EMPRESA.every(f => e[f]?.toString().trim()), [])
 
@@ -28,7 +29,7 @@ export function useProData() {
       if (!user) { navigate('/login'); return }
       setUser(user)
 
-      const [empR, configR, pedR, facR, disc, cotR, unreadR] = await Promise.all([
+      const [empR, configR, pedR, facR, disc, cotR, unreadR, papR] = await Promise.all([
         supabase.rpc('get_professional_data', { p_user_id: user.id }).then(r => ({ data: r.data?.[0] ?? null, error: r.error })),
         supabase.from('blind_configurations').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('orders').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
@@ -36,6 +37,7 @@ export function useProData() {
         getProfessionalDiscountForUser(user.id),
         supabase.from('pro_purchase_quotes').select('*').eq('user_id', user.id).is('deleted_at', null).order('created_at', { ascending: false }),
         supabase.from('pro_messages').select('id', { count: 'exact', head: true }).eq('professional_user_id', user.id).eq('sender_role', 'admin').eq('read_by_professional', false),
+        supabase.from('pro_purchase_quotes').select('id,budget_number,client_info,created_at,deleted_at,admin_total_con_iva,total_con_iva,client_total').eq('user_id', user.id).not('deleted_at', 'is', null).order('deleted_at', { ascending: false }),
       ])
 
       setGlobalDiscount(disc)
@@ -46,6 +48,7 @@ export function useProData() {
       setUnreadMsgs(unreadR.count ?? 0)
       setPedidos(pedR.data ?? [])
       setFacturas(facR.data ?? [])
+      setPapelera(papR.data ?? [])
 
       if (user.id) {
         const { data: logoData } = supabase.storage.from('professional-logos').getPublicUrl(`${user.id}/logo`)
@@ -72,6 +75,7 @@ export function useProData() {
     globalDiscount,
     showEmpresaModal, setShowEmpresaModal,
     empresaCompleta,
+    papelera, setPapelera,
     loadData,
     handleLogout,
   }

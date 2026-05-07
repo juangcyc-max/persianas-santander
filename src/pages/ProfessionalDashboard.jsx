@@ -51,6 +51,7 @@ export default function ProfessionalDashboard() {
     globalDiscount,
     showEmpresaModal, setShowEmpresaModal,
     empresaCompleta,
+    papelera, setPapelera,
     loadData,
     handleLogout,
   } = useProData()
@@ -276,7 +277,11 @@ export default function ProfessionalDashboard() {
                 cotizaciones={cotizaciones}
                 configuraciones={configuraciones}
                 setConfiguraciones={setConfiguraciones}
-                onDelete={id => setCotizaciones(prev => prev.filter(q => q.id !== id))}
+                onDelete={id => {
+                  const q = cotizaciones.find(c => c.id === id)
+                  if (q) setPapelera(p => [{ id: q.id, budget_number: q.budget_number, client_info: q.client_info, created_at: q.created_at, deleted_at: new Date().toISOString(), admin_total_con_iva: q.admin_total_con_iva, total_con_iva: q.total_con_iva, client_total: q.client_total }, ...p])
+                  setCotizaciones(prev => prev.filter(c => c.id !== id))
+                }}
                 onUpdate={(id, updates) => setCotizaciones(prev => prev.map(q => q.id === id ? { ...q, ...updates } : q))}
                 logoUrl={logoUrl}
                 globalDiscount={globalDiscount}
@@ -313,6 +318,9 @@ export default function ProfessionalDashboard() {
             {activeTab === 'presupuestos' && (
               <PresupuestosClienteTab
                 cotizaciones={cotizaciones}
+                papelera={papelera}
+                setPapelera={setPapelera}
+                onRefresh={loadData}
                 onUpdate={(id, updates) => setCotizaciones(prev => prev.map(q => q.id === id ? { ...q, ...updates } : q))}
                 logoUrl={logoUrl}
                 proInfo={{

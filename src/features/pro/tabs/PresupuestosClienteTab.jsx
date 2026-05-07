@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { supabase } from '../../../services/supabase/client'
 import { fmt, fmtDate, TEMPLATE_OPTS } from '../constants'
 import { generateClientBudgetFromQuotePDF, generateClientInvoiceFromQuotePDF } from '../../../services/pdf'
@@ -15,7 +15,7 @@ function autoNum(q) {
   return `PRES-${(q.id ?? '').slice(0, 8).toUpperCase()}`
 }
 
-export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo, logoUrl }) {
+export default function PresupuestosClienteTab({ cotizaciones, papelera = [], setPapelera, onRefresh, onUpdate, proInfo, logoUrl }) {
   const [expandedId,  setExpandedId]  = useState(null)
   const [editingId,   setEditingId]   = useState(null)
   const [edits,       setEdits]       = useState({})
@@ -24,37 +24,22 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
   const [downloading, setDownloading] = useState({})
   const [sortDir,     setSortDir]     = useState('desc')
   const [statusFilter,setStatusFilter]= useState('all')
-  const [papelera,    setPapelera]    = useState([])
   const [papeleraOpen,setPapeleraOpen]= useState(false)
   const [restoring,   setRestoring]   = useState(null)
   const [deletingPerm,setDeletingPerm]= useState(null)
 
-  useEffect(() => {
-    async function loadPapelera() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data } = await supabase
-        .from('pro_purchase_quotes')
-        .select('id, budget_number, client_info, created_at, deleted_at, admin_total_con_iva, total_con_iva, client_total')
-        .eq('user_id', user.id)
-        .not('deleted_at', 'is', null)
-        .order('deleted_at', { ascending: false })
-      setPapelera(data ?? [])
-    }
-    loadPapelera()
-  }, [cotizaciones.length])
-
   async function handleRestore(id) {
     setRestoring(id)
     await supabase.from('pro_purchase_quotes').update({ deleted_at: null }).eq('id', id)
-    setPapelera(prev => prev.filter(q => q.id !== id))
+    setPapelera?.(prev => prev.filter(q => q.id !== id))
     setRestoring(null)
+    onRefresh?.()
   }
 
   async function handleDeletePermanent(id) {
     setDeletingPerm(id)
     await supabase.from('pro_purchase_quotes').delete().eq('id', id)
-    setPapelera(prev => prev.filter(q => q.id !== id))
+    setPapelera?.(prev => prev.filter(q => q.id !== id))
     setDeletingPerm(null)
   }
 
