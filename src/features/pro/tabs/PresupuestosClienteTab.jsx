@@ -108,6 +108,19 @@ export default function PresupuestosClienteTab({ cotizaciones, onUpdate, proInfo
           clientComments: comments, ivaPct: iva, logoUrl, templateId: template,
         })
         doc?.save(`Presupuesto_${budgetNum}.pdf`)
+        const adminTotal = parseFloat(q.admin_total_con_iva ?? q.total_con_iva ?? 0)
+        const updates = {
+          client_margin_pct: margin,
+          client_total:      adminTotal * (1 + margin / 100) + extras,
+          extras_amount:     extras,
+          iva_pct:           iva,
+          client_comments:   comments || null,
+          client_info:       Object.values(ci).some(v => v?.trim?.()) ? ci : null,
+          budget_number:     budgetNum || autoNum(q),
+          budget_status:     get(q, 'budgetStatus'),
+        }
+        await supabase.from('pro_purchase_quotes').update(updates).eq('id', q.id)
+        onUpdate?.(q.id, updates)
       }
     } catch {}
     setDownloading(p => ({ ...p, [key]: false }))
