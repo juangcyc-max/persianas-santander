@@ -1502,11 +1502,12 @@ export async function generateClientBudgetFromQuotePDF({
       y += commentH + 8
     }
 
-    // Bloque totales
+    // Bloque totales (todo sin IVA en el desglose, IVA aparte)
     const persianasConIva = clientSinIva * (1 + ivaRate / 100)
     const totalConIva     = persianasConIva + extras
     const baseImponible   = totalConIva / (1 + ivaRate / 100)
     const ivaAmount       = totalConIva - baseImponible
+    const extrasSinIva    = extras / (1 + ivaRate / 100)
     const totalRows       = extras > 0 ? 4 : 3
     const rowH            = 6
     const totalsBlockH    = totalRows * rowH + 14
@@ -1516,10 +1517,10 @@ export async function generateClientBudgetFromQuotePDF({
     let ty = y + 8
     if (extras > 0) {
       doc.text('Persianas:',           W - ML - 66, ty)
-      doc.text(formatCurrency(persianasConIva), W - ML - 2, ty, { align: 'right' })
+      doc.text(formatCurrency(clientSinIva), W - ML - 2, ty, { align: 'right' })
       ty += rowH
       doc.text('Trabajos adicionales:', W - ML - 66, ty)
-      doc.text(formatCurrency(extras),  W - ML - 2, ty, { align: 'right' })
+      doc.text(formatCurrency(extrasSinIva), W - ML - 2, ty, { align: 'right' })
       ty += rowH
     }
     doc.text('Base imponible:',        W - ML - 66, ty)
