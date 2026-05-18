@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { supabase } from '../../../services/supabase/client'
 import { generateProQuotePDF, generateClientBudgetFromQuotePDF, generateClientInvoiceFromQuotePDF } from '../../../services/pdf'
-import { fmt, fmtDate, blindLabel, QUOTE_STATUS, TEMPLATE_OPTS } from '../constants'
+import { fmt, fmtDate, blindLabel, QUOTE_STATUS, TEMPLATE_OPTS, computeClientTotal } from '../constants'
 import SectionHeader from '../components/SectionHeader'
 import ConfiguracionesTab from './ConfiguracionesTab'
 
@@ -86,7 +86,7 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
     const margin      = parseFloat(editMargin[id] !== undefined ? editMargin[id] : (currentMarginPct ?? 0))
     const extras      = parseFloat(editExtras[id] !== undefined ? editExtras[id] : (currentExtras ?? 0)) || 0
     const ivaPct      = parseFloat(editIvaPct[id] !== undefined ? editIvaPct[id] : (currentIvaPct ?? 21))
-    const clientTotal = parseFloat(adminTotal) * (1 + margin / 100) + extras
+    const clientTotal = computeClientTotal(adminTotal, margin, extras, ivaPct)
     const notes       = editWorkNotes[id] !== undefined ? editWorkNotes[id] : (currentWorkNotes ?? null)
     const comments    = editClientComments[id] !== undefined ? editClientComments[id] : (currentClientComments ?? null)
     const ci          = editClientInfo[id] !== undefined ? editClientInfo[id] : (currentClientInfo ?? null)
@@ -227,7 +227,8 @@ export default function CotizacionesTab({ cotizaciones, configuraciones, setConf
           const isAccepted = q.status === 'accepted' || q.status === 'modified'
           const clientMargin = parseFloat(editMargin[q.id] !== undefined ? editMargin[q.id] : (q.client_margin_pct ?? 0))
           const extras       = parseFloat(editExtras[q.id] !== undefined ? editExtras[q.id] : (q.extras_amount ?? 0)) || 0
-          const clientTotal  = adminTotal * (1 + clientMargin / 100) + extras
+          const ivaPctRow    = parseFloat(editIvaPct[q.id] !== undefined ? editIvaPct[q.id] : (q.iva_pct ?? 21))
+          const clientTotal  = computeClientTotal(adminTotal, clientMargin, extras, ivaPctRow)
           const clientAccepted = q.client_status === 'accepted'
           return (
             <div key={q.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden">

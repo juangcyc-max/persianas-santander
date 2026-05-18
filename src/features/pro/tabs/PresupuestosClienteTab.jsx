@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { supabase } from '../../../services/supabase/client'
-import { fmt, fmtDate, TEMPLATE_OPTS } from '../constants'
+import { fmt, fmtDate, TEMPLATE_OPTS, computeClientTotal } from '../constants'
 import { generateClientBudgetFromQuotePDF, generateClientInvoiceFromQuotePDF } from '../../../services/pdf'
 import SectionHeader from '../components/SectionHeader'
 
@@ -63,10 +63,12 @@ export default function PresupuestosClienteTab({ cotizaciones, papelera = [], se
   }
 
   function clientTotal(q) {
-    const admin  = parseFloat(q.admin_total_con_iva ?? q.total_con_iva ?? 0)
-    const margin = parseFloat(get(q, 'margin')) || 0
-    const extras = parseFloat(get(q, 'extras')) || 0
-    return admin * (1 + margin / 100) + extras
+    return computeClientTotal(
+      q.admin_total_con_iva ?? q.total_con_iva ?? 0,
+      get(q, 'margin'),
+      get(q, 'extras'),
+      get(q, 'iva'),
+    )
   }
 
   function buildUpdates(q) {
@@ -77,7 +79,7 @@ export default function PresupuestosClienteTab({ cotizaciones, papelera = [], se
     const adminTotal = parseFloat(q.admin_total_con_iva ?? q.total_con_iva ?? 0)
     return {
       client_margin_pct: margin,
-      client_total:      adminTotal * (1 + margin / 100) + extras,
+      client_total:      computeClientTotal(adminTotal, margin, extras, iva),
       extras_amount:     extras,
       iva_pct:           iva,
       client_comments:   get(q, 'comments') || null,

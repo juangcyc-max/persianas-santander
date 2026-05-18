@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../../../services/supabase/client'
-import { fmt, fmtDate } from '../constants'
+import { fmt, fmtDate, computeClientTotal } from '../constants'
 import { generateClientInvoiceFromQuotePDF } from '../../../services/pdf'
 import SectionHeader from '../components/SectionHeader'
 
@@ -143,7 +143,8 @@ export default function FacturasClienteTab({ proInfo, logoUrl }) {
             const adminTotal = parseFloat(q.admin_total_con_iva ?? q.total_con_iva ?? 0)
             const margin     = parseFloat(q.client_margin_pct ?? 0)
             const extras     = parseFloat(q.extras_amount ?? 0) || 0
-            const total      = adminTotal * (1 + margin / 100) + extras
+            const ivaPct     = parseFloat(q.iva_pct ?? 21)
+            const total      = computeClientTotal(adminTotal, margin, extras, ivaPct)
             const paid       = q.client_invoice_paid ?? false
 
             return (

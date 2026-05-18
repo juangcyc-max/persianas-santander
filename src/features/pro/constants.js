@@ -84,6 +84,17 @@ export const STATUS_BORDER = {
 
 export const REQUIRED_EMPRESA = ['razon_social', 'cif_nif', 'telefono', 'direccion_fiscal', 'codigo_postal', 'ciudad', 'provincia', 'email_facturacion']
 
+// Total del cliente final: la base imponible se re-tasa al IVA del cliente
+// (que puede ser != 21% en obras de reforma). Misma fórmula que usa el PDF.
+export function computeClientTotal(adminTotalConIva, marginPct, extrasAmount, ivaPct = 21) {
+  const admin   = parseFloat(adminTotalConIva) || 0
+  const margin  = parseFloat(marginPct)        || 0
+  const extras  = parseFloat(extrasAmount)     || 0
+  const iva     = parseFloat(ivaPct ?? 21)     || 21
+  const sinIva  = (admin * (1 + margin / 100)) / 1.21
+  return sinIva * (1 + iva / 100) + extras
+}
+
 // ── Función de cálculo de precio pro ─────────────────────────────────────
 import { DEFAULT_MOTOR_PRICES, DEFAULT_GUIDE_PRICE_PER_ML, DEFAULT_INSTALACION_PRICE, DEFAULT_INSTALACION_FIJA, DEFAULT_PRICES } from '../../services/prices'
 
